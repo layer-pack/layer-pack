@@ -1,0 +1,63 @@
+{
+  "name": "inherit-webpack-plugin",
+  "version": "0.1.0",
+  "description": "inherit-webpack-plugin",
+  "license": "MIT",
+  "engines": {
+    "node": ">= 8.11.4",
+    "npm": ">= 5.6.0"
+  },
+  "main": "etc/npm",
+  "readmeFilename": "readme.md",
+  "author": "N8tz <caipilabs@gmail.com>",
+  "maintainers": [
+    "Nathan Braun <caipilabs@gmail.com>"
+  ],
+  "sponsors": [
+    "Nathan Braun <caipilabs@gmail.com>"
+  ],
+  "contributors": [
+    "N8tz (https://github.com/N8tz)"
+  ],
+  "bugs": {
+    "url": "https://github.com/caipilabs/caipi/issues"
+  },
+  "badges": {
+    "list": [
+      "patreon",
+      "gratipay",
+      "paypal"
+    ],
+    "config": {
+      "patreonUsername": "nytzi",
+      "gratipayUsername": "nytzi",
+      "slackinURL": "https://caipilabs.slack.com",
+      "paypalURL": "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=4VKU4267ZB5WG"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/n8tz/inherit-webpack-plugin"
+  },
+  "src": "src/InheritPlugin.js",
+  "scripts": {
+    "test": "mocha --compilers js:babel-core/register ./test/caipi/*.js -b"
+  },
+  "devDependencies": {
+  },
+  "peerDependencies": {
+  },
+  "dependencies": {
+    "virtual-module-webpack-plugin": "^0.3.0",
+    "walk": "^2.3.9",
+    "webpack": "^2.2.1",
+    "is-builtin-module": "^3.0.0",
+    "webpack-closure-compiler": "^1.1.2",
+    "webpack-combine-loaders": "^2.0.0",
+    "webpack-cordova-plugin": "^0.1.6",
+    "webpack-dev-middleware": "^1.8.4",
+    "webpack-externals-plugin": "^1.0.0",
+    "webpack-hot-middleware": "^2.10.0",
+    "webpack-visualizer-plugin": "^0.1.11"
+  }
+}
