@@ -7,8 +7,6 @@
     "node": ">= 8.11.4",
     "npm": ">= 5.6.0"
   },
-  "main": "etc/npm",
-  "readmeFilename": "readme.md",
   "author": "N8tz <caipilabs@gmail.com>",
   "maintainers": [
     "Nathan Braun <caipilabs@gmail.com>"
@@ -39,7 +37,7 @@
     "type": "git",
     "url": "https://github.com/n8tz/inherit-webpack-plugin"
   },
-  "src": "src/InheritPlugin.js",
+  "main": "src/InheritPlugin.js",
   "scripts": {
     "test": "mocha --compilers js:babel-core/register ./test/caipi/*.js -b"
   },
