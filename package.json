@@ -1,7 +1,7 @@
 {
-  "name": "inherit-webpack-plugin",
+  "name": "webpack-inherit",
   "version": "0.0.1",
-  "description": "inherit-webpack-plugin",
+  "description": "webpack-inherit",
   "license": "MIT",
   "engines": {
     "node": ">= 8.11.4",

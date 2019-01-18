@@ -1,10 +1,11 @@
-# inherit-webpack-plugin (wip)
+# inherit-webpack-plugin ( not working for now; extracting from Caipi )
 
-Allow :
+Will Allow :
 - Inherit multiple projects directory
+- Do glob require on inherited directory
 - Easily override node_modules
 
-/!\ wip
+
 
 ## Contributors ?
 
