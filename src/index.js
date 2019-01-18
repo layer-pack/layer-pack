@@ -12,7 +12,7 @@
  *  @contact : caipilabs@gmail.com
  */
 
-import utils from "./utils"
+const utils = require("./utils")
 
 module.exports = {
 	getAllWpiCfg() {
