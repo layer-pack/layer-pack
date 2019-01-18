@@ -12,3 +12,88 @@
  *  @contact : caipilabs@gmail.com
  */
 
+
+var path       = require("path"),
+    fs         = require("fs"),
+    cwd        = path.normalize(__dirname + '/..');
+module.exports = {
+	getModulePaths() {
+		var projectRoot   = process.cwd(),
+		    pkgConfig     = fs.existsSync(path.normalize(projectRoot + "/package.json")) &&
+			    JSON.parse(fs.readFileSync(path.normalize(projectRoot + "/package.json"))),
+		    extAliases    = {},
+		    allModulePath = [],
+		    allExternals  = [],
+		    allCfg        = [],
+		    /**
+		     * Find & return all  inherited pkg paths
+		     * @type {Array}
+		     */
+		    allExtPath    = (() => {
+			    let list = [], seen = {};
+			
+			    pkgConfig.wpInherit.forEach(function walk( p, i ) {
+				    let where = fs.existsSync(path.normalize(projectRoot + "/libs/" + p))
+				                ? "/libs/" :
+				                "/node_modules/",
+				        cfg   = fs.existsSync(path.normalize(projectRoot + where + p + "/package.json")) &&
+					        JSON.parse(fs.readFileSync(path.normalize(projectRoot + where + p + "/package.json")))
+				
+				
+				    if ( cfg.wpInherit )
+					    cfg.wpInherit.forEach(walk)
+				
+				    list.push(path.normalize(projectRoot + where + p));
+				
+			    })
+			
+			    list.filter(e => (seen[e] ? true : (seen[e] = true, false)))
+			    return list;
+		    })(),
+		    allRoots      = (function () {
+			    var roots = [projectRoot + '/App'], libPath = [];
+			
+			    libPath.push(path.normalize(projectRoot + '/libs'));
+			    allModulePath.push(path.normalize(projectRoot + '/node_modules'));
+			
+			    allExtPath.forEach(
+				    function ( where ) {
+					    let cfg = fs.existsSync(path.normalize(where + "/package.json")) &&
+						    JSON.parse(fs.readFileSync(path.normalize(where + "/package.json")));
+					
+					    if ( cfg && cfg.aliases )
+						    extAliases = {
+							    ...extAliases,
+							    ...cfg.aliases
+						    };
+					    if ( cfg )
+						    allCfg.push(cfg)
+					
+					    roots.push(fs.realpathSync(path.normalize(where + "/App")));
+					
+					    fs.existsSync(path.normalize(where + "/libs"))
+					    && libPath.push(
+						    fs.realpathSync(path.normalize(where + "/libs")));
+					
+					    //console.log(path.normalize(where +
+					    // "/node_modules"), fs.existsSync(path.normalize(projectRoot + where
+					    // + p + "/node_modules")) && "yes")
+					    fs.existsSync(path.normalize(where + "/node_modules"))
+					    && allModulePath.push(
+						    fs.realpathSync(path.normalize(where + "/node_modules")));
+				    }
+			    );
+			    allModulePath = libPath.concat(allModulePath);
+			    roots.push(
+				    path.normalize(cwd + '/App')
+			    );
+			    allModulePath.push(path.normalize(cwd + '/node_modules'));
+			
+			    allModulePath = allModulePath.filter(fs.existsSync.bind(fs));
+			    //allModulePath.push("node_modules")
+			    return roots.map(path.normalize.bind(path));
+		    })();
+		allCfg.push(pkgConfig)
+		return { allModulePath, allRoots, extAliases, allCfg };
+	}
+}

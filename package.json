@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "description": "webpack-inherit",
   "license": "MIT",
+  "main": "src/index.js",
   "engines": {
     "node": ">= 8.11.4",
     "npm": ">= 5.6.0"
@@ -24,18 +25,15 @@
     "type": "git",
     "url": "https://github.com/n8tz/inherit-webpack-plugin"
   },
-  "main": "src/InheritPlugin.js",
   "scripts": {
     "test": "mocha --compilers js:babel-core/register ./test/caipi/*.js -b"
   },
-  "devDependencies": {
-  },
-  "peerDependencies": {
-  },
+  "devDependencies": {},
+  "peerDependencies": {},
   "dependencies": {
+    "webpack": "^2.7.0",
     "virtual-module-webpack-plugin": "^0.3.0",
     "walk": "^2.3.9",
-    "webpack": "^2.2.1",
     "is-builtin-module": "^3.0.0"
   }
 }
