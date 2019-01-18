@@ -472,20 +472,6 @@ module.exports = function ( opts, ctx, ctx2 ) {
                 
                 
                 data.wipOriginRrequest = data.request;
-                //!/www/.test(ctx) && console.log(ctx + " custom => ", data.request);
-                
-                //if ( /s?css$/.test(data.request) ) {
-                //    console.warn("external", data, requireOrigin)
-                //    //     throw 1;
-                //}
-                //if ( /index\.scss$/.test(requireOrigin) ) {
-                //    console.warn("internal", data, requireOrigin)
-                //    //     throw 1;
-                //}
-                // if (data.request == "$map(App/ui/assets/styles/pages)" ) {
-                //     console.warn(data)
-                //     throw 1;
-                // }
                 
                 // $map resolving...
                 if ( (vals = data.request.match(
@@ -562,7 +548,7 @@ module.exports = function ( opts, ctx, ctx2 ) {
                         }
                     );
                 }
-                
+                // Inheritable root based resolving
                 if ( /^App/.test(data.request) ) {
                     return findParentPath(
                         compiler.inputFileSystem,
@@ -579,41 +565,11 @@ module.exports = function ( opts, ctx, ctx2 ) {
                         }
                     );
                 }
-                //try{
-                //if ( !/^(\!|\w\:\\|\.?\.?[\\|\/])/.test(data.request) )// get modules call
-                //{
-                //    //if (
-                //    ///^(xmlhttprequest|ws$)/i.test(data.request)
-                //    //)
-                //    //    //{// webpack seems to have special alias
-                //    ////for that
-                //    //    return cb(true, data); //}
-                //    //{
-                //
-                //    //console.log(data.request, requireOrigin)
-                //
-                //    return findFallBack(wipResolver, fallback, data.context, data.request, 0,
-                // function ( e, filePath, file ) { //console.log(data.request, data.context,
-                // filePath, e) if ( !filePath || e ) { console.error("notfound %s", data.request);
-                // //return wipResolver.resolve( //    {}, //    data.context, //
-                // data.request, //    resolve //);// return resolve(null, data.request) }
-                // resolve(null, filePath); }); } else //resolve(null, data.request); {
-                // console.log(data.request)
-                //return wipResolver.resolve(
-                //    {},
-                //    data.context,
-                //    data.request,
-                //    resolve
-                //)
-                //}
                 resolve(null, data.request);
             }
             
             this._sassImporter = function ( url, prev, cb ) {
-                //const nodeSassOptions = this.options;
-                //if ( /^\~/.test(url) )
                 if ( /^(\$|App\/)/.test(url) ) {
-                    //console.log(prev, url, cb)
                     wipResolve(
                         {
                             contextInfo: {
@@ -638,41 +594,9 @@ module.exports = function ( opts, ctx, ctx2 ) {
                     )
                 }
                 else return null;
-                //else
-                //    compiler.resolvers.normal.resolve(
-                //        { ...compiler.options.resolve },
-                //        roots[0],
-                //        url + '.scss',
-                //        //{},
-                //        function ( e, found ) {
-                //            if ( found ) {
-                //                console.warn("Find In fall back !!! ", found, roots[i]);
-                //                cb && cb({ file: found });
-                //            }
-                //            else {
-                //
-                //                console.warn("not found In fall back !!! ", url, e);
-                //                cb && cb({ file: url });
-                //            }
-                //
-                //        }
-                //    )
-                
-                
             };
             
             compiler.plugin("normal-module-factory", function ( nmf ) {
-                                //console.log(compiler.resolvers.normal)
-                                //const wipResolver = ResolverFactory.createResolver(
-                                //    {
-                                //        // Typical usage will consume the
-                                //        // `NodeJsInputFileSystem` +
-                                //        // `CachedInputFileSystem`, which wraps the
-                                //        // Node.js `fs` wrapper to add resilience +
-                                //        // caching.
-                                //        fileSystem: new CachedInputFileSystem(new NodeJsInputFileSystem(), 4000),
-                                //        ...compiler.options.resolve
-                                //    });
                                 !/www/.test(ctx) && nmf.plugin('factory', function ( factory ) {
                                     return function ( data, callback ) {
                                         let mkExt = isBuiltinModule(data.request)

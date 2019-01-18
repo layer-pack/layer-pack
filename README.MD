@@ -1,7 +1,10 @@
 # inherit-webpack-plugin (wip)
 
-Inherit multiple projects when compiling with webpack
+Allow :
+- Inherit multiple projects directory
+- Easily override node_modules
 
+/!\ wip
 
 ## Contributors ?
 
