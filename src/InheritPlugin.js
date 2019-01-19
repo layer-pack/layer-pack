@@ -41,14 +41,14 @@ module.exports = function ( cfg, opts ) {
 			    internals           = [];
 			
 			// add resolve paths
-			compiler.options.resolve         = compiler.options.resolve || {};
-			compiler.options.resolve.modules = compiler.options.resolve.modules || [];
-			compiler.options.resolve.modules.unshift(...opts.allModulePath);
-			
-			
-			compiler.options.resolveLoader         = compiler.options.resolveLoader || {};
-			compiler.options.resolveLoader.modules = compiler.options.resolveLoader.modules || [];
-			compiler.options.resolveLoader.modules.unshift(...opts.allModulePath);
+			//compiler.options.resolve         = compiler.options.resolve || {};
+			//compiler.options.resolve.modules = compiler.options.resolve.modules || [];
+			////compiler.options.resolve.modules = opts.allModulePath;
+			//
+			//
+			//compiler.options.resolveLoader         = compiler.options.resolveLoader || {};
+			//compiler.options.resolveLoader.modules = compiler.options.resolveLoader.modules || [];
+			//compiler.options.resolveLoader.modules.unshift(...opts.allModulePath);
 			
 			
 			
