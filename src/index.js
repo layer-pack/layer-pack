@@ -12,11 +12,28 @@
  *  @contact : caipilabs@gmail.com
  */
 
-const utils = require("./utils")
+const utils = require("./utils");
+let allConfigs, currentProfile;
 
 module.exports = {
-	getAllWpiCfg() {
-		return utils.getModulePaths()
+	getAllConfigs() {
+		return allConfigs = allConfigs || utils.getAllConfigs()
+	},
+	getSuperCfg( profile = "default" ) {
+		return this.getAllConfigs()[profile]
+	},
+	getSuperWebpackCfg( profile = "default" ) {
+		let cfg = this.getAllConfigs()[profile],
+		    wpCfg;
+		try {
+			currentProfile = profile;
+			wpCfg          = require(cfg.allWebpackCfg[0])
+		} catch ( e ) {
+			console.error(e)
+			wpCfg = []
+		}
+		currentProfile = null;
+		return wpCfg;
 	},
 	plugin() {
 	}
