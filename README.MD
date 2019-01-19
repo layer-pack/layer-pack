@@ -1,12 +1,13 @@
-# inherit-webpack-plugin ( not well tested for now )
+# webpack-inherit
 
 Allow :
 - Inherit multiple projects directory
 - Do glob require on inherited directory
 - Easily override node_modules
+- inherit webpack config easily
 
-This plugin is working, but still in beta stage
-Samples will come here : https://github.com/n8tz/webpack-inherit-sample
+This plugin is working, but still in beta stage  ( not well tested for now ),
+Samples come here : https://github.com/n8tz/webpack-inherit-sample ( actually the only doc )
 
 ## Contributors ?
 
