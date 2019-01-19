@@ -1,11 +1,12 @@
-# inherit-webpack-plugin ( not working for now; extracting from Caipi )
+# inherit-webpack-plugin ( not well tested for now )
 
-Will Allow :
+Allow :
 - Inherit multiple projects directory
 - Do glob require on inherited directory
 - Easily override node_modules
 
-
+This plugin is working, but still in beta stage
+Samples will come here : https://github.com/n8tz/webpack-inherit-sample
 
 ## Contributors ?
 
@@ -20,7 +21,4 @@ Will Allow :
 Become a sponsor!
 
 <span class="badge-paypal"><a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=YNJZ6NQYVPTPE" title="Donate to this project using Paypal"><img src="https://img.shields.io/badge/paypal-donate-yellow.svg" alt="PayPal donate button" /></a></span>
-<a href="https://liberapay.com/n8tz/donate"><img alt="Donate using Liberapay" src="https://liberapay.com/assets/widgets/donate.svg"></a>
 
-<!-- /BACKERS -->
-[![HitCount](http://hits.dwyl.io/caipilabs/Caipilabs/Caipi.svg)](#)
