@@ -89,7 +89,6 @@ module.exports = function ( cfg, opts ) {
 				}
 				
 				var resolve = function ( e, filePath, content ) {
-					    //console.log("find %s\t\t\t=> %s", data.request, filePath, e, cache[key]);
 					    while ( cache[key].length )
 						    cache[key].pop()(e, filePath, content);
 					    cache[key] = filePath || true;
@@ -152,6 +151,7 @@ module.exports = function ( cfg, opts ) {
 						0,
 						function ( e, filePath, file ) {
 							if ( e ) {
+								console.log("find %s\t\t\t=> %s", data.request);
 								console.error("File not found \n'%s' (required in '%s')",
 								              data.request, requireOrigin);
 								return resolve(404)
@@ -237,7 +237,6 @@ module.exports = function ( cfg, opts ) {
 						compilation.contextDependencies.push(context);
 					}
 				});
-				console.warn(compilation.contextDependencies)
 				cb()
 				cache = {};
 			});
