@@ -20,9 +20,15 @@ module.exports = {
 	getAllConfigs() {
 		return allConfigs = allConfigs || utils.getAllConfigs()
 	},
+	getConfig( profile = currentProfile || 'default' ) {
+		return this.getAllConfigs()[profile];
+	},
 	getSuperWebpackCfg( profile = "default" ) {
 		let cfg = this.getAllConfigs()[profile],
 		    wpCfg;
+		
+		let addModulePath = require('app-module-path').addPath;
+		cfg.allModulePath.map(addModulePath)
 		try {
 			currentProfile = profile;
 			wpCfg          = require(cfg.allWebpackCfg[0])

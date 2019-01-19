@@ -40,6 +40,18 @@ module.exports = function ( cfg, opts ) {
 				( k ) => ([new RegExp(k), opts.extAliases[k]])),
 			    internals           = [];
 			
+			// add resolve paths
+			compiler.options.resolve         = compiler.options.resolve || {};
+			compiler.options.resolve.modules = compiler.options.resolve.modules || [];
+			compiler.options.resolve.modules.unshift(...opts.allModulePath);
+			
+			
+			compiler.options.resolveLoader         = compiler.options.resolveLoader || {};
+			compiler.options.resolveLoader.modules = compiler.options.resolveLoader.modules || [];
+			compiler.options.resolveLoader.modules.unshift(...opts.allModulePath);
+			
+			
+			
 			function wpiResolve( data, cb ) {
 				var vals,
 				    requireOrigin = data.contextInfo.issuer,

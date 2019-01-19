@@ -75,6 +75,7 @@ module.exports                = {
 				
 				    if ( cfg.wpInherit && cfg.wpInherit[profile] && cfg.wpInherit[profile].extend )
 					    cfg.wpInherit[profile].extend.forEach(walk)
+				    else throw new Error("webpack-inherit : Can't inherit an not installed module")
 				
 				    list.push(path.normalize(projectRoot + where + p));
 			    })
@@ -100,6 +101,7 @@ module.exports                = {
 					
 					    allModuleRoots.push(where)
 					
+					    allModulePath.push(path.normalize(where + "/node_modules"));
 					    cfg = cfg.wpInherit[profile];
 					
 					    if ( cfg && cfg.aliases )
@@ -119,21 +121,17 @@ module.exports                = {
 					    && libPath.push(
 						    fs.realpathSync(path.normalize(where + "/" + cfg.libsPath)));
 					
-					    //console.log(path.normalize(where +
-					    // "/node_modules"), fs.existsSync(path.normalize(projectRoot + where
-					    // + p + "/node_modules")) && "yes")
-					    fs.existsSync(path.normalize(where + "/node_modules"))
-					    && allModulePath.push(
-						    fs.realpathSync(path.normalize(where + "/node_modules")));
+					    console.warn(allModulePath)
+					
 				    }
 			    );
-			    allModulePath = libPath.concat(allModulePath);
+			    //allModulePath = libPath.concat(allModulePath);
 			    //roots.push(
 			    //    path.normalize(cwd + '/' + rootDir)
 			    //);
 			    //allModulePath.push(path.normalize(cwd + '/node_modules'));
 			
-			    allModulePath = allModulePath.filter(fs.existsSync.bind(fs));
+			    //allModulePath = allModulePath.filter(fs.existsSync.bind(fs));
 			    //allModulePath.push("node_modules")
 			    return roots.map(path.normalize.bind(path));
 		    })();
