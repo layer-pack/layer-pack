@@ -51,7 +51,6 @@ module.exports = function ( cfg, opts ) {
 			//compiler.options.resolveLoader.modules.unshift(...opts.allModulePath);
 			
 			
-			
 			function wpiResolve( data, cb ) {
 				var vals,
 				    requireOrigin = data.contextInfo.issuer,
