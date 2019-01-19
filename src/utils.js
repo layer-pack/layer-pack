@@ -101,7 +101,6 @@ module.exports                = {
 					
 					    allModuleRoots.push(where)
 					
-					    allModulePath.push(path.normalize(where + "/node_modules"));
 					    cfg = cfg.wpInherit[profile];
 					
 					    if ( cfg && cfg.aliases )
@@ -121,7 +120,8 @@ module.exports                = {
 					    && libPath.push(
 						    fs.realpathSync(path.normalize(where + "/" + cfg.libsPath)));
 					
-					    console.warn(allModulePath)
+					    allModulePath.push(path.normalize(where + "/node_modules"));
+					    //console.warn(allModulePath)
 					
 				    }
 			    );
