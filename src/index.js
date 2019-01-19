@@ -28,6 +28,7 @@ module.exports = {
 		    wpCfg;
 		
 		let addModulePath = require('app-module-path').addPath;
+		cfg.allModulePath.map(console.log)
 		cfg.allModulePath.map(addModulePath)
 		try {
 			currentProfile = profile;
