@@ -71,13 +71,8 @@ module.exports = function ( cfg, opts ) {
 					data.request = ("App" + path.resolve(path.dirname(requireOrigin) + '/' + data.request).substr(tmpPath.length)).replace(/\\/g, '/');
 				}
 				// $map resolving...
-				//if ( (vals = data.request.match(
-				//	/^\$map\(([^'"\),]+)(\s*,\s*([^'",\)]+))?(\s*,\s*([^'",\)]+))?(\s*,\s*([^'"\)]+))?\s*\)/)) ) {
 				if ( data.request.indexOf('*') != -1 ) {
-					//vals = data.request.match(
-					//	/^\$map\(([^'"\),]+)(\s*,\s*([^'",\)]+))?(\s*,\s*([^'",\)]+))?(\s*,\s*([^'"\)]+))?\s*\)/);
 					
-					console.warn("find %s\t\t\t=> %s", data.request);
 					return utils.indexOf(
 						compiler.inputFileSystem,
 						roots,
