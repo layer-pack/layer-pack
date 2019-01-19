@@ -31,9 +31,10 @@
   "devDependencies": {},
   "peerDependencies": {},
   "dependencies": {
-    "webpack": "^2.7.0",
+    "is-builtin-module": "^3.0.0",
+    "shortid": "^2.2.14",
     "virtual-module-webpack-plugin": "^0.3.0",
     "walk": "^2.3.9",
-    "is-builtin-module": "^3.0.0"
+    "webpack": "^2.7.0"
   }
 }

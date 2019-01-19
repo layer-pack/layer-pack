@@ -34,19 +34,20 @@ module.exports = {
 		return allCfg;
 	},
 	getConfigByProfiles( projectRoot, pkgConfig, profile ) {
-		var extAliases    = {},
-		    allModulePath = [],
-		    allExternals  = [],
-		    allWebpackCfg = [],
-		    allCfg        = [],
-		    allModuleId   = [],
-		    rootAlias     = pkgConfig.rootAlias || 'App',
-		    rootDir       = pkgConfig.rootDir || './App',
+		var extAliases     = {},
+		    allModulePath  = [],
+		    allExternals   = [],
+		    allWebpackCfg  = [],
+		    allModuleRoots = [],
+		    allCfg         = [],
+		    allModuleId    = [],
+		    rootAlias      = pkgConfig.rootAlias || 'App',
+		    rootDir        = pkgConfig.rootDir || './App',
 		    /**
 		     * Find & return all  inherited pkg paths
 		     * @type {Array}
 		     */
-		    allExtPath    = (() => {
+		    allExtPath     = (() => {
 			    let list = [], seen = {};
 			
 			    pkgConfig.extend.forEach(function walk( p, i ) {
@@ -66,7 +67,7 @@ module.exports = {
 			    list.filter(e => (seen[e] ? true : (seen[e] = true, false)))
 			    return list;
 		    })(),
-		    allRoots      = (function () {
+		    allRoots       = (function () {
 			    var roots = [projectRoot + '/' + rootDir], libPath = [];
 			
 			    allModuleId.push(pkgConfig)
@@ -75,12 +76,14 @@ module.exports = {
 			    && libPath.push(path.normalize(projectRoot + "/" + pkgConfig.libsPath));
 			
 			    allModulePath.push(path.normalize(projectRoot + '/node_modules'));
-			
+			    allModuleRoots.push(projectRoot)
 			    allExtPath.forEach(
 				    function ( where ) {
 					    let cfg = fs.existsSync(path.normalize(where + "/package.json")) &&
 						    JSON.parse(fs.readFileSync(path.normalize(where + "/package.json")));
 					
+					    allModuleRoots.push(where)
+					    
 					    cfg = cfg.wpInherit[profile];
 					
 					    if ( cfg && cfg.aliases )
@@ -119,6 +122,6 @@ module.exports = {
 			    return roots.map(path.normalize.bind(path));
 		    })();
 		allCfg.push(pkgConfig)
-		return { allWebpackCfg, allModulePath, allRoots, allExtPath, extAliases, allCfg };
+		return { allWebpackCfg, allModulePath, allRoots, allExtPath, extAliases, allModuleRoots, allCfg };
 	}
 }

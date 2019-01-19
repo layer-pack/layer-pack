@@ -9,7 +9,7 @@
  * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  *  @author : Nathanael Braun
- *  @contact : wiplabs@gmail.com
+ *  @contact : wpilabs@gmail.com
  */
 
 /**
@@ -27,7 +27,7 @@ var ModuleFilenameHelpers     = require('webpack/lib/ModuleFilenameHelpers');
 var ExternalModule            = require('webpack/lib/ExternalModule');
 
 /**
- * Main wip plugin
+ * Main wpi plugin
  *
  */
 var possible_ext = [
@@ -439,8 +439,7 @@ function indexOfScss( vfs, roots, dir, _fileMatch, ctx, contextual, contextDepen
 	
 }
 
-module.exports = function ( opts, ctx, ctx2 ) {
-	ctx2 = ctx2 || ctx;
+module.exports = function ( cfg, opts ) {
 	let plugin;
 	return plugin = {
 		sassImporter: function () {
@@ -451,14 +450,32 @@ module.exports = function ( opts, ctx, ctx2 ) {
 			// override the normal parser plugin to have the origin file (required to find parents)
 			var contextDependencies = [], fileDependencies = [];
 			
-			var roots    = opts.root;
-			var fallback = opts.allModulePath || compiler.options.resolve.modules;
+			var roots     = opts.allRoots;
+			var fallback  = opts.allModulePath || compiler.options.resolve.modules;
 			//opts.allCfg && console.log(ctx, opts.allCfg.map(cfg => cfg.builds[ctx]))
-			var alias    = opts.alias, internals = [];
+			var alias     = Object.keys(opts.extAliases || {}).map(
+				( k ) => ([new RegExp(k), opts.extAliases[k]])),
+			    internals = [];
 			
+			//compiler.plugin('module', function(request, callback) {
+			//	console.warn(request.request)
+			//	//if (request.request[0] === '#') {
+			//	//	var req = request.request.substr(1);
+			//	//	var obj = {
+			//	//		path: request.path,
+			//	//		request: req + '/' + path.basename(req) + '.js',
+			//	//		query: request.query,
+			//	//		directory: request.directory
+			//	//	};
+			//	//	this.doResolve(['file'], obj, callback);
+			//	//}
+			//	//else {
+			//		callback();
+			//	//}
+			//});
 			// @todo : rewrite this mess ( & optimize )
 			
-			function wipResolve( data, cb ) {
+			function wpiResolve( data, cb ) {
 				var vals,
 				    requireOrigin = data.contextInfo.issuer,
 				    rootIndex;
@@ -471,7 +488,7 @@ module.exports = function ( opts, ctx, ctx2 ) {
 				}
 				
 				
-				data.wipOriginRrequest = data.request;
+				data.wpiOriginRrequest = data.request;
 				
 				// $map resolving...
 				if ( (vals = data.request.match(
@@ -570,7 +587,7 @@ module.exports = function ( opts, ctx, ctx2 ) {
 			
 			this._sassImporter = function ( url, prev, cb ) {
 				if ( /^(\$|App\/)/.test(url) ) {
-					wipResolve(
+					wpiResolve(
 						{
 							contextInfo: {
 								issuer: prev
@@ -597,17 +614,17 @@ module.exports = function ( opts, ctx, ctx2 ) {
 			};
 			
 			compiler.plugin("normal-module-factory", function ( nmf ) {
-				                !/www/.test(ctx) && nmf.plugin('factory', function ( factory ) {
+				                nmf.plugin('factory', function ( factory ) {
 					                return function ( data, callback ) {
 						                let mkExt = isBuiltinModule(data.request)
-							                || data.wipOriginRrequest && isBuiltinModule(data.wipOriginRrequest),
+							                || data.wpiOriginRrequest && isBuiltinModule(data.wpiOriginRrequest),
 						                    //=
 						                    ///^\./.test(data.request) && internals.find(p =>
 						                    // data.context.startsWith(p)) ||  (opts.appInternal || []).find(p =>
 						                    // data.request.startsWith(p)),
 						                    found;
 						                //if ( /toolbox/.test(data.request) )
-						                //if ( data.wipOriginRrequest && !root ) {
+						                //if ( data.wpiOriginRrequest && !root ) {
 						
 						                if ( !mkExt && opts.allCfg.find(
 							                cfg => (
@@ -615,24 +632,24 @@ module.exports = function ( opts, ctx, ctx2 ) {
 								                cfg.builds[ctx] &&
 								                cfg.builds[ctx].externals &&
 								                cfg.builds[ctx].externals.find(mod => {
-									                return data.wipOriginRrequest.startsWith(found = mod)
+									                return data.wpiOriginRrequest.startsWith(found = mod)
 									                //|| data.request.startsWith(found = mod);
 								                })
 								                //ModuleFilenameHelpers.matchObject(cfg.builds[ctx].internals,
-								                // data.wipOriginRrequest)
+								                // data.wpiOriginRrequest)
 							                )
 						                ) ) {
 							                mkExt = true;//fallback.find(p => data.request.startsWith(p))||true;
 							                //console.warn("ext!", mkExt + '/' + found, data.request)
 						                }
 						
-						                //root && console.warn("int", data.request, data.wipOriginRrequest)
+						                //root && console.warn("int", data.request, data.wpiOriginRrequest)
 						                //}
 						                //mkExt && console.log("ext", data.request, data.context,
-						                // data.wipOriginRrequest)
+						                // data.wpiOriginRrequest)
 						                if ( mkExt ) {
 							                return callback(null, new ExternalModule(
-								                data.wipOriginRrequest || data.request,
+								                data.wpiOriginRrequest || data.request,
 								                //!/www/.test(ctx) ?
 								                compiler.options.output.libraryTarget
 								                //: "commonjs"
@@ -645,7 +662,7 @@ module.exports = function ( opts, ctx, ctx2 ) {
 						
 					                };
 				                });
-				                nmf.plugin("before-resolve", wipResolve);
+				                nmf.plugin("before-resolve", wpiResolve);
 				
 			                }
 			);

@@ -12,8 +12,9 @@
  *  @contact : caipilabs@gmail.com
  */
 
-const utils = require("./utils");
-let allConfigs, currentProfile;
+const utils                                     = require("./utils");
+const InheritPlugin                             = require("./InheritPlugin");
+let allConfigs, currentProfile, allCfgInstances = {};
 
 module.exports = {
 	getAllConfigs() {
@@ -35,6 +36,15 @@ module.exports = {
 		currentProfile = null;
 		return wpCfg;
 	},
-	plugin() {
+	plugin( cfg, profile = currentProfile || 'default' ) {
+		return allCfgInstances[profile] = allCfgInstances[profile] || InheritPlugin(cfg, this.getAllConfigs()[profile])
+	},
+	isFileExcluded( profile = currentProfile || 'default' ) {
+		let allRoots = this.getAllConfigs()[profile].allRoots;
+		return { test: ( path ) => !allRoots.find(r => path.startsWith(r)) }
+	},
+	getHeadRoot( profile = currentProfile || 'default' ) {
+		let allModuleRoots = this.getAllConfigs()[profile].allModuleRoots;
+		return allModuleRoots[0]
 	}
 }
