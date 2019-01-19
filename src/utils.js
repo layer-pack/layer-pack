@@ -23,7 +23,10 @@ var walk                      = require('walk'),
     os                        = require('os');
 var VirtualModulePlugin       = require('virtual-module-webpack-plugin');
 var CommonJsRequireDependency = require("webpack/lib/dependencies/CommonJsRequireDependency");
-var possible_ext              = [
+var glob                      = require('fast-glob');
+
+
+var possible_ext = [
 	".js",
 	".jsx",
 	".json",
@@ -33,7 +36,7 @@ var possible_ext              = [
 	".scss",
 	".css"
 ];
-module.exports                = {
+module.exports   = {
 	getAllConfigs() {
 		var projectRoot = process.cwd(),
 		    pkgConfig   = fs.existsSync(path.normalize(projectRoot + "/package.json")) &&
@@ -190,143 +193,56 @@ module.exports                = {
 		}
 		cb && cb(true);
 	},
-	indexOf( vfs, roots, dir, _fileMatch, ctx, contextual, contextDependencies, fileDependencies, cb ) {
-		var sema        = 0,
-		    files       = {},
-		    lvls        = {},
-		    fileMatch   = _fileMatch && (new RegExp(//file mask
-		                                            "^" +
-			                                            _fileMatch
-				                                            .replace(/^,\s*(.*)\s*$/, '$1')
-				                                            // .replace(/\.jsx?$/, '')
-				                                            .replace(/\./ig, '\\.')
-				                                            .replace(/\*\*/ig, '((*/)+)?*')
-				                                            .replace(/\*/ig, '[^\\\\\\/]+')
-			                                            + "$")),
-		    seen        = 0,
-		    done        = false,
-		    code        = "export default  {};",
+	indexOf( vfs, roots, input, contextDependencies, fileDependencies, cb ) {
+		var files       = {},
+		    code        = "",
 		    virtualFile = path.normalize(
-			    path.join(roots[roots.length - 1], 'MapOf.' + dir.replace(/[^\w]/ig, '_') +
-				    (_fileMatch || '*').replace(/\*/ig, '.W').replace(/[^\w\.]/ig, '_') +
+			    path.join(roots[roots.length - 1], 'MapOf.' + input.replace(/[^\w]/ig, '_')
+			                                                       .replace(/\*/ig, '.W')
+			                                                       .replace(/[^\w\.]/ig, '_') +
 				    '.gen.js'));
 		
-		sema++;
-		
-		dir = dir.replace(/\/$/, '').replace(/^App\//, '');
+		input = input.replace(/\/$/, '').replace(/^App\//, '');
 		roots.forEach(
 			( _root, lvl ) => {
-				var
-					root = _root + '/' + dir;
-				contextDependencies.push(path.join(_root, dir));
-				
-				sema++;
-				// find all files resolvable in the passed namespace
-				checkIfDir(
-					vfs,
-					root,
-					( e, r ) => {
-						if ( r ) {
-							var walker = walk.walk(root);
-							
-							walker.on("file", function ( _root, fileStats, next ) {
-								
-								var fn      = path.normalize(path.join(_root, fileStats.name)),
-								    keyTest = (fn).substr(root.length)
-								                  // .replace(/\.jsx?$/, '')
-								                  .replace(/\\/g, '/')// use /
-								                  .replace(/^\//, ''),
-								    key     = keyTest.replace(/\.jsx?$/, '');// rm js ext
-								
-								// fileMatch && console.log(fileMatch.test(keyTest), keyTest);
-								
-								if ( (!fileMatch || fileMatch.test(keyTest)) ) {
-									if ( (lvls[key] || 1000) > lvl ) {
-										files[key] = fn.replace(/(['"\\])/g, '\\$1');
-										lvls[key]  = lvl + 1;
-										fileDependencies.push(fn);
-									}
-								}
-								next();
-							});
-							
-							walker.on("directory", function ( _root, fileStats, next ) {
-								contextDependencies.push(
-									path.normalize(path.join(_root, fileStats.name)));
-								next();
-							});
-							
-							walker.on("errors", function ( root, nodeStatsArray, next ) {
-								next();
-							});
-							
-							walker.on("end", function () {
-								if ( !(--seen) ) {
-									var fkeys = [],
-									    fpath = Object.keys(files).map(( k ) => (fkeys.push(k), files[k])),
-									    code  = "var exp = {" +
-										    fkeys.map(
-											    ( module, i ) => {
-												    let file = module.match(/^(.*)(?:\.([^\.]+))$/), mid = module;
-												    return '"' + mid + '":require(\"App/' + dir + '/' + module +
-													    '\")';
-											    }
-										    ).join(',\n')
-										    + '};\n' +
-										    'export default exp;';
-									//console.log(code)
-									// fs.writeFileSync(virtualFile, code);
-									vfs.purge([virtualFile]);
-									
-									VirtualModulePlugin.populateFilesystem(
-										{ fs: vfs, modulePath: virtualFile, contents: code, ctime: Date.now() });
-									
-									//VirtualModulePlugin.populateFilesystem(
-									//    {
-									//        fs         : vfs,
-									//        modulePath : virtualFile + '.map',
-									//        contents   : "",
-									//        ctime      : Date.now()
-									//    });
-								}
-								if ( !(--sema) ) {
-									cb(null, virtualFile, code);
-								}
-							});
-							seen++;
-						}
-						else if ( !(--sema) ) {
-							// fs.writeFileSync(virtualFile, code);
-							vfs.purge([virtualFile]);
-							VirtualModulePlugin.populateFilesystem(
-								{
-									fs        : vfs,
-									modulePath: virtualFile,
-									contents  : "export default  {};",
-									ctime     : Date.now()
-								});
-							VirtualModulePlugin.populateFilesystem(
-								{ fs: vfs, modulePath: virtualFile + '.map', contents: "", ctime: Date.now() });
-							cb(null, virtualFile, "module.export = {};");
-						}
-					}
+				contextDependencies.push(
+					path.dirname(
+						path.normalize(
+							_root + '/' + path.normalize(input).replace(/^([^\*]+)\/.*$/, '$1')
+						)
+					)
 				);
+				glob.sync([_root + '/' + path.normalize(input)])
+				    .forEach(
+					    file => {
+						    fileDependencies.push(path.normalize(file));
+						
+						
+						    files["App" + file.substr(_root.length)] = true
+					    }
+				    )
 			}
 		)
-		if ( !(--sema) ) {
-			
-			// fs.writeFileSync(virtualFile, code);
-			vfs.purge([virtualFile]);
-			VirtualModulePlugin.populateFilesystem(
-				{ fs: vfs, modulePath: virtualFile, contents: "module.export = {};", ctime: Date.now() });
-			VirtualModulePlugin.populateFilesystem(
-				{ fs: vfs, modulePath: virtualFile + '.map', contents: "", ctime: Date.now() });
-			cb(null, virtualFile, "module.export = {};");
-		}
-		
-		
+		code =
+			"export default {\n" +
+			Object.keys(files).map(
+				( file, i ) => {
+					let mid = file.replace(/\.[^\.]*$/, '');
+					
+					return '"' + mid + '":require(\"' + file + '\")';
+				}
+			).join(',\n')
+			+ '\n};\n';
+		console.log(code)
+		//fs.writeFileSync(virtualFile, code);
+		vfs.purge([virtualFile]);
+		VirtualModulePlugin.populateFilesystem(
+			{ fs: vfs, modulePath: virtualFile, contents: code, ctime: Date.now() });
+		VirtualModulePlugin.populateFilesystem(
+			{ fs: vfs, modulePath: virtualFile + '.map', contents: "", ctime: Date.now() });
+		cb(null, virtualFile, code);
 	},
-	indexOfScss( vfs, roots, dir, _fileMatch, ctx, contextual, contextDependencies, fileDependencies, cb ) {
+	indexOfScss( vfs, roots, input, contextDependencies, fileDependencies, cb ) {
 		var sema        = 0,
 		    files       = {},
 		    lvls        = {},

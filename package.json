@@ -32,6 +32,8 @@
   "peerDependencies": {},
   "dependencies": {
     "app-module-path": "^2.2.0",
+    "fast-glob": "^2.2.6",
+    "glob-fs": "^0.1.7",
     "is-builtin-module": "^3.0.0",
     "shortid": "^2.2.14",
     "virtual-module-webpack-plugin": "^0.3.0",

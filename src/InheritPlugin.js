@@ -24,7 +24,6 @@ const utils = require("./utils");
  * Main wpi plugin
  *
  */
-
 module.exports = function ( cfg, opts ) {
 	let plugin;
 	return plugin = {
@@ -32,14 +31,14 @@ module.exports = function ( cfg, opts ) {
 			return plugin._sassImporter(...arguments)
 		},
 		apply       : function ( compiler ) {
-			var cache               = {}, plugin = this;
+			var cache = {}, plugin = this;
+			var roots              = opts.allRoots;
+			var alias              = Object.keys(opts.extAliases || {}).map(
+				( k ) => ([new RegExp(k), opts.extAliases[k]])),
+			    internals          = [];
+			
 			var contextDependencies = [],
 			    fileDependencies    = [];
-			var roots               = opts.allRoots;
-			var alias               = Object.keys(opts.extAliases || {}).map(
-				( k ) => ([new RegExp(k), opts.extAliases[k]])),
-			    internals           = [];
-			
 			// add resolve paths
 			//compiler.options.resolve         = compiler.options.resolve || {};
 			//compiler.options.resolve.modules = compiler.options.resolve.modules || [];
@@ -67,18 +66,22 @@ module.exports = function ( cfg, opts ) {
 				data.wpiOriginRrequest = data.request;
 				
 				
+				// resolve inheritable relative
+				if ( requireOrigin && /^\./.test(data.request) && (tmpPath = roots.find(r => path.resolve(path.dirname(requireOrigin) + '/' + data.request).startsWith(r))) ) {
+					data.request = ("App" + path.resolve(path.dirname(requireOrigin) + '/' + data.request).substr(tmpPath.length)).replace(/\\/g, '/');
+				}
 				// $map resolving...
-				if ( (vals = data.request.match(
-					/^\$map\(([^'"\),]+)(\s*,\s*([^'",\)]+))?(\s*,\s*([^'",\)]+))?(\s*,\s*([^'"\)]+))?\s*\)/)) ) {
-					vals[2] = vals[2] && vals[2].replace(/^,\s*(.*)\s*$/, '$1') || '';
+				//if ( (vals = data.request.match(
+				//	/^\$map\(([^'"\),]+)(\s*,\s*([^'",\)]+))?(\s*,\s*([^'",\)]+))?(\s*,\s*([^'"\)]+))?\s*\)/)) ) {
+				if ( data.request.indexOf('*') != -1 ) {
+					//vals = data.request.match(
+					//	/^\$map\(([^'"\),]+)(\s*,\s*([^'",\)]+))?(\s*,\s*([^'",\)]+))?(\s*,\s*([^'"\)]+))?\s*\)/);
 					
-					
-					return (/\.s?css$/.test(vals[2]) ? utils.indexOfScss : utils.indexOf)(
-						compiler.inputFileSystem, roots, vals[1],
-						vals[2]
-							|| null,
-						vals[2] && ctx,
-						!!vals[3],
+					console.warn("find %s\t\t\t=> %s", data.request);
+					return utils.indexOf(
+						compiler.inputFileSystem,
+						roots,
+						data.request,
 						contextDependencies,
 						fileDependencies,
 						function ( e, filePath, content ) {
@@ -105,10 +108,6 @@ module.exports = function ( cfg, opts ) {
 				    },
 				    key;
 				
-				// resolve inheritable relative
-				if ( requireOrigin && /^\./.test(data.request) && (tmpPath = roots.find(r => path.resolve(path.dirname(requireOrigin) + '/' + data.request).startsWith(r))) ) {
-					data.request = ("App" + path.resolve(path.dirname(requireOrigin) + '/' + data.request).substr(tmpPath.length)).replace('\\', '/');
-				}
 				
 				key = data.context + '##' + data.request;
 				
@@ -180,14 +179,9 @@ module.exports = function ( cfg, opts ) {
 						},
 						function ( e, found, contents ) {
 							if ( found || contents ) {
-								//console.warn("Find plugin !!! ", url, found, contents);
 								cb && cb(contents && { contents } || { file: found.request });
 							}
 							else {
-								//if ( i + 1 < roots.length ) findFallBack(nm, roots, ctx, file, i + 1, cb);
-								//else
-								
-								//console.warn("not found !!! ", url, found, e);
 								cb && cb({ file: url });
 							}
 							
@@ -202,13 +196,7 @@ module.exports = function ( cfg, opts ) {
 					                return function ( data, callback ) {
 						                let mkExt = isBuiltinModule(data.request)
 							                || data.wpiOriginRrequest && isBuiltinModule(data.wpiOriginRrequest),
-						                    //=
-						                    ///^\./.test(data.request) && internals.find(p =>
-						                    // data.context.startsWith(p)) ||  (opts.appInternal || []).find(p =>
-						                    // data.request.startsWith(p)),
 						                    found;
-						                //if ( /toolbox/.test(data.request) )
-						                //if ( data.wpiOriginRrequest && !root ) {
 						
 						                if ( !mkExt && opts.allCfg.find(
 							                cfg => (
@@ -217,26 +205,16 @@ module.exports = function ( cfg, opts ) {
 								                cfg.builds[ctx].externals &&
 								                cfg.builds[ctx].externals.find(mod => {
 									                return data.wpiOriginRrequest.startsWith(found = mod)
-									                //|| data.request.startsWith(found = mod);
 								                })
-								                //ModuleFilenameHelpers.matchObject(cfg.builds[ctx].internals,
-								                // data.wpiOriginRrequest)
 							                )
 						                ) ) {
 							                mkExt = true;//fallback.find(p => data.request.startsWith(p))||true;
-							                //console.warn("ext!", mkExt + '/' + found, data.request)
 						                }
 						
-						                //root && console.warn("int", data.request, data.wpiOriginRrequest)
-						                //}
-						                //mkExt && console.log("ext", data.request, data.context,
-						                // data.wpiOriginRrequest)
 						                if ( mkExt ) {
 							                return callback(null, new ExternalModule(
 								                data.wpiOriginRrequest || data.request,
-								                //!/www/.test(ctx) ?
 								                compiler.options.output.libraryTarget
-								                //: "commonjs"
 							                ));
 							
 						                }
@@ -264,7 +242,7 @@ module.exports = function ( cfg, opts ) {
 						compilation.contextDependencies.push(context);
 					}
 				});
-				contextDependencies = [];
+				console.warn(compilation.contextDependencies)
 				cb()
 				cache = {};
 			});
