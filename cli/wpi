@@ -1,0 +1,42 @@
+#!/usr/bin/env node
+/*
+ * Copyright (c) 2018. Wise Wild Web
+ *
+ * This File is part of Caipi and under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International Public License
+ * Full license at https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+ *
+ *  @author : Nathanael Braun
+ *  @contact : caipilabs@gmail.com
+ */
+
+
+'use strict';
+
+var wpi = require('../src');
+console.log(wpi.getConfig().allWebpackCfg[0])
+
+var util  = require('util'),
+    exec = require('child_process').exec,
+    cmd,
+    argz  = process.argv.slice(2);
+try {
+	console.warn(__dirname+'/../node_modules/.bin/webpack.cmd --config '+wpi.getConfig().allWebpackCfg[0]+argz.join(' '));
+	cmd = exec(__dirname+'/../node_modules/.bin/webpack.cmd --config '+wpi.getConfig().allWebpackCfg[0]+argz.join(' '),
+	            {stdio:'pipe'}
+	);
+
+  cmd.stdout.on('data', (data) => {
+    console.log( data.toString())
+  })
+
+  cmd.stderr.on('data', (data) => {
+    console.log(data.toString())
+  })
+} catch ( e ) {
+	console.warn('\n\nServer fail with err : ' + e + '\n\n');
+	process.exit();
+}
+
+cmd.on('exit', function ( code ) {
+	process.exit();// kill mongo & redis
+});

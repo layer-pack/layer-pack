@@ -90,13 +90,16 @@ module.exports   = {
 		    allRoots       = (function () {
 			    var roots = [projectRoot + '/' + rootDir], libPath = [];
 			
-			    allModuleId.push(pkgConfig)
 			    pkgConfig.libsPath
 			    && fs.existsSync(path.normalize(projectRoot + "/" + pkgConfig.libsPath))
 			    && libPath.push(path.normalize(projectRoot + "/" + pkgConfig.libsPath));
 			
 			    allModulePath.push(path.normalize(projectRoot + '/node_modules'));
-			    allModuleRoots.push(projectRoot)
+			    allModuleRoots.push(projectRoot);
+			
+			    if ( pkgConfig.config )
+				    allWebpackCfg.push(path.normalize(projectRoot + '/' + pkgConfig.config))
+			
 			    allExtPath.forEach(
 				    function ( where ) {
 					    let cfg = fs.existsSync(path.normalize(where + "/package.json")) &&
@@ -112,9 +115,9 @@ module.exports   = {
 							    ...cfg.aliases
 						    };
 					    if ( cfg )
-						    allCfg.push(cfg)
+						    allCfg.push(cfg);
 					    if ( cfg.config )
-						    allWebpackCfg.push(where + '/' + cfg.config)
+						    allWebpackCfg.push(path.normalize(where + '/' + cfg.config));
 					
 					    roots.push(fs.realpathSync(path.normalize(where + "/" + (cfg.rootDir || 'App'))));
 					
