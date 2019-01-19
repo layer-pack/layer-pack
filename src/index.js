@@ -20,9 +20,6 @@ module.exports = {
 	getAllConfigs() {
 		return allConfigs = allConfigs || utils.getAllConfigs()
 	},
-	getSuperCfg( profile = "default" ) {
-		return this.getAllConfigs()[profile]
-	},
 	getSuperWebpackCfg( profile = "default" ) {
 		let cfg = this.getAllConfigs()[profile],
 		    wpCfg;
@@ -34,6 +31,7 @@ module.exports = {
 			wpCfg = []
 		}
 		currentProfile = null;
+		console.log(cfg)
 		return wpCfg;
 	},
 	plugin( cfg, profile = currentProfile || 'default' ) {

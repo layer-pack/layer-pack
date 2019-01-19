@@ -382,7 +382,7 @@ module.exports = function ( cfg, opts ) {
 			function wpiResolve( data, cb ) {
 				var vals,
 				    requireOrigin = data.contextInfo.issuer,
-				    rootIndex;
+				    tmpPath;
 				
 				for ( var i = 0; i < alias.length; i++ ) {
 					if ( alias[i][0].test(data.request) ) {
@@ -393,6 +393,7 @@ module.exports = function ( cfg, opts ) {
 				
 				
 				data.wpiOriginRrequest = data.request;
+				
 				
 				// $map resolving...
 				if ( (vals = data.request.match(
@@ -431,6 +432,14 @@ module.exports = function ( cfg, opts ) {
 					    cb(null, data, content);
 				    },
 				    key     = data.context + '##' + data.request;
+				
+				if ( requireOrigin && /^\./.test(data.request) && (tmpPath = roots.find(r => path.resolve(path.dirname(requireOrigin) + '/' + data.request).startsWith(r))) ) {
+					//console.info(data.request, tmpPath, path.dirname(requireOrigin), "App" +
+					// path.resolve(path.dirname(requireOrigin) + '/' + data.request).substr(tmpPath.length));
+					data.request = ("App" + path.resolve(path.dirname(requireOrigin) + '/' + data.request).substr(tmpPath.length)).replace('\\', '/');
+					// data.request)).substr(0, tmpPath.length) console.dir(data.dependencies); key = "$super<" +
+					// requireOrigin;
+				}
 				
 				if ( /^\$super$/.test(data.request) ) {
 					// console.info(requireOrigin);
