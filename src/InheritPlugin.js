@@ -23,7 +23,6 @@ var walk                      = require('walk'),
 var VirtualModulePlugin       = require('virtual-module-webpack-plugin');
 var CommonJsRequireDependency = require("webpack/lib/dependencies/CommonJsRequireDependency");
 const isBuiltinModule         = require('is-builtin-module');
-var ModuleFilenameHelpers     = require('webpack/lib/ModuleFilenameHelpers');
 var ExternalModule            = require('webpack/lib/ExternalModule');
 
 /**
@@ -40,11 +39,6 @@ var possible_ext = [
 	".scss",
 	".css"
 ];
-const {
-	      NodeJsInputFileSystem,
-	      CachedInputFileSystem,
-	      ResolverFactory
-      }          = require('enhanced-resolve');
 
 function findParentPath( fs, roots, file, i, cb, _curExt, _ext ) {
 	_ext    = _ext || '';
@@ -73,30 +67,6 @@ function findParentPath( fs, roots, file, i, cb, _curExt, _ext ) {
 	})
 }
 
-function findFallBack( nm, roots, ctx, file, i, cb ) {
-	
-	//console.warn("try ", ctx, roots[i], file);
-	nm.resolve(
-		{},
-		roots[0],
-		file,
-		//{},
-		function ( e, found ) {
-			if ( found ) {
-				//console.warn("Find In fall back !!! ", found, roots[i]);
-				cb && cb(null, found, found.substr(roots[i].length + 1));
-			}
-			else {
-				
-				//if ( i + 1 < roots.length ) findFallBack(nm, roots, ctx, file, i + 1, cb);
-				//else
-				cb && cb(true);
-			}
-			
-		}
-	)
-}
-
 function checkIfDir( fs, file, cb ) {
 	fs.stat(file, function fsStat( err, stats ) {
 		if ( err ) {
@@ -122,8 +92,6 @@ function findParent( fs, roots, file, cb ) {
 	}
 	cb && cb(true);
 }
-
-var available_contexts = { "api": true, "www": true };
 
 function indexOf( vfs, roots, dir, _fileMatch, ctx, contextual, contextDependencies, fileDependencies, cb ) {
 	var sema        = 0,
@@ -198,32 +166,11 @@ function indexOf( vfs, roots, dir, _fileMatch, ctx, contextual, contextDependenc
 						walker.on("end", function () {
 							if ( !(--seen) ) {
 								var fkeys = [],
-								    fpath = Object.keys(files).filter(
-									    ( module, i ) => {
-										    var file = module.match(/^(.*)(?:\.([^\.]+))$/);
-										    if ( ctx ) {
-											    if ( file && file[2] !== ctx && (file[2] in available_contexts) ) {// not current ctx
-												    // console.warn('not current ctx', ctx, file, module,
-												    //              available_contexts, (file[2] in
-												    // available_contexts));
-												    return false;
-											    }
-											    if ( file && file[2] == ctx && files[file[1]] ) {// current ctx but have multi ctx
-												    return false;
-											    }
-										    }
-										    return true;
-									    }
-								    ).map(( k ) => (fkeys.push(k), files[k])),
+								    fpath = Object.keys(files).map(( k ) => (fkeys.push(k), files[k])),
 								    code  = "var exp = {" +
 									    fkeys.map(
 										    ( module, i ) => {
 											    let file = module.match(/^(.*)(?:\.([^\.]+))$/), mid = module;
-											    if ( ctx && file ) {
-												    if ( file[2] && contextual && (file[2] in available_contexts) ) {// current ctx
-													    mid = file[1];
-												    }
-											    }
 											    return '"' + mid + '":require(\"App/' + dir + '/' + module +
 												    '\")';
 										    }
@@ -356,32 +303,10 @@ function indexOfScss( vfs, roots, dir, _fileMatch, ctx, contextual, contextDepen
 						walker.on("end", function () {
 							if ( !(--seen) ) {
 								var fkeys = [],
-								    fpath = Object.keys(files).filter(
-									    ( module, i ) => {
-										    var file = module.match(/^(.*)(?:\.([^\.]+))$/);
-										    if ( ctx ) {
-											    if ( file && file[2] !== ctx && (file[2] in available_contexts) ) {// not current ctx
-												    // console.warn('not current ctx', ctx, file, module,
-												    //              available_contexts, (file[2] in
-												    // available_contexts));
-												    return false;
-											    }
-											    if ( file && file[2] == ctx && files[file[1]] ) {// current ctx but have multi ctx
-												    return false;
-											    }
-										    }
-										    return true;
-									    }
-								    ).map(( k ) => (fkeys.push(k), files[k]));
+								    fpath = Object.keys(files).map(( k ) => (fkeys.push(k), files[k]));
 								code      = "" +
 									fkeys.map(
 										( module, i ) => {
-											let file = module.match(/^(.*)(?:\.([^\.]+))$/), mid = module;
-											if ( ctx && file ) {
-												if ( file[2] && contextual && (file[2] in available_contexts) ) {// current ctx
-													mid = file[1];
-												}
-											}
 											return '@import "App/' + dir + '/' + module + '\";';
 										}
 									).join('\n')
@@ -447,33 +372,12 @@ module.exports = function ( cfg, opts ) {
 		},
 		apply       : function ( compiler ) {
 			var cache               = {}, plugin = this;
-			// override the normal parser plugin to have the origin file (required to find parents)
-			var contextDependencies = [], fileDependencies = [];
-			
-			var roots     = opts.allRoots;
-			var fallback  = opts.allModulePath || compiler.options.resolve.modules;
-			//opts.allCfg && console.log(ctx, opts.allCfg.map(cfg => cfg.builds[ctx]))
-			var alias     = Object.keys(opts.extAliases || {}).map(
+			var contextDependencies = [],
+			    fileDependencies    = [];
+			var roots               = opts.allRoots;
+			var alias               = Object.keys(opts.extAliases || {}).map(
 				( k ) => ([new RegExp(k), opts.extAliases[k]])),
-			    internals = [];
-			
-			//compiler.plugin('module', function(request, callback) {
-			//	console.warn(request.request)
-			//	//if (request.request[0] === '#') {
-			//	//	var req = request.request.substr(1);
-			//	//	var obj = {
-			//	//		path: request.path,
-			//	//		request: req + '/' + path.basename(req) + '.js',
-			//	//		query: request.query,
-			//	//		directory: request.directory
-			//	//	};
-			//	//	this.doResolve(['file'], obj, callback);
-			//	//}
-			//	//else {
-			//		callback();
-			//	//}
-			//});
-			// @todo : rewrite this mess ( & optimize )
+			    internals           = [];
 			
 			function wpiResolve( data, cb ) {
 				var vals,
