@@ -15,7 +15,7 @@
 /**
  * @author N.Braun
  */
-var path              = require('path');
+var path = require('path');
 
 const utils = require("./utils");
 /**
@@ -35,17 +35,17 @@ module.exports = function ( cfg, opts ) {
 				( k ) => ([new RegExp(k), opts.extAliases[k]])),
 			    internals          = [];
 			
-			var contextDependencies = [],
-			    fileDependencies    = [];
+			var contextDependencies          = [],
+			    fileDependencies             = [];
 			// add resolve paths
-			//compiler.options.resolve         = compiler.options.resolve || {};
-			//compiler.options.resolve.modules = compiler.options.resolve.modules || [];
-			////compiler.options.resolve.modules = opts.allModulePath;
-			//
-			//
-			//compiler.options.resolveLoader         = compiler.options.resolveLoader || {};
-			//compiler.options.resolveLoader.modules = compiler.options.resolveLoader.modules || [];
-			//compiler.options.resolveLoader.modules.unshift(...opts.allModulePath);
+			compiler.options.resolve         = compiler.options.resolve || {};
+			compiler.options.resolve.modules = compiler.options.resolve.modules || [];
+			compiler.options.resolve.modules.unshift(...opts.allModulePath);
+			
+			
+			compiler.options.resolveLoader         = compiler.options.resolveLoader || {};
+			compiler.options.resolveLoader.modules = compiler.options.resolveLoader.modules || [];
+			compiler.options.resolveLoader.modules.unshift(...opts.allModulePath);
 			
 			
 			function wpiResolve( data, cb ) {
@@ -186,36 +186,36 @@ module.exports = function ( cfg, opts ) {
 			
 			compiler.plugin("normal-module-factory", function ( nmf ) {
 				                //nmf.plugin('factory', function ( factory ) {
-					            //    return function ( data, callback ) {
-						        //        let mkExt = isBuiltinModule(data.request)
-							    //            || data.wpiOriginRrequest && isBuiltinModule(data.wpiOriginRrequest),
-						        //            found;
+				                //    return function ( data, callback ) {
+				                //        let mkExt = isBuiltinModule(data.request)
+				                //            || data.wpiOriginRrequest && isBuiltinModule(data.wpiOriginRrequest),
+				                //            found;
 				                //
-						        //        if ( !mkExt && opts.allCfg.find(
-							    //            cfg => (
-								//                cfg.builds &&
-								//                cfg.builds[ctx] &&
-								//                cfg.builds[ctx].externals &&
-								//                cfg.builds[ctx].externals.find(mod => {
-								//	                return data.wpiOriginRrequest.startsWith(found = mod)
-								//                })
-							    //            )
-						        //        ) ) {
-							    //            mkExt = true;//fallback.find(p => data.request.startsWith(p))||true;
-						        //        }
+				                //        if ( !mkExt && opts.allCfg.find(
+				                //            cfg => (
+				                //                cfg.builds &&
+				                //                cfg.builds[ctx] &&
+				                //                cfg.builds[ctx].externals &&
+				                //                cfg.builds[ctx].externals.find(mod => {
+				                //	                return data.wpiOriginRrequest.startsWith(found = mod)
+				                //                })
+				                //            )
+				                //        ) ) {
+				                //            mkExt = true;//fallback.find(p => data.request.startsWith(p))||true;
+				                //        }
 				                //
-						        //        if ( mkExt ) {
-							    //            return callback(null, new ExternalModule(
-								//                data.wpiOriginRrequest || data.request,
-								//                compiler.options.output.libraryTarget
-							    //            ));
+				                //        if ( mkExt ) {
+				                //            return callback(null, new ExternalModule(
+				                //                data.wpiOriginRrequest || data.request,
+				                //                compiler.options.output.libraryTarget
+				                //            ));
 				                //
-						        //        }
-						        //        else {
-							    //            return factory(data, callback);
-						        //        }
+				                //        }
+				                //        else {
+				                //            return factory(data, callback);
+				                //        }
 				                //
-					            //    };
+				                //    };
 				                //});
 				                nmf.plugin("before-resolve", wpiResolve);
 				
