@@ -28,7 +28,13 @@ Samples come here : https://github.com/n8tz/webpack-inherit-sample ( actually th
 
 ## How to use ?
 
-In package.json :
+Add webpack-inherit to deps
+
+```
+npm i -s webpack-inherit // on all inheritable projects with wp conf & on the head project
+```
+
+Add in package.json :
 ```
 {
   "name": "daProject",
@@ -43,7 +49,8 @@ In package.json :
   }
 }
 ```
-In wp config :
+
+In wp configs :
 ```
 
 var wpInherit = require('webpack-inherit');
@@ -82,6 +89,15 @@ module.exports = [
 	//...
 ]
 ```
+
+Then you can use the wpi CLI to call the first inherited webpack config using the webpack bin of the same package
+
+```
+# from the head project
+wpi # use webpack params here
+
+```
+
 
 ## Caveats / bugs ?
 
