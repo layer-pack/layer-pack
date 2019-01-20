@@ -6,7 +6,7 @@ Allow :
 - Easily override node_modules
 - inherit webpack config easily
 
-This plugin is working, but still in beta stage  ( not well tested/optimized for now ),
+This plugin is working, but still in beta stage  ( not well tested/optimized for now ),<br/>
 Samples come here : https://github.com/n8tz/webpack-inherit-sample ( actually the only doc )
 
 ## Contributors ?

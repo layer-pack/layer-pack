@@ -16,8 +16,6 @@
  * @author N.Braun
  */
 var path              = require('path');
-const isBuiltinModule = require('is-builtin-module');
-var ExternalModule    = require('webpack/lib/ExternalModule');
 
 const utils = require("./utils");
 /**
@@ -187,38 +185,38 @@ module.exports = function ( cfg, opts ) {
 			};
 			
 			compiler.plugin("normal-module-factory", function ( nmf ) {
-				                nmf.plugin('factory', function ( factory ) {
-					                return function ( data, callback ) {
-						                let mkExt = isBuiltinModule(data.request)
-							                || data.wpiOriginRrequest && isBuiltinModule(data.wpiOriginRrequest),
-						                    found;
-						
-						                if ( !mkExt && opts.allCfg.find(
-							                cfg => (
-								                cfg.builds &&
-								                cfg.builds[ctx] &&
-								                cfg.builds[ctx].externals &&
-								                cfg.builds[ctx].externals.find(mod => {
-									                return data.wpiOriginRrequest.startsWith(found = mod)
-								                })
-							                )
-						                ) ) {
-							                mkExt = true;//fallback.find(p => data.request.startsWith(p))||true;
-						                }
-						
-						                if ( mkExt ) {
-							                return callback(null, new ExternalModule(
-								                data.wpiOriginRrequest || data.request,
-								                compiler.options.output.libraryTarget
-							                ));
-							
-						                }
-						                else {
-							                return factory(data, callback);
-						                }
-						
-					                };
-				                });
+				                //nmf.plugin('factory', function ( factory ) {
+					            //    return function ( data, callback ) {
+						        //        let mkExt = isBuiltinModule(data.request)
+							    //            || data.wpiOriginRrequest && isBuiltinModule(data.wpiOriginRrequest),
+						        //            found;
+				                //
+						        //        if ( !mkExt && opts.allCfg.find(
+							    //            cfg => (
+								//                cfg.builds &&
+								//                cfg.builds[ctx] &&
+								//                cfg.builds[ctx].externals &&
+								//                cfg.builds[ctx].externals.find(mod => {
+								//	                return data.wpiOriginRrequest.startsWith(found = mod)
+								//                })
+							    //            )
+						        //        ) ) {
+							    //            mkExt = true;//fallback.find(p => data.request.startsWith(p))||true;
+						        //        }
+				                //
+						        //        if ( mkExt ) {
+							    //            return callback(null, new ExternalModule(
+								//                data.wpiOriginRrequest || data.request,
+								//                compiler.options.output.libraryTarget
+							    //            ));
+				                //
+						        //        }
+						        //        else {
+							    //            return factory(data, callback);
+						        //        }
+				                //
+					            //    };
+				                //});
 				                nmf.plugin("before-resolve", wpiResolve);
 				
 			                }

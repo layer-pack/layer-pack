@@ -42,7 +42,6 @@ module.exports = {
 			wpCfg = []
 		}
 		currentProfile = null;
-		console.log(cfg)
 		return wpCfg;
 	},
 	plugin( cfg, profile = currentProfile || 'default' ) {

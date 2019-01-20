@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /*
  * The MIT License (MIT)
  * Copyright (c) 2019. Wise Wild Web
@@ -15,4 +14,31 @@
 
 'use strict';
 
-require('./wpi.js');
+var wpi = require('../src');
+
+var path     = require('path'),
+    util     = require('util'),
+    resolve  = require('resolve'),
+    execSync = require('child_process').execSync,
+    cmd,
+    wpCli,
+    argz     = process.argv.slice(2);
+
+try {
+	
+	// find da good webpack
+	wpCli = resolve.sync('webpack', { basedir: path.dirname(wpi.getConfig().allWebpackCfg[0]) });
+	wpCli = path.join(wpCli.substr(0, wpCli.lastIndexOf("node_modules")), 'node_modules/.bin/webpack');
+	
+	console.warn(wpCli.replace(/\\/g, '/'));
+	//cmd = exec(__dirname + '/../node_modules/.bin/webpack.cmd --config ' + wpi.getConfig().allWebpackCfg[0] +
+	// argz.join(' '), { stdio: 'pipe' } );
+	
+	cmd = execSync(wpCli + (process.platform == 'win32'
+	                        ? '.cmd'
+	                        : '') + ' --config ' + wpi.getConfig().allWebpackCfg[0] + ' ' +
+		               argz.join(' '), { stdio: 'inherit' });
+} catch ( e ) {
+	console.warn('\n\nServer fail with err : ' + e + '\n\n');
+	process.exit();
+}

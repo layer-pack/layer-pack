@@ -17,13 +17,13 @@ var path = require("path"),
     fs   = require("fs"),
     cwd  = path.normalize(__dirname + '/..');
 
-var walk                      = require('walk'),
-    shortid                   = require('shortid'),
-    fs                        = require('fs'),
-    os                        = require('os');
-var VirtualModulePlugin       = require('virtual-module-webpack-plugin');
-var CommonJsRequireDependency = require("webpack/lib/dependencies/CommonJsRequireDependency");
-var glob                      = require('fast-glob');
+var walk                = require('walk'),
+    shortid             = require('shortid'),
+    fs                  = require('fs'),
+    os                  = require('os');
+var VirtualModulePlugin = require('virtual-module-webpack-plugin');
+//var CommonJsRequireDependency = require("webpack/lib/dependencies/CommonJsRequireDependency");
+var glob                = require('fast-glob');
 
 
 var possible_ext = [
@@ -138,7 +138,8 @@ module.exports   = {
 			    //allModulePath.push(path.normalize(cwd + '/node_modules'));
 			
 			    //allModulePath = allModulePath.filter(fs.existsSync.bind(fs));
-			    //allModulePath.push("node_modules")
+			    allModulePath.push("node_modules")
+			    console.log(allModulePath)
 			    return roots.map(path.normalize.bind(path));
 		    })();
 		allCfg.push(pkgConfig)
