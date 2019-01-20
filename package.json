@@ -1,6 +1,6 @@
 {
   "name": "webpack-inherit",
-  "version": "0.9.8",
+  "version": "1.0.0",
   "description": "webpack-inherit",
   "license": "MIT",
   "main": "src/index.js",

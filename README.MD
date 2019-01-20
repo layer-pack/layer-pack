@@ -23,6 +23,63 @@ and switch them easily !
 This plugin is working, but still in beta stage  ( not well tested/optimized for now ),<br/>
 Samples come here : https://github.com/n8tz/webpack-inherit-sample ( actually the only doc )
 
+## How to use ?
+
+In package.json :
+```
+{
+  "name": "daProject",
+  "version": "1.0.0",
+  "wpInherit": {
+    "default": {
+      "rootFolder": "App",// local root that will be mapped on App/...
+      "extend": [
+        "parentProject" // parentProject must have wpInherit.default with his own extend value
+      ]
+    }
+  }
+}
+```
+In wp config :
+```
+
+var wpInherit = require('webpack-inherit');
+
+module.exports = [
+	{
+		// The jsx App entry point
+		entry: {
+			App: 'App'
+		},
+
+		// The resulting build
+		output: {
+			path      : wpInherit.getHeadRoot() + "/dist/",
+		},
+
+		// Global build plugin & option
+		plugins: (
+			[
+				wpInherit.plugin(),
+			]
+		),
+
+		module: {
+			rules: [
+				{
+					test   : /\.jsx?$/,
+					exclude: wpInherit.isFileExcluded()
+					//...
+				}
+				//...
+			]
+		}
+		//...
+	}
+	//...
+]
+```
+
 ## Caveats / bugs ?
 
 - All inherited dir are accessible using require('App/...')
