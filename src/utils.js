@@ -139,7 +139,6 @@ module.exports   = {
 			
 			    //allModulePath = allModulePath.filter(fs.existsSync.bind(fs));
 			    allModulePath.push("node_modules")
-			    console.log(allModulePath)
 			    return roots.map(path.normalize.bind(path));
 		    })();
 		allCfg.push(pkgConfig)

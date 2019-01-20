@@ -27,7 +27,6 @@ module.exports = {
 		let cfg = this.getAllConfigs()[profile];
 		
 		let addModulePath = require('app-module-path').addPath;
-		cfg.allModulePath.map(console.log)
 		cfg.allModulePath.map(addModulePath)
 	},
 	getSuperWebpackCfg( profile = "default" ) {

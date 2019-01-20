@@ -149,7 +149,7 @@ module.exports = function ( cfg, opts ) {
 						0,
 						function ( e, filePath, file ) {
 							if ( e ) {
-								console.log("find %s\t\t\t=> %s", data.request);
+								//console.log("find %s\t\t\t=> %s", data.request);
 								console.error("File not found \n'%s' (required in '%s')",
 								              data.request, requireOrigin);
 								return resolve(404)
