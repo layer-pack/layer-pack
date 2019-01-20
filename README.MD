@@ -23,6 +23,15 @@ and switch them easily !
 This plugin is working, but still in beta stage  ( not well tested/optimized for now ),<br/>
 Samples come here : https://github.com/n8tz/webpack-inherit-sample ( actually the only doc )
 
+## Caveats / bugs ?
+
+- All inherited dir are accessible using require('App/...')
+- All devDependencies of inheritable packages must be move to normal deps in order to define webpack conf
+- Context based webpack requires are not processed
+- This plugin probably need some optimisations
+- This plugin probably need some bugs fixes ( find them ! :) )
+
+
 ## Contributors ?
 
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](#)
