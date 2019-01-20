@@ -69,18 +69,19 @@ module.exports   = {
 		    allExtPath     = (() => {
 			    let list = [], seen = {};
 			
-			    pkgConfig.extend.forEach(function walk( p, i ) {
-				    let where = fs.existsSync(path.normalize(projectRoot + "/libs/" + p))
-				                ? "/libs/" :
-				                "/node_modules/",
-				        cfg   = fs.existsSync(path.normalize(projectRoot + where + p + "/package.json")) &&
-					        JSON.parse(fs.readFileSync(path.normalize(projectRoot + where + p + "/package.json")))
+			    pkgConfig.extend.forEach(function walk( p, i, x, mRoot ) {
+				    mRoot     = mRoot || projectRoot;
+				    let where = "/node_modules/",
+				        cfg   = fs.existsSync(path.normalize(mRoot + where + p + "/package.json")) &&
+					        JSON.parse(fs.readFileSync(path.normalize(mRoot + where + p + "/package.json")))
 				
 				    if ( cfg.wpInherit && cfg.wpInherit[profile] && cfg.wpInherit[profile].extend )
-					    cfg.wpInherit[profile].extend.forEach(walk)
-				    else throw new Error("webpack-inherit : Can't inherit an not installed module")
+					    cfg.wpInherit[profile].extend.forEach(( mid, y ) => walk(mid, y, null, mRoot + where + p))
+				    else {
+					    throw new Error("webpack-inherit : Can't inherit an not installed module " + p)
+				    }
 				
-				    list.push(path.normalize(projectRoot + where + p));
+				    list.push(path.normalize(mRoot + where + p));
 			    })
 			
 			
