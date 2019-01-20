@@ -1,10 +1,24 @@
 # webpack-inherit
 
-Allow :
-- Inherit multiple projects directory (in js & scss)
+What you can do with it :
+- Inherit multiple projects ( using webpack-inherit )
+
+ So you can override any files in you're project & use cool things like that :
+```
+import $super from "$super";
+// or require('$super')
+class MyOverrided extend $super{
+//...
+}
+```
+
+- Inherit a project with its webpack config, and use it on you're project
+
+So you can put you'r config in some inheritable npm packages;
+and switch them easily !
+
 - Do glob require on inherited directory
 - Easily override node_modules
-- inherit webpack config easily
 
 This plugin is working, but still in beta stage  ( not well tested/optimized for now ),<br/>
 Samples come here : https://github.com/n8tz/webpack-inherit-sample ( actually the only doc )
