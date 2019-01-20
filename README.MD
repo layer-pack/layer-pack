@@ -1,5 +1,8 @@
 # webpack-inherit
 
+<a href="https://www.npmjs.com/package/webpack-inherit">
+<img src="https://img.shields.io/npm/v/webpack-inherit.svg" alt="NPM" /></a>
+
 What you can do with it :
 - Inherit multiple projects ( using webpack-inherit )
 
