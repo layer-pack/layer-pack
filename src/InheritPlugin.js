@@ -197,19 +197,34 @@ module.exports = function ( cfg, opts ) {
 			};
 			
 			compiler.plugin('after-emit', ( compilation, cb ) => {
-				// Add file dependencies if they're not already tracked
-				fileDependencies.forEach(( file ) => {
-					if ( compilation.fileDependencies.indexOf(file) == -1 ) {
-						compilation.fileDependencies.push(file);
-					}
-				});
-				
-				// Add context dependencies if they're not already tracked
-				contextDependencies.forEach(( context ) => {
-					if ( compilation.contextDependencies.indexOf(context) == -1 ) {
-						compilation.contextDependencies.push(context);
-					}
-				});
+				compilation.fileDependencies    = compilation.fileDependencies || [];
+				compilation.contextDependencies = compilation.contextDependencies || [];
+				if ( compilation.fileDependencies.concat ) {
+					// Add file dependencies if they're not already tracked
+					fileDependencies.forEach(( file ) => {
+						if ( compilation.fileDependencies.indexOf(file) == -1 ) {
+							compilation.fileDependencies.push(file);
+						}
+					});
+					
+					// Add context dependencies if they're not already tracked
+					contextDependencies.forEach(( context ) => {
+						if ( compilation.contextDependencies.indexOf(context) == -1 ) {
+							compilation.contextDependencies.push(context);
+						}
+					});
+				}
+				else {// webpack 4
+					// Add file dependencies if they're not already tracked
+					fileDependencies.forEach(( file ) => {
+						compilation.fileDependencies.add(file);
+					});
+					
+					// Add context dependencies if they're not already tracked
+					contextDependencies.forEach(( context ) => {
+						compilation.contextDependencies.add(context);
+					});
+				}
 				cb()
 				cache = {};
 			});
