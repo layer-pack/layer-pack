@@ -108,7 +108,6 @@ wpi # use webpack params here
 - This plugin probably need some optimisations
 - This plugin probably need some bugs fixes ( find them ! :) )
 
-
 ## Contributors ?
 
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](#)

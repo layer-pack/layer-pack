@@ -26,17 +26,7 @@ var VirtualModulePlugin = require('virtual-module-webpack-plugin');
 var glob                = require('fast-glob');
 
 
-var possible_ext = [
-	".js",
-	".jsx",
-	".json",
-	"/index.js",
-	"/index.scss",
-	"/index.css",
-	".scss",
-	".css"
-];
-module.exports   = {
+module.exports = {
 	getAllConfigs() {
 		var projectRoot = process.cwd(),
 		    pkgConfig   = fs.existsSync(path.normalize(projectRoot + "/package.json")) &&
@@ -146,7 +136,7 @@ module.exports   = {
 		return { allWebpackCfg, allModulePath, allRoots, allExtPath, extAliases, allModuleRoots, allCfg };
 	},
 	
-	findParentPath( fs, roots, file, i, cb, _curExt, _ext ) {
+	findParentPath( fs, roots, file, i, possible_ext, cb, _curExt, _ext ) {
 		_ext    = _ext || '';
 		var fn  = path.normalize(roots[i] + file + _ext);
 		_curExt = _curExt || 0;
@@ -159,13 +149,12 @@ module.exports   = {
 			else {
 				// console.warn("Not found !!! ", fn, ei);
 				if ( possible_ext.length > _curExt ) {
-					this.findParentPath(fs, roots, file, i, cb, _curExt + 1, possible_ext[_curExt])
+					this.findParentPath(fs, roots, file, i, possible_ext, cb, _curExt + 1, possible_ext[_curExt])
 				}
 				else if ( i + 1 < roots.length ) {
-					this.findParentPath(fs, roots, file, i + 1, cb, 0, '');
+					this.findParentPath(fs, roots, file, i + 1, possible_ext, cb, 0, '');
 				}
 				else {
-					
 					cb && cb(true);
 				}
 			}
@@ -187,12 +176,12 @@ module.exports   = {
 			return cb(null, stats.isDirectory());
 		});
 	},
-	findParent( fs, roots, file, cb ) {
+	findParent( fs, roots, file, possible_ext, cb ) {
 		var i = -1, tmp;
 		while ( ++i < roots.length ) {
 			tmp = file.substr(0, roots[i].length);
 			if ( roots[i] == tmp ) {// found
-				return (i != roots.length - 1) && this.findParentPath(fs, roots, file.substr(tmp.length), i + 1, cb);
+				return (i != roots.length - 1) && this.findParentPath(fs, roots, file.substr(tmp.length), i + 1, possible_ext, cb);
 			}
 		}
 		cb && cb(true);

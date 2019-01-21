@@ -35,12 +35,22 @@ module.exports = function ( cfg, opts ) {
 				( k ) => ([new RegExp(k), opts.extAliases[k]])),
 			    internals          = [];
 			
-			var contextDependencies          = [],
-			    fileDependencies             = [];
+			var contextDependencies = [],
+			    fileDependencies    = [],
+			    availableExts       = [];
+			
+			
 			// add resolve paths
 			compiler.options.resolve         = compiler.options.resolve || {};
 			compiler.options.resolve.modules = compiler.options.resolve.modules || [];
 			compiler.options.resolve.modules.unshift(...opts.allModulePath);
+			
+			if ( compiler.options.resolve.modules.extensions ) {
+				availableExts.push(...compiler.options.resolve.modules.extensions);
+			}
+			else availableExts = ["", ".webpack.js", ".web.js", ".js"];
+			availableExts = availableExts.filter(ext => ((ext != '.')));
+			availableExts.push(...availableExts.filter(ext => ext).map(ext => ('/index' + ext)));
 			
 			
 			compiler.options.resolveLoader         = compiler.options.resolveLoader || {};
@@ -101,10 +111,10 @@ module.exports = function ( cfg, opts ) {
 				    key;
 				
 				
+				//console.info(data);
 				key = data.context + '##' + data.request;
 				
 				if ( /^\$super$/.test(data.request) ) {
-					// console.info(requireOrigin);
 					// console.dir(data.dependencies);
 					key = "$super<" + requireOrigin;
 				}
@@ -130,6 +140,7 @@ module.exports = function ( cfg, opts ) {
 						compiler.inputFileSystem,
 						roots,
 						requireOrigin,
+						availableExts,
 						function ( e, filePath, file ) {
 							if ( e ) {
 								console.warn("Parent not found for " + requireOrigin);
@@ -147,6 +158,7 @@ module.exports = function ( cfg, opts ) {
 						roots,
 						data.request.replace(/^App/ig, ''),
 						0,
+						availableExts,
 						function ( e, filePath, file ) {
 							if ( e ) {
 								//console.log("find %s\t\t\t=> %s", data.request);
@@ -161,6 +173,10 @@ module.exports = function ( cfg, opts ) {
 				resolve(null, data.request);
 			}
 			
+			compiler.plugin("normal-module-factory", function ( nmf ) {
+				                nmf.plugin("before-resolve", wpiResolve);
+			                }
+			);
 			this._sassImporter = function ( url, prev, cb ) {
 				if ( /^(\$|App\/)/.test(url) ) {
 					wpiResolve(
