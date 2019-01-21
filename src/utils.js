@@ -162,20 +162,6 @@ module.exports = {
 		})
 	},
 	
-	checkIfDir( fs, file, cb ) {
-		fs.stat(file, function fsStat( err, stats ) {
-			if ( err ) {
-				if ( err.code === 'ENOENT' ) {
-					return cb(null, false);
-				}
-				else {
-					return cb(err);
-				}
-			}
-			// console.dir(Object.keys(stats))
-			return cb(null, stats.isDirectory());
-		});
-	},
 	findParent( fs, roots, file, possible_ext, cb ) {
 		var i = -1, tmp;
 		while ( ++i < roots.length ) {
