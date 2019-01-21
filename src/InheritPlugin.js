@@ -78,7 +78,7 @@ module.exports = function ( cfg, opts ) {
 				if ( requireOrigin && /^\./.test(data.request) && (tmpPath = roots.find(r => path.resolve(path.dirname(requireOrigin) + '/' + data.request).startsWith(r))) ) {
 					data.request = ("App" + path.resolve(path.dirname(requireOrigin) + '/' + data.request).substr(tmpPath.length)).replace(/\\/g, '/');
 				}
-				// $map resolving...
+				// glob resolving...
 				if ( data.request.indexOf('*') != -1 ) {
 					
 					return utils.indexOf(
@@ -111,11 +111,9 @@ module.exports = function ( cfg, opts ) {
 				    key;
 				
 				
-				//console.info(data);
 				key = data.context + '##' + data.request;
 				
 				if ( /^\$super$/.test(data.request) ) {
-					// console.dir(data.dependencies);
 					key = "$super<" + requireOrigin;
 				}
 				
@@ -131,7 +129,6 @@ module.exports = function ( cfg, opts ) {
 					data.file    = true;
 					return cb(null, data)
 				}
-				// console.log("search %s", data.request, cache[key]);
 				cache[key] = [apply];
 				
 				// $super resolving..
@@ -140,7 +137,7 @@ module.exports = function ( cfg, opts ) {
 						compiler.inputFileSystem,
 						roots,
 						requireOrigin,
-						availableExts,
+						[path.extname(requireOrigin)],
 						function ( e, filePath, file ) {
 							if ( e ) {
 								console.warn("Parent not found for " + requireOrigin);
