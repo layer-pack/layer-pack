@@ -27,11 +27,7 @@ var path     = require('path'),
 try {
 	// find da good webpack
 	wpCli = resolve.sync('webpack', { basedir: path.dirname(wpi.getConfig().allWebpackCfg[0]) });
-	wpCli = path.join(wpCli.substr(0, wpCli.lastIndexOf("node_modules")), 'node_modules/.bin/webpack');
-	
-	//console.warn(wpCli.replace(/\\/g, '/'));
-	//cmd = exec(__dirname + '/../node_modules/.bin/webpack.cmd --config ' + wpi.getConfig().allWebpackCfg[0] +
-	// argz.join(' '), { stdio: 'pipe' } );
+	wpCli = path.join(wpCli.substr(0, wpCli.lastIndexOf("node_modules")), 'node_modules/.bin/webpack-dev-server');
 	
 	cmd = execSync(wpCli + (process.platform == 'win32'
 	                        ? '.cmd'
