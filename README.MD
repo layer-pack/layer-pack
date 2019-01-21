@@ -82,6 +82,20 @@ module.exports = [
 					//...
 				}
 				//...
+
+				{
+					test: /\.(scss|css)$/,
+					use : [
+				        //...
+						{
+							loader : "sass-loader",
+							options: {
+								importer  : wpInherit.plugin().sassImporter,
+							}
+						}
+					]
+				}
+				//...
 			]
 		}
 		//...
