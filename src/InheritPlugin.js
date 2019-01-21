@@ -80,8 +80,7 @@ module.exports = function ( cfg, opts ) {
 				}
 				// glob resolving...
 				if ( data.request.indexOf('*') != -1 ) {
-					
-					return utils.indexOf(
+					return (/\.s?css$/.test(requireOrigin) ? utils.indexOfScss : utils.indexOf)(
 						compiler.inputFileSystem,
 						roots,
 						data.request,
