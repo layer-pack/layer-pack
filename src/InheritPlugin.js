@@ -197,6 +197,8 @@ module.exports = function ( cfg, opts ) {
 			};
 			
 			compiler.plugin('after-emit', ( compilation, cb ) => {
+				compilation.fileDependencies    = compilation.fileDependencies || [];
+				compilation.contextDependencies = compilation.contextDependencies || [];
 				// Add file dependencies if they're not already tracked
 				fileDependencies.forEach(( file ) => {
 					if ( compilation.fileDependencies.indexOf(file) == -1 ) {
