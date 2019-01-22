@@ -40,12 +40,25 @@ Add in package.json :
   "name": "daProject",
   "version": "1.0.0",
   "wpInherit": {
-    "default": {
+    "default": {// default profile id
       "rootFolder": "App",// local root that will be mapped on App/...
       "extend": [
         "parentProject" // parentProject must have wpInherit.default with his own extend value
       ]
+    },
+    // optionally we can define multiple profile
+    "api": {// same profiles must exist in all inherited project
+      "rootFolder": "App",
+      "config": "./webpack.config.api.js", // optional webpack config
+      "extend": [
+        "parentProject"
+      ]
     }
+  }
+  //...
+  devDependencies:{
+    "parentProject":"^1.0.0"
+  //...
   }
 }
 ```
@@ -111,6 +124,12 @@ Then you can use the wpi CLI to call the first inherited webpack config using th
 wpi # use webpack params here
 # or
 wpi-dev-server
+
+# or using profiles
+
+wpi :api # use webpack params here
+# or
+wpi-dev-server :anotherProfile
 ```
 
 Or retrieve the config by creating a new webpack config :
@@ -121,6 +140,9 @@ var wpInherit = require('webpack-inherit');
 
 
 module.exports = wpInherit.getSuperWebpackCfg();
+
+//module.exports = wpInherit.getSuperWebpackCfg(/* "profileId" */);
+
 ```
 
 
