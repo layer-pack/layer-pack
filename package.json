@@ -1,6 +1,6 @@
 {
   "name": "webpack-inherit",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "webpack-inherit",
   "license": "MIT",
   "main": "src/index.js",
@@ -9,7 +9,8 @@
     "npm": ">= 5.6.0"
   },
   "bin": {
-    "wpi": "cli/wpi"
+    "wpi": "cli/wpi",
+    "wpi-dev-server": "cli/wpi-dev-server"
   },
   "author": "N8tz <caipilabs@gmail.com>",
   "maintainers": [
@@ -28,7 +29,6 @@
   "scripts": {},
   "devDependencies": {},
   "peerDependencies": {
-    "webpack": "^2.7.0 || ^4.0.0"
   },
   "dependencies": {
     "app-module-path": "^2.2.0",
