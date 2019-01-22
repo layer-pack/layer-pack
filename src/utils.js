@@ -184,7 +184,8 @@ module.exports = {
 				glob.sync([_root + '/' + path.normalize(input)])
 				    .forEach(
 					    file => {
-						    fileDependencies.push(path.normalize(file));
+						    !files["App" + file.substr(_root.length)]
+						    && fileDependencies.push(path.normalize(file));
 						
 						
 						    files["App" + file.substr(_root.length)] = true
@@ -238,8 +239,8 @@ module.exports = {
 				glob.sync([_root + '/' + path.normalize(input)])
 				    .forEach(
 					    file => {
-						    fileDependencies.push(path.normalize(file));
-						
+						    !files["App" + file.substr(_root.length)]
+						    && fileDependencies.push(path.normalize(file));
 						
 						    files["App" + file.substr(_root.length)] = true
 					    }
