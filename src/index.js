@@ -12,9 +12,9 @@
  *  @contact : caipilabs@gmail.com
  */
 
-const utils                                     = require("./utils");
-const InheritPlugin                             = require("./InheritPlugin");
-let allConfigs, currentProfile, allCfgInstances = {};
+const utils                                        = require("./utils");
+const InheritPlugin                                = require("./InheritPlugin");
+let allConfigs, currentProfile, allPluginInstances = {}, allCfgInstances = {};
 
 module.exports = {
 	getAllConfigs() {
@@ -32,7 +32,12 @@ module.exports = {
 	getSuperWebpackCfg( profile = "default" ) {
 		let cfg = this.getAllConfigs()[profile],
 		    wpCfg;
-		this.loadModulePath(profile)
+		
+		if ( allCfgInstances[profile] )
+			return allCfgInstances[profile];
+		
+		this.loadModulePath(profile);
+		
 		try {
 			currentProfile = profile;
 			wpCfg          = require(cfg.allWebpackCfg[0])
@@ -40,11 +45,12 @@ module.exports = {
 			console.error(e)
 			wpCfg = []
 		}
-		currentProfile = null;
+		allCfgInstances[profile] = wpCfg;
+		currentProfile           = null;
 		return wpCfg;
 	},
 	plugin( cfg, profile = currentProfile || 'default' ) {
-		return allCfgInstances[profile] = allCfgInstances[profile] || InheritPlugin(cfg, this.getAllConfigs()[profile])
+		return allPluginInstances[profile] = allPluginInstances[profile] || InheritPlugin(cfg, this.getAllConfigs()[profile])
 	},
 	isFileExcluded( profile = currentProfile || 'default' ) {
 		let allRoots = this.getAllConfigs()[profile].allRoots;

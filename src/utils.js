@@ -13,17 +13,11 @@
  */
 
 
-var path = require("path"),
-    fs   = require("fs"),
-    cwd  = path.normalize(__dirname + '/..');
-
-var walk                = require('walk'),
-    shortid             = require('shortid'),
+var path                = require("path"),
+    fs                  = require("fs"),
     fs                  = require('fs'),
-    os                  = require('os');
-var VirtualModulePlugin = require('virtual-module-webpack-plugin');
-//var CommonJsRequireDependency = require("webpack/lib/dependencies/CommonJsRequireDependency");
-var glob                = require('fast-glob');
+    VirtualModulePlugin = require('virtual-module-webpack-plugin'),
+    glob                = require('fast-glob');
 
 
 module.exports = {
@@ -119,16 +113,8 @@ module.exports = {
 					
 					    allModulePath.push(path.normalize(where + "/node_modules"));
 					    //console.warn(allModulePath)
-					
 				    }
 			    );
-			    //allModulePath = libPath.concat(allModulePath);
-			    //roots.push(
-			    //    path.normalize(cwd + '/' + rootDir)
-			    //);
-			    //allModulePath.push(path.normalize(cwd + '/node_modules'));
-			
-			    //allModulePath = allModulePath.filter(fs.existsSync.bind(fs));
 			    allModulePath.push("node_modules")
 			    return roots.map(path.normalize.bind(path));
 		    })();
@@ -136,6 +122,7 @@ module.exports = {
 		return { allWebpackCfg, allModulePath, allRoots, allExtPath, extAliases, allModuleRoots, allCfg };
 	},
 	
+	// find a $super file in the available roots
 	findParentPath( fs, roots, file, i, possible_ext, cb, _curExt, _ext ) {
 		_ext    = _ext || '';
 		var fn  = path.normalize(roots[i] + file + _ext);
@@ -161,7 +148,6 @@ module.exports = {
 			
 		})
 	},
-	
 	findParent( fs, roots, file, possible_ext, cb ) {
 		var i = -1, tmp;
 		while ( ++i < roots.length ) {
@@ -172,6 +158,10 @@ module.exports = {
 		}
 		cb && cb(true);
 	},
+	
+	/**
+	 * Create a virtual file accessible by webpack that map a given glob query like "App/somewhere/**.js"
+	 */
 	indexOf( vfs, roots, input, contextDependencies, fileDependencies, cb ) {
 		var files       = {},
 		    code        = "",
@@ -221,6 +211,11 @@ module.exports = {
 			{ fs: vfs, modulePath: virtualFile + '.map', contents: "", ctime: Date.now() });
 		cb(null, virtualFile, code);
 	},
+	
+	
+	/**
+	 * Create a virtual file accessible by webpack that map a given glob query like "App/somewhere/**.scss"
+	 */
 	indexOfScss( vfs, roots, input, contextDependencies, fileDependencies, cb ) {
 		var files       = {},
 		    code        = "",

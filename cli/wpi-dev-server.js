@@ -35,11 +35,13 @@ try {
 	wpCli = resolve.sync('webpack', { basedir: path.dirname(wpi.getConfig(profile).allWebpackCfg[0]) });
 	wpCli = path.join(wpCli.substr(0, wpCli.lastIndexOf("node_modules")), 'node_modules/.bin/webpack-dev-server');
 	
+	console.info("Compile using profile id : ", profile);
+	
 	cmd = execSync(wpCli + (process.platform == 'win32'
 	                        ? '.cmd'
 	                        : '') + ' --config ' + wpi.getConfig(profile).allWebpackCfg[0] + ' ' +
 		               argz.join(' '), { stdio: 'inherit' });
 } catch ( e ) {
-	console.warn('\n\nServer fail with err : ' + e + '\n\n');
+	console.warn('\n\nFail with err : ' + e + '\n\n');
 	process.exit();
 }
