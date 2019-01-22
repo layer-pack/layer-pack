@@ -1,7 +1,7 @@
 {
   "name": "webpack-inherit",
   "version": "1.0.8",
-  "description": "webpack-inherit",
+  "description": "Allows your Webpack projects to inherit other npm packages & build using inherited webpack config",
   "license": "MIT",
   "main": "src/index.js",
   "engines": {
