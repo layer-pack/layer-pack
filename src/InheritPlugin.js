@@ -12,11 +12,7 @@
  *  @contact : caipilabs@gmail.com
  */
 
-/**
- * @author N.Braun
- */
-var path = require('path');
-
+var path    = require('path');
 const utils = require("./utils");
 /**
  * Main wpi plugin
@@ -29,13 +25,12 @@ module.exports = function ( cfg, opts ) {
 			return plugin._sassImporter(...arguments)
 		},
 		apply       : function ( compiler ) {
-			var cache = {}, plugin = this;
-			var roots              = opts.allRoots;
-			var alias              = Object.keys(opts.extAliases || {}).map(
-				( k ) => ([new RegExp(k), opts.extAliases[k]])),
-			    internals          = [];
-			
-			var contextDependencies = [],
+			var cache               = {},
+			    plugin              = this,
+			    roots               = opts.allRoots,
+			    alias               = Object.keys(opts.extAliases || {})
+			                                .map(( k ) => ([new RegExp(k), opts.extAliases[k]])),
+			    contextDependencies = [],
 			    fileDependencies    = [],
 			    availableExts       = [];
 			
@@ -44,7 +39,11 @@ module.exports = function ( cfg, opts ) {
 			compiler.options.resolve         = compiler.options.resolve || {};
 			compiler.options.resolve.modules = compiler.options.resolve.modules || [];
 			compiler.options.resolve.modules.unshift(...opts.allModulePath);
+			compiler.options.resolveLoader         = compiler.options.resolveLoader || {};
+			compiler.options.resolveLoader.modules = compiler.options.resolveLoader.modules || [];
+			compiler.options.resolveLoader.modules.unshift(...opts.allModulePath);
 			
+			// detect resolvable ext
 			if ( compiler.options.resolve.modules.extensions ) {
 				availableExts.push(...compiler.options.resolve.modules.extensions);
 			}
@@ -53,14 +52,11 @@ module.exports = function ( cfg, opts ) {
 			availableExts.push(...availableExts.filter(ext => ext).map(ext => ('/index' + ext)));
 			
 			
-			compiler.options.resolveLoader         = compiler.options.resolveLoader || {};
-			compiler.options.resolveLoader.modules = compiler.options.resolveLoader.modules || [];
-			compiler.options.resolveLoader.modules.unshift(...opts.allModulePath);
-			
-			
+			/**
+			 * The main resolver / glob mngr
+			 */
 			function wpiResolve( data, cb ) {
-				var vals,
-				    requireOrigin = data.contextInfo.issuer,
+				var requireOrigin = data.contextInfo.issuer,
 				    tmpPath;
 				
 				for ( var i = 0; i < alias.length; i++ ) {
@@ -70,14 +66,11 @@ module.exports = function ( cfg, opts ) {
 					}
 				}
 				
-				
-				data.wpiOriginRrequest = data.request;
-				
-				
-				// resolve inheritable relative
+				// resolve inheritable & relative @todo
 				if ( requireOrigin && /^\./.test(data.request) && (tmpPath = roots.find(r => path.resolve(path.dirname(requireOrigin) + '/' + data.request).startsWith(r))) ) {
 					data.request = ("App" + path.resolve(path.dirname(requireOrigin) + '/' + data.request).substr(tmpPath.length)).replace(/\\/g, '/');
 				}
+				
 				// glob resolving...
 				if ( data.request.indexOf('*') != -1 ) {
 					return (/\.s?css$/.test(requireOrigin) ? utils.indexOfScss : utils.indexOf)(
@@ -95,6 +88,7 @@ module.exports = function ( cfg, opts ) {
 					)
 				}
 				
+				// small caching system as we are hooking before resolve
 				var resolve = function ( e, filePath, content ) {
 					    while ( cache[key].length )
 						    cache[key].pop()(e, filePath, content);
@@ -119,8 +113,7 @@ module.exports = function ( cfg, opts ) {
 				if ( cache[key] === true )
 					return cb(null, data);
 				
-				
-				if ( cache[key] instanceof Array ) {
+				if ( cache[key] instanceof Array ) {// deal with concurrent query
 					return cache[key].push(apply)
 				}
 				else if ( cache[key] ) {
@@ -130,6 +123,7 @@ module.exports = function ( cfg, opts ) {
 				}
 				cache[key] = [apply];
 				
+				
 				// $super resolving..
 				if ( /^\$super$/.test(data.request) ) {
 					return utils.findParent(
@@ -138,7 +132,8 @@ module.exports = function ( cfg, opts ) {
 						requireOrigin,
 						[path.extname(requireOrigin)],
 						function ( e, filePath, file ) {
-							if ( e ) {
+							
+							if ( e ) {// silently deal when there is no parents
 								console.warn("Parent not found for " + requireOrigin);
 								return resolve(e, "", "/* Parent not found for " + requireOrigin + '*/\n');
 							}
@@ -147,6 +142,7 @@ module.exports = function ( cfg, opts ) {
 						}
 					);
 				}
+				
 				// Inheritable root based resolving
 				if ( /^App/.test(data.request) ) {
 					return utils.findParentPath(
@@ -169,10 +165,14 @@ module.exports = function ( cfg, opts ) {
 				resolve(null, data.request);
 			}
 			
-			compiler.plugin("normal-module-factory", function ( nmf ) {
+			// wp hook
+			compiler.plugin("normal-module-factory",
+			                function ( nmf ) {
 				                nmf.plugin("before-resolve", wpiResolve);
 			                }
 			);
+			
+			// sass resolver
 			this._sassImporter = function ( url, prev, cb ) {
 				if ( /^(\$|App\/)/.test(url) ) {
 					wpiResolve(
@@ -196,6 +196,7 @@ module.exports = function ( cfg, opts ) {
 				else return null;
 			};
 			
+			// should deal with hot reload watched files & dirs
 			compiler.plugin('after-emit', ( compilation, cb ) => {
 				compilation.fileDependencies    = compilation.fileDependencies || [];
 				compilation.contextDependencies = compilation.contextDependencies || [];
@@ -230,6 +231,4 @@ module.exports = function ( cfg, opts ) {
 			});
 		}
 	}
-		;
 }
-;
