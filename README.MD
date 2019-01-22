@@ -109,7 +109,18 @@ Then you can use the wpi CLI to call the first inherited webpack config using th
 ```
 # from the head project
 wpi # use webpack params here
+# or
+wpi-dev-server
+```
 
+Or retrieve the config by creating a new webpack config :
+
+webpack.config.js
+```
+var wpInherit = require('webpack-inherit');
+
+
+module.exports = wpInherit.getSuperWebpackCfg();
 ```
 
 
