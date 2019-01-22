@@ -1,6 +1,6 @@
 {
   "name": "webpack-inherit",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "webpack-inherit",
   "license": "MIT",
   "main": "src/index.js",
@@ -24,16 +24,16 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/n8tz/inherit-webpack-plugin"
+    "url": "https://github.com/n8tz/inherit-webpack"
   },
   "scripts": {},
   "devDependencies": {},
-  "peerDependencies": {
-  },
+  "peerDependencies": {},
   "dependencies": {
     "app-module-path": "^2.2.0",
     "fast-glob": "^2.2.6",
     "is-builtin-module": "^3.0.0",
+    "minimist": "^1.2.0",
     "resolve": "^1.9.0",
     "shortid": "^2.2.14",
     "virtual-module-webpack-plugin": "^0.3.0",

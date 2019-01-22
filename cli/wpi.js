@@ -14,7 +14,6 @@
 
 'use strict';
 
-var wpi = require('../src');
 
 var path     = require('path'),
     util     = require('util'),
@@ -22,20 +21,26 @@ var path     = require('path'),
     execSync = require('child_process').execSync,
     cmd,
     wpCli,
-    argz     = process.argv.slice(2);
+    argz     = process.argv.slice(2),
+    profile  = 'default';
 
+var wpi = require('../src');
 try {
+	if ( argz[0] && /^\:.*$/.test(argz[0]) )
+		profile = argz.shift().replace(/^\:(.*)$/, '$1');
+	
+	if ( !wpi.getConfig(profile) )
+		throw new Error("Can't find profile '" + profile + "' in the inherited packages");
+	
 	// find da good webpack
-	wpCli = resolve.sync('webpack', { basedir: path.dirname(wpi.getConfig().allWebpackCfg[0]) });
+	wpCli = resolve.sync('webpack', { basedir: path.dirname(wpi.getConfig(profile).allWebpackCfg[0]) });
 	wpCli = path.join(wpCli.substr(0, wpCli.lastIndexOf("node_modules")), 'node_modules/.bin/webpack');
 	
-	//console.warn(wpCli.replace(/\\/g, '/'));
-	//cmd = exec(__dirname + '/../node_modules/.bin/webpack.cmd --config ' + wpi.getConfig().allWebpackCfg[0] +
-	// argz.join(' '), { stdio: 'pipe' } );
+	console.info("Compile using ", profile, wpi.getConfig(profile).allWebpackCfg[0]);
 	
 	cmd = execSync(wpCli + (process.platform == 'win32'
 	                        ? '.cmd'
-	                        : '') + ' --config ' + wpi.getConfig().allWebpackCfg[0] + ' ' +
+	                        : '') + ' --config ' + wpi.getConfig(profile).allWebpackCfg[0] + ' ' +
 		               argz.join(' '), { stdio: 'inherit' });
 } catch ( e ) {
 	console.warn('\n\nServer fail with err : ' + e + '\n\n');
