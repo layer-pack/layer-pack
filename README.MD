@@ -22,12 +22,17 @@ and switch them easily !
 
 - Do glob require on inherited directory
 
-So you can easily create/inherit modules & extensions and require them with some import("App/extensions/*.js")
+So you can easily create/inherit modules & extensions and require them with some import("App/extensions/*.(js|scss)")
 
 - Easily override node_modules
+- Compile multiples inherited & versioned projects in 1 head package
+- Etc...
 
 
-This plugin is working, but still in beta stage  ( not well tested/optimized for now ),<br/>
+This plugin is working, but still in beta stage  ( not well tested/optimized for now )<br/>
+
+Feel free to test / feedback / make contribs<br/>
+
 Check the samples here : https://github.com/n8tz/webpack-inherit-sample
 
 ## How to use ?
@@ -39,6 +44,7 @@ npm i -s webpack-inherit // on all inheritable projects with wp conf & on the he
 ```
 
 Add in package.json :
+
 ```
 {
   "name": "daProject",
@@ -152,8 +158,7 @@ module.exports = wpInherit.getSuperWebpackCfg();
 
 ## Caveats / bugs ?
 
-- All inherited dir are accessible using require('App/...')
-- All devDependencies of inheritable packages must be move to normal deps in order to define webpack conf
+- All devDependencies of inheritable packages must be move to normal deps in order to define theirs own webpack conf
 - Context based webpack requires are not processed
 - In some case webpack need to be restarted when adding/removing some file from App/*
 - This plugin probably need some optimisations
