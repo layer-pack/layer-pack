@@ -21,10 +21,14 @@ So you can put you'r config in some inheritable npm packages;
 and switch them easily !
 
 - Do glob require on inherited directory
+
+So you can easily create/inherit modules & extensions and require them with some import("App/extensions/*.js")
+
 - Easily override node_modules
 
+
 This plugin is working, but still in beta stage  ( not well tested/optimized for now ),<br/>
-Samples come here : https://github.com/n8tz/webpack-inherit-sample ( actually the only doc )
+Check the samples here : https://github.com/n8tz/webpack-inherit-sample
 
 ## How to use ?
 
@@ -72,7 +76,7 @@ module.exports = [
 	{
 		// The jsx App entry point
 		entry: {
-			App: 'App'
+			App: 'App' // will be resolved as App/index.js but we can also use glob ( eg: App/ep/*.js )
 		},
 
 		// The resulting build
