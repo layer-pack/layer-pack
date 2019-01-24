@@ -12,8 +12,8 @@
  *  @contact : caipilabs@gmail.com
  */
 
-var path    = require('path');
-const utils = require("./utils");
+var path          = require('path');
+const utils       = require("./utils");
 /**
  * Main wpi plugin
  *
@@ -21,8 +21,11 @@ const utils = require("./utils");
 module.exports = function ( cfg, opts ) {
 	let plugin;
 	return plugin = {
-		sassImporter: function () {
-			return plugin._sassImporter(...arguments)
+		sassImporter: function ( next ) {
+			return ( url, requireOrigin, cb ) =>
+				plugin._sassImporter(url, requireOrigin, next
+				                                         ? e => next(url, requireOrigin, cb)
+				                                         : cb)
 		},
 		apply       : function ( compiler ) {
 			var cache               = {},
@@ -32,7 +35,8 @@ module.exports = function ( cfg, opts ) {
 			                                .map(( k ) => ([new RegExp(k), opts.extAliases[k]])),
 			    contextDependencies = [],
 			    fileDependencies    = [],
-			    availableExts       = [];
+			    availableExts       = [],
+			    nextSassImporter    = magicImporter();
 			
 			
 			// add resolve paths
@@ -173,27 +177,34 @@ module.exports = function ( cfg, opts ) {
 			);
 			
 			// sass resolver
-			this._sassImporter = function ( url, prev, cb ) {
+			this._sassImporter = function ( url, requireOrigin, cb ) {
+				let tmpPath;
+				if ( requireOrigin &&
+					/^\./.test(url) &&
+					(tmpPath = roots.find(r => path.resolve(path.dirname(requireOrigin) + '/' + url).startsWith(r))) ) {
+					url = ("App" + path.resolve(path.dirname(requireOrigin) + '/' + url).substr(tmpPath.length)).replace(/\\/g, '/');
+				}
+				
 				if ( /^(\$|App\/)/.test(url) ) {
 					wpiResolve(
 						{
 							contextInfo: {
-								issuer: prev
+								issuer: requireOrigin
 							},
 							request    : url
 						},
-						function ( e, found, contents ) {
+						( e, found, contents ) => {
 							if ( found || contents ) {
 								cb && cb(contents && { contents } || { file: found.request });
 							}
 							else {
-								cb && cb({ file: url });
+								msImporter(url, requireOrigin, cb)
 							}
 							
 						}
 					)
 				}
-				else return null;
+				else return msImporter(url, requireOrigin, cb);
 			};
 			
 			// should deal with hot reload watched files & dirs

@@ -113,7 +113,7 @@ module.exports = [
 						{
 							loader : "sass-loader",
 							options: {
-								importer  : wpInherit.plugin().sassImporter,
+								importer  : wpInherit.plugin().sassImporter(/* add others importers here */),
 							}
 						}
 					]
@@ -160,7 +160,6 @@ module.exports = wpInherit.getSuperWebpackCfg();
 
 - All devDependencies of inheritable packages must be move to normal deps in order to define theirs own webpack conf
 - Context based webpack requires are not processed
-- In some case webpack need to be restarted when adding/removing some file from App/*
 - This plugin probably need some optimisations
 - This plugin probably need some bugs fixes ( find them ! :) )
 
