@@ -20,6 +20,14 @@ var path                = require("path"),
     glob                = require('fast-glob');
 
 
+function checkIfDir( fs, file ) {
+	try {
+		return fs.statSync(file).isDirectory()
+	} catch ( err ) {
+		return false
+	}
+}
+
 module.exports = {
 	getAllConfigs() {
 		var projectRoot = process.cwd(),
@@ -158,7 +166,6 @@ module.exports = {
 		}
 		cb && cb(true);
 	},
-	
 	/**
 	 * Create a virtual file accessible by webpack that map a given glob query like "App/somewhere/**.js"
 	 */
@@ -169,40 +176,37 @@ module.exports = {
 			    path.join(roots[roots.length - 1], 'MapOf.' + input.replace(/[^\w]/ig, '_')
 			                                                       .replace(/\*/ig, '.W')
 			                                                       .replace(/[^\w\.]/ig, '_') +
-				    '.gen.js'));
+				    '.gen.js')),
+		    subPath     = "",
+		    re          = ""
+		;
 		
-		input = input.replace(/\/$/, '').replace(/^App\//, '');
+		
+		input   = input.replace(/\/$/, '').replace(/^App\//, '');
+		subPath = path.dirname(input.substr(0, input.indexOf('*')) + "a")
+		re      =
+			input.substr(subPath.length + 1)
+			     .replace(/\//ig, '\\/')
+			     .replace(/\./ig, '\\.')
+			     .replace(/\*\*/ig, '((*\\/)+)?*')
+			     .replace(/\*/ig, '[^\\\\\\/]+');
+		
+		//console.log(input, subPath, re)
+		
+		code += "let req, _exports = {}, root;"
 		roots.forEach(
 			( _root, lvl ) => {
-				contextDependencies.push(
-					path.dirname(
-						path.normalize(
-							_root + '/' + path.normalize(input).replace(/^([^\*]+)\/.*$/, '$1')
-						)
-					)
-				);
-				glob.sync([_root + '/' + path.normalize(input)])
-				    .forEach(
-					    file => {
-						    !files["App" + file.substr(_root.length)]
-						    && fileDependencies.push(path.normalize(file));
-						
-						
-						    files["App" + file.substr(_root.length)] = true
-					    }
-				    )
+				if ( checkIfDir(fs, path.normalize(_root + "/" + subPath)) )
+					code += "" +
+						"req = require.context(" + JSON.stringify(path.normalize(_root + "/" + subPath)) + ", true, /^\\.\\/" + re + "$/);\n" +
+						"\n" +
+						"req.keys().forEach(function (key) {\n" +
+						"    let name=key.substr(2);" +
+						"    _exports[name] = _exports[name]||req(key);\n" +
+						"});\n";
 			}
 		)
-		code =
-			"export default {\n" +
-			Object.keys(files).map(
-				( file, i ) => {
-					let mid = file.replace(/\.[^\.]*$/, '');
-					
-					return '"' + mid + '":require(\"' + file + '\")';
-				}
-			).join(',\n')
-			+ '\n};\n';
+		code += "export default _exports;";
 		//console.log(code)
 		//fs.writeFileSync(virtualFile, code);
 		vfs.purge([virtualFile]);
