@@ -12,7 +12,6 @@
  *  @contact : caipilabs@gmail.com
  */
 
-var magicImporter = require('node-sass-magic-importer');
 var path          = require('path');
 const utils       = require("./utils");
 /**

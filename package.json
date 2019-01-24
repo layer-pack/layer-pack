@@ -34,7 +34,6 @@
     "fast-glob": "^2.2.6",
     "is-builtin-module": "^3.0.0",
     "minimist": "^1.2.0",
-    "node-sass-magic-importer": "^5.3.0",
     "resolve": "^1.9.0",
     "shortid": "^2.2.14",
     "virtual-module-webpack-plugin": "^0.3.0",
