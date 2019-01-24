@@ -12,8 +12,8 @@
  *  @contact : caipilabs@gmail.com
  */
 
-var path          = require('path');
-const utils       = require("./utils");
+var path    = require('path');
+const utils = require("./utils");
 /**
  * Main wpi plugin
  *
@@ -35,8 +35,7 @@ module.exports = function ( cfg, opts ) {
 			                                .map(( k ) => ([new RegExp(k), opts.extAliases[k]])),
 			    contextDependencies = [],
 			    fileDependencies    = [],
-			    availableExts       = [],
-			    nextSassImporter    = magicImporter();
+			    availableExts       = [];
 			
 			
 			// add resolve paths
