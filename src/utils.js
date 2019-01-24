@@ -261,7 +261,7 @@ module.exports = {
 				}
 			).join('\n')
 			+ '\n';
-		console.log(code)
+		//console.log(code)
 		//fs.writeFileSync(virtualFile, code);
 		vfs.purge([virtualFile]);
 		VirtualModulePlugin.populateFilesystem(
