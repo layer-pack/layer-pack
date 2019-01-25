@@ -75,6 +75,8 @@ Add in package.json :
    			// optional vars used in the webpack config ( overrided by child/head package )
    			"vars"  : {
    				// all @optional
+
+
    				// override the root folder alias ( default to "App" )
    				// So all inner build inheritable files will be requierable using require("Comp/some/stuff")
    				"rootAlias"   : "Comp",
@@ -85,7 +87,7 @@ Add in package.json :
    				"externals"   : true,
 
    				"webpackPatch": {
-   					/* some webpack config patch that will be merged */
+   					/* some webpack config patch that will be merged using require('webpack-merge').smart */
    				}
    			},
    			"extend": [
@@ -110,7 +112,9 @@ module.exports = [
 	{
 		// The jsx App entry point
 		entry: {
-			App: 'App' // will be resolved as App/index.js but we can also use glob ( eg: App/ep/*.js )
+		    // App entry point default wpiCfg.vars.rootAlias is 'App' wich will be resolved as App/index.js
+		    // * we can also use glob ( eg: App/ep/*.js )
+			App: wpiCfg.vars.rootAlias
 		},
 
 		// The resulting build
