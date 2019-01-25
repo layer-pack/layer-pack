@@ -158,14 +158,14 @@ module.exports = {
 		_ext    = _ext || '';
 		var fn  = path.normalize(roots[i] + file + _ext);
 		_curExt = _curExt || 0;
-		// console.warn("check !!! ", fn, ei);
+		//console.warn("check !!! ", fn, _curExt);
 		fs.stat(fn, ( err, stats ) => {
 			if ( stats && stats.isFile() ) {
-				// console.warn("Find parent !!! ", fn);
+				//console.warn("Find parent !!! ", fn);
 				cb && cb(null, fn, fn.substr(roots[i].length + 1));
 			}
 			else {
-				// console.warn("Not found !!! ", fn, ei);
+				//console.warn("Not found !!! ", fn, _curExt);
 				if ( possible_ext.length > _curExt ) {
 					this.findParentPath(fs, roots, file, i, possible_ext, cb, _curExt + 1, possible_ext[_curExt])
 				}
@@ -181,6 +181,8 @@ module.exports = {
 	},
 	findParent( fs, roots, file, possible_ext, cb ) {
 		var i = -1, tmp;
+		file  = path.normalize(file);
+		//console.warn("Find parent !!! ", path.normalize(file), roots);
 		while ( ++i < roots.length ) {
 			tmp = file.substr(0, roots[i].length);
 			if ( roots[i] == tmp ) {// found
@@ -229,6 +231,7 @@ module.exports = {
 						"    let name=key.substr(2);" +
 						"    _exports[name] = _exports[name]||req(key);\n" +
 						"});\n";
+				//\"" + RootAlias + "/" + subPath + "/" + "\"+key
 			}
 		)
 		code += "export default _exports;";
