@@ -13,6 +13,7 @@
  */
 
 var path    = require('path'),
+    is      = require('is'),
     resolve = require('resolve');
 
 const utils           = require("./utils");
@@ -25,8 +26,10 @@ module.exports = function ( cfg, opts ) {
 	let plugin;
 	
 	// find da good webpack
-	let wp             = resolve.sync('webpack', { basedir: path.dirname(opts.allWebpackCfg[0]) }),
-	    ExternalModule = require(path.join(path.dirname(wp), 'ExternalModule'));
+	let wp               = resolve.sync('webpack', { basedir: path.dirname(opts.allWebpackCfg[0]) }),
+	    ExternalModule   = require(path.join(path.dirname(wp), 'ExternalModule')),
+	    excludeExternals = opts.vars.externals,
+	    externalRE       = is.string(opts.vars.externals) && new RegExp(opts.vars.externals);
 	
 	return plugin = {
 		sassImporter: function ( next ) {
@@ -70,7 +73,10 @@ module.exports = function ( cfg, opts ) {
 			 */
 			function wpiResolve( data, cb ) {
 				var requireOrigin = data.contextInfo.issuer,
+				    context       = data.context || path.dirname(requireOrigin),
 				    tmpPath;
+				
+				data.wpiOriginRequest = data.request;
 				
 				for ( var i = 0; i < alias.length; i++ ) {
 					if ( alias[i][0].test(data.request) ) {
@@ -80,8 +86,8 @@ module.exports = function ( cfg, opts ) {
 				}
 				
 				// resolve inheritable & relative @todo
-				if ( requireOrigin && /^\./.test(data.request) && (tmpPath = roots.find(r => path.resolve(path.dirname(requireOrigin) + '/' + data.request).startsWith(r))) ) {
-					data.request = (RootAlias + path.resolve(path.dirname(requireOrigin) + '/' + data.request).substr(tmpPath.length)).replace(/\\/g, '/');
+				if ( context && /^\./.test(data.request) && (tmpPath = roots.find(r => path.resolve(context + '/' + data.request).startsWith(r))) ) {
+					data.request = (RootAlias + path.resolve(context + '/' + data.request).substr(tmpPath.length)).replace(/\\/g, '/');
 				}
 				
 				// glob resolving...
@@ -111,9 +117,9 @@ module.exports = function ( cfg, opts ) {
 				    },
 				    apply   = ( e, r, content ) => {
 					    if ( e && !r ) return cb(null, data, content);
+					
 					    data.request = r;
 					    data.file    = true;
-					
 					    cb(null, data, content);
 				    },
 				    key;
@@ -187,16 +193,17 @@ module.exports = function ( cfg, opts ) {
 				if ( requireOrigin &&
 					/^\./.test(url) &&
 					(tmpPath = roots.find(r => path.resolve(path.dirname(requireOrigin) + '/' + url).startsWith(r))) ) {
+					
 					url = (RootAlias + path.resolve(path.dirname(requireOrigin) + '/' + url).substr(tmpPath.length)).replace(/\\/g, '/');
 				}
 				
-				if ( RootAliasRe.test(url) || url[0] === '$' ) {
+				if ( RootAliasRe.test(url) || url[0] === '$' || url[0] === '.' ) {
 					wpiResolve(
 						{
 							contextInfo: {
 								issuer: requireOrigin
 							},
-							request    : url
+							request    : path.normalize(url)
 						},
 						( e, found, contents ) => {
 							if ( found || contents ) {
@@ -216,25 +223,47 @@ module.exports = function ( cfg, opts ) {
 			compiler.plugin("normal-module-factory",
 			                function ( nmf ) {
 				
-				                opts.vars.externals && nmf.plugin('factory', function ( factory ) {
+				
+				                excludeExternals && nmf.plugin('factory', function ( factory ) {
 					                return function ( data, callback ) {
-						                let mkExt = isBuiltinModule(data.request)
-							                || data.wpiOriginRrequest && isBuiltinModule(data.wpiOriginRrequest),
-						                    found;
+						                var requireOrigin = data.contextInfo.issuer,
+						                    context       = data.context || path.dirname(requireOrigin),
+						                    request       = data.wpiOriginRequest || data.request,
+						                    mkExt         = isBuiltinModule(data.request),
+						                    isInRoot;
 						
-						                if ( !mkExt && !opts.allRoots.find(r => data.request.startsWith(r)) ) {
-							                mkExt = true;//fallback.find(p => data.request.startsWith(p))||true;
+						                if ( data.contextInfo.issuer === '' )// entry points ?
+							                return factory(data, callback);
+						
+						                if ( !mkExt ) {
+							                //console.log(data.request, context, roots)
+							                // is it external ? @todo
+							                mkExt = !(
+								                context &&
+								                /^\./.test(data.request)
+								                ? (isInRoot = roots.find(r => path.resolve(context + '/' + data.request).startsWith(r)))
+								                : (isInRoot = roots.find(r => path.resolve(data.request).startsWith(r)))
+							                );
 						                }
 						
-						                if ( mkExt ) {
-							                //console.warn("ext!", mkExt + '/' + found, data.request)
+						                if ( mkExt &&
+							                (
+								                !externalRE
+								                || externalRE.test(data.request)
+							                )
+							                &&
+							                !(!isInRoot && /^\./.test(data.request)) // so it's relative to an internal
+						                ) {
+							                //console.warn("ext!", data)
 							                return callback(null, new ExternalModule(
-								                data.wpiOriginRrequest || data.request,
+								                data.request,
 								                compiler.options.output.libraryTarget
 							                ));
 							
 						                }
 						                else {
+							                //if ( mkExt && !(!isInRoot && /^\./.test(data.request)) )
+							                //console.warn(data.request)
 							                return factory(data, callback);
 						                }
 						
