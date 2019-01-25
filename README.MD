@@ -79,9 +79,6 @@ Add in package.json :
    				// So all inner build inheritable files will be requierable using require("Comp/some/stuff")
    				"rootAlias"   : "Comp",
 
-   				// make anything outside the inheritable folder external
-   				"externals"   : true,
-
    				"webpackPatch": {
    					/* some webpack config patch that will be merged */
    				}
@@ -99,6 +96,8 @@ Add in package.json :
 }
 ```
 
+   				<!--// make anything outside the inheritable folder external-->
+   				<!--"externals"   : true,-->
 In wp configs :
 ```
 

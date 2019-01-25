@@ -12,25 +12,25 @@
  *  @contact : caipilabs@gmail.com
  */
 
-const utils                                        = require("./utils");
-const InheritPlugin                                = require("./InheritPlugin");
-var merge                                          = require('webpack-merge');
-let allConfigs, currentProfile, allPluginInstances = {}, allCfgInstances = {};
+const utils                        = require("./utils");
+const InheritPlugin                = require("./InheritPlugin");
+var merge                          = require('webpack-merge');
+let allConfigs, allPluginInstances = {}, allCfgInstances = {};
 
 module.exports = {
 	getAllConfigs() {
 		return allConfigs = allConfigs || utils.getAllConfigs()
 	},
-	getConfig( profile = currentProfile || 'default' ) {
+	getConfig( profile = process.env.__WPI_PROFILE__ || 'default' ) {
 		return this.getAllConfigs()[profile];
 	},
-	loadModulePath( profile = currentProfile || "default" ) {
+	loadModulePath( profile = process.env.__WPI_PROFILE__ || "default" ) {
 		let cfg = this.getAllConfigs()[profile];
 		
 		let addModulePath = require('app-module-path').addPath;
 		cfg.allModulePath.map(addModulePath)
 	},
-	getSuperWebpackCfg( profile = "default" ) {
+	getSuperWebpackCfg( profile = process.env.__WPI_PROFILE__ || "default" ) {
 		let cfg = this.getAllConfigs()[profile],
 		    wpCfg;
 		
@@ -40,7 +40,6 @@ module.exports = {
 		this.loadModulePath(profile);
 		
 		try {
-			currentProfile = profile;
 			wpCfg = require(cfg.allWebpackCfg[0])
 			if ( cfg.vars.webpackPatch ) {
 				wpCfg = merge.smart(wpCfg, cfg.vars.webpackPatch)
@@ -50,17 +49,16 @@ module.exports = {
 			wpCfg = []
 		}
 		allCfgInstances[profile] = wpCfg;
-		currentProfile           = null;
 		return wpCfg;
 	},
-	plugin( cfg, profile = currentProfile || 'default' ) {
+	plugin( cfg, profile = process.env.__WPI_PROFILE__ || 'default' ) {
 		return allPluginInstances[profile] = allPluginInstances[profile] || InheritPlugin(cfg, this.getAllConfigs()[profile])
 	},
-	isFileExcluded( profile = currentProfile || 'default' ) {
+	isFileExcluded( profile = process.env.__WPI_PROFILE__ || 'default' ) {
 		let allRoots = this.getAllConfigs()[profile].allRoots;
 		return { test: ( path ) => !allRoots.find(r => path.startsWith(r)) }
 	},
-	getHeadRoot( profile = currentProfile || 'default' ) {
+	getHeadRoot( profile = process.env.__WPI_PROFILE__ || 'default' ) {
 		let allModuleRoots = this.getAllConfigs()[profile].allModuleRoots;
 		return allModuleRoots[0]
 	}
