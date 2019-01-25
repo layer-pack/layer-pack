@@ -45,26 +45,52 @@ npm i -s webpack-inherit // on all inheritable projects with wp conf & on the he
 
 Add in package.json :
 
-```
+```js
 {
-  "name": "daProject",
-  "version": "1.0.0",
-  "wpInherit": {
-    "default": {// default profile id
-      "rootFolder": "App",// local root that will be mapped on App/...
-      "extend": [
-        "parentProject" // parentProject must have wpInherit.default with his own extend value
-      ]
-    },
-    // optionally we can define multiple profile
-    "api": {// same profiles must exist in all inherited project
-      "rootFolder": "App",
-      "config": "./webpack.config.api.js", // optional webpack config
-      "extend": [
-        "parentProject"
-      ]
-    }
-  }
+    {
+   	"name"         : "daProject",
+   	"version"      : "1.0.0",
+   	"wpInherit"    : {
+   		"default": {// default profile id
+   			"rootFolder": "App",// local root that will be mapped on App/...
+   			"extend"    : [
+   				"parentProject" // parentProject must have wpInherit.default with his own extend value
+   			]
+   		},
+   		// optionally we can define multiple profile
+   		"api"    : {// same profiles must exist in all inherited project
+   			"rootFolder": "App",
+   			"config"    : "./webpack.config.api.js", // optional webpack config
+   			"extend"    : [
+   				"parentProject"
+   			]
+   		},
+   		// optionally we can define profile with some wp config overrides
+   		"Comp"   : {
+   			"config": "./webpack.config.www.js",
+
+   			// optional profile id to use in the inherited packages
+   			"basedOn": "someSuperProfile_in_parents",
+
+   			// optional vars used in the webpack config ( overrided by child/head package )
+   			"vars"  : {
+   				// all @optional
+   				// override the root folder alias ( default to "App" )
+   				// So all inner build inheritable files will be requierable using require("Comp/some/stuff")
+   				"rootAlias"   : "Comp",
+
+   				// make anything outside the inheritable folder external
+   				"externals"   : true,
+
+   				"webpackPatch": {
+   					/* some webpack config patch that will be merged */
+   				}
+   			},
+   			"extend": [
+   				"parentProject"
+   			]
+   		}
+   	}
   //...
   devDependencies:{
     "parentProject":"^1.0.0"

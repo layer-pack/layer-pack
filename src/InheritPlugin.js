@@ -9,27 +9,37 @@
  * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  *  @author : Nathanael Braun
- *  @contact : caipilabs@gmail.com
+ *  @contact : wpilabs@gmail.com
  */
 
-var path    = require('path');
-const utils = require("./utils");
+var path    = require('path'),
+    resolve = require('resolve');
+
+const utils           = require("./utils");
+const isBuiltinModule = require('is-builtin-module');
 /**
  * Main wpi plugin
  *
  */
 module.exports = function ( cfg, opts ) {
 	let plugin;
+	
+	// find da good webpack
+	let wp             = resolve.sync('webpack', { basedir: path.dirname(opts.allWebpackCfg[0]) }),
+	    ExternalModule = require(path.join(path.dirname(wp), 'ExternalModule'));
+	
 	return plugin = {
 		sassImporter: function ( next ) {
 			return ( url, requireOrigin, cb ) =>
-				plugin._sassImporter(url, requireOrigin, next
-				                                         ? e => next(url, requireOrigin, cb)
-				                                         : cb)
+				plugin._sassImporter(url, requireOrigin, cb, next
+				                                             ? e => next(url, requireOrigin, cb)
+				                                             : null)
 		},
 		apply       : function ( compiler ) {
 			var cache               = {},
 			    plugin              = this,
+			    RootAlias           = opts.vars.rootAlias || "App",
+			    RootAliasRe         = new RegExp("^" + RootAlias, 'g'),
 			    roots               = opts.allRoots,
 			    alias               = Object.keys(opts.extAliases || {})
 			                                .map(( k ) => ([new RegExp(k), opts.extAliases[k]])),
@@ -71,7 +81,7 @@ module.exports = function ( cfg, opts ) {
 				
 				// resolve inheritable & relative @todo
 				if ( requireOrigin && /^\./.test(data.request) && (tmpPath = roots.find(r => path.resolve(path.dirname(requireOrigin) + '/' + data.request).startsWith(r))) ) {
-					data.request = ("App" + path.resolve(path.dirname(requireOrigin) + '/' + data.request).substr(tmpPath.length)).replace(/\\/g, '/');
+					data.request = (RootAlias + path.resolve(path.dirname(requireOrigin) + '/' + data.request).substr(tmpPath.length)).replace(/\\/g, '/');
 				}
 				
 				// glob resolving...
@@ -82,6 +92,8 @@ module.exports = function ( cfg, opts ) {
 						data.request,
 						contextDependencies,
 						fileDependencies,
+						RootAlias,
+						RootAliasRe,
 						function ( e, filePath, content ) {
 							data.path    = '/';
 							data.request = filePath;
@@ -147,11 +159,11 @@ module.exports = function ( cfg, opts ) {
 				}
 				
 				// Inheritable root based resolving
-				if ( /^App/.test(data.request) ) {
+				if ( RootAliasRe.test(data.request) ) {
 					return utils.findParentPath(
 						compiler.inputFileSystem,
 						roots,
-						data.request.replace(/^App/ig, ''),
+						data.request.replace(RootAliasRe, ''),
 						0,
 						availableExts,
 						function ( e, filePath, file ) {
@@ -168,23 +180,17 @@ module.exports = function ( cfg, opts ) {
 				resolve(null, data.request);
 			}
 			
-			// wp hook
-			compiler.plugin("normal-module-factory",
-			                function ( nmf ) {
-				                nmf.plugin("before-resolve", wpiResolve);
-			                }
-			);
 			
 			// sass resolver
-			this._sassImporter = function ( url, requireOrigin, cb ) {
+			this._sassImporter = function ( url, requireOrigin, cb, next ) {
 				let tmpPath;
 				if ( requireOrigin &&
 					/^\./.test(url) &&
 					(tmpPath = roots.find(r => path.resolve(path.dirname(requireOrigin) + '/' + url).startsWith(r))) ) {
-					url = ("App" + path.resolve(path.dirname(requireOrigin) + '/' + url).substr(tmpPath.length)).replace(/\\/g, '/');
+					url = (RootAlias + path.resolve(path.dirname(requireOrigin) + '/' + url).substr(tmpPath.length)).replace(/\\/g, '/');
 				}
 				
-				if ( /^(\$|App\/)/.test(url) ) {
+				if ( RootAliasRe.test(url) || url[0] === '$' ) {
 					wpiResolve(
 						{
 							contextInfo: {
@@ -197,14 +203,46 @@ module.exports = function ( cfg, opts ) {
 								cb && cb(contents && { contents } || { file: found.request });
 							}
 							else {
-								msImporter(url, requireOrigin, cb)
+								next && next()
 							}
 							
 						}
 					)
 				}
-				else return msImporter(url, requireOrigin, cb);
+				else return cb(url, requireOrigin, cb);
 			};
+			
+			// wp hook
+			compiler.plugin("normal-module-factory",
+			                function ( nmf ) {
+				
+				                opts.vars.externals && nmf.plugin('factory', function ( factory ) {
+					                return function ( data, callback ) {
+						                let mkExt = isBuiltinModule(data.request)
+							                || data.wpiOriginRrequest && isBuiltinModule(data.wpiOriginRrequest),
+						                    found;
+						
+						                if ( !mkExt && !opts.allRoots.find(r => data.request.startsWith(r)) ) {
+							                mkExt = true;//fallback.find(p => data.request.startsWith(p))||true;
+						                }
+						
+						                if ( mkExt ) {
+							                //console.warn("ext!", mkExt + '/' + found, data.request)
+							                return callback(null, new ExternalModule(
+								                data.wpiOriginRrequest || data.request,
+								                compiler.options.output.libraryTarget
+							                ));
+							
+						                }
+						                else {
+							                return factory(data, callback);
+						                }
+						
+					                };
+				                });
+				                nmf.plugin("before-resolve", wpiResolve);
+			                }
+			);
 			
 			// should deal with hot reload watched files & dirs
 			compiler.plugin('after-emit', ( compilation, cb ) => {

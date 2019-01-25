@@ -14,6 +14,7 @@
 
 const utils                                        = require("./utils");
 const InheritPlugin                                = require("./InheritPlugin");
+var merge                                          = require('webpack-merge');
 let allConfigs, currentProfile, allPluginInstances = {}, allCfgInstances = {};
 
 module.exports = {
@@ -40,7 +41,10 @@ module.exports = {
 		
 		try {
 			currentProfile = profile;
-			wpCfg          = require(cfg.allWebpackCfg[0])
+			wpCfg = require(cfg.allWebpackCfg[0])
+			if ( cfg.vars.webpackPatch ) {
+				wpCfg = merge.smart(wpCfg, cfg.vars.webpackPatch)
+			}
 		} catch ( e ) {
 			console.error(e)
 			wpCfg = []

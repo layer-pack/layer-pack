@@ -51,9 +51,8 @@ module.exports = {
 		    allWebpackCfg  = [],
 		    allModuleRoots = [],
 		    allCfg         = [],
-		    allModuleId    = [],
-		    rootAlias      = pkgConfig.rootAlias || 'App',
-		    rootDir        = pkgConfig.rootDir || './App',
+		    vars           = {},
+		    rootDir        = pkgConfig.rootFolder || './App',
 		    /**
 		     * Find & return all  inherited pkg paths
 		     * @type {Array}
@@ -61,16 +60,22 @@ module.exports = {
 		    allExtPath     = (() => {
 			    let list = [], seen = {};
 			
-			    pkgConfig.extend.forEach(function walk( p, i, x, mRoot ) {
+			    pkgConfig.extend.forEach(function walk( p, i, x, mRoot, cProfile ) {
 				    mRoot     = mRoot || projectRoot;
+				    cProfile  = cProfile || pkgConfig.basedOn || profile;
 				    let where = "/node_modules/",
 				        cfg   = fs.existsSync(path.normalize(mRoot + where + p + "/package.json")) &&
 					        JSON.parse(fs.readFileSync(path.normalize(mRoot + where + p + "/package.json")))
 				
-				    if ( cfg.wpInherit && cfg.wpInherit[profile] && cfg.wpInherit[profile].extend )
-					    cfg.wpInherit[profile].extend.forEach(( mid, y ) => walk(mid, y, null, mRoot + where + p))
+				    if ( cfg.wpInherit && cfg.wpInherit[cProfile] && cfg.wpInherit[cProfile].extend )
+					    cfg.wpInherit[cProfile].extend.forEach(( mid, y ) => walk(mid, y, null, mRoot + where + p, cfg.wpInherit[profile].basedOn))
 				    else {
-					    throw new Error("webpack-inherit : Can't inherit an not installed module " + p)
+					    if ( !cfg )
+						    throw new Error("webpack-inherit : Can't inherit an not installed module :\nNot found :" + mRoot + where + p)
+					    if ( !cfg.wpInherit )
+						    throw new Error("webpack-inherit : Can't inherit a module with no wpInherit in the package.json :\nAt :" + mRoot + where + p)
+					    if ( !cfg.wpInherit[cProfile] )
+						    throw new Error("webpack-inherit : Can't inherit a module without the requested profile\nAt :" + mRoot + where + p + "\nRequested profile :" + cProfile)
 				    }
 				
 				    list.push(path.normalize(mRoot + where + p));
@@ -94,25 +99,31 @@ module.exports = {
 				    allWebpackCfg.push(path.normalize(projectRoot + '/' + pkgConfig.config))
 			
 			    allExtPath.forEach(
-				    function ( where ) {
-					    let cfg = fs.existsSync(path.normalize(where + "/package.json")) &&
+				    function ( where, i, arr, cProfile ) {
+					    cProfile = cProfile || pkgConfig.basedOn || profile;
+					    let cfg  = fs.existsSync(path.normalize(where + "/package.json")) &&
 						    JSON.parse(fs.readFileSync(path.normalize(where + "/package.json")));
 					
 					    allModuleRoots.push(where)
 					
-					    cfg = cfg.wpInherit[profile];
+					    cfg = cfg.wpInherit[cProfile];
 					
 					    if ( cfg && cfg.aliases )
 						    extAliases = {
 							    ...extAliases,
 							    ...cfg.aliases
 						    };
+					    if ( cfg && cfg.vars )
+						    vars = {
+							    ...vars,
+							    ...cfg.vars
+						    };
 					    if ( cfg )
 						    allCfg.push(cfg);
 					    if ( cfg.config )
 						    allWebpackCfg.push(path.normalize(where + '/' + cfg.config));
 					
-					    roots.push(fs.realpathSync(path.normalize(where + "/" + (cfg.rootDir || 'App'))));
+					    roots.push(fs.realpathSync(path.normalize(where + "/" + (cfg.rootFolder || 'App'))));
 					
 					    cfg.libsPath &&
 					    fs.existsSync(path.normalize(where + "/" + cfg.libsPath))
@@ -126,8 +137,20 @@ module.exports = {
 			    allModulePath.push("node_modules")
 			    return roots.map(path.normalize.bind(path));
 		    })();
+		
+		if ( pkgConfig && pkgConfig.aliases )
+			extAliases = {
+				...extAliases,
+				...pkgConfig.aliases
+			};
+		if ( pkgConfig && pkgConfig.vars )
+			vars = {
+				rootAlias: 'App',
+				...vars,
+				...pkgConfig.vars
+			};
 		allCfg.push(pkgConfig)
-		return { allWebpackCfg, allModulePath, allRoots, allExtPath, extAliases, allModuleRoots, allCfg };
+		return { allWebpackCfg, allModulePath, allRoots, allExtPath, extAliases, allModuleRoots, allCfg, vars };
 	},
 	
 	// find a $super file in the available roots
@@ -169,7 +192,9 @@ module.exports = {
 	/**
 	 * Create a virtual file accessible by webpack that map a given glob query like "App/somewhere/**.js"
 	 */
-	indexOf( vfs, roots, input, contextDependencies, fileDependencies, cb ) {
+	indexOf( vfs, roots, input, contextDependencies, fileDependencies,
+	         RootAlias,
+	         RootAliasRe, cb ) {
 		var files       = {},
 		    code        = "",
 		    virtualFile = path.normalize(
@@ -182,7 +207,7 @@ module.exports = {
 		;
 		
 		
-		input   = input.replace(/\/$/, '').replace(/^App\//, '');
+		input   = input.replace(/\/$/, '').replace(RootAliasRe, '').substr(1); // rm App/
 		subPath = path.dirname(input.substr(0, input.indexOf('*')) + "a")
 		re      =
 			input.substr(subPath.length + 1)
@@ -221,7 +246,9 @@ module.exports = {
 	/**
 	 * Create a virtual file accessible by webpack that map a given glob query like "App/somewhere/**.scss"
 	 */
-	indexOfScss( vfs, roots, input, contextDependencies, fileDependencies, cb ) {
+	indexOfScss( vfs, roots, input, contextDependencies, fileDependencies,
+	             RootAlias,
+	             RootAliasRe, cb ) {
 		var files       = {},
 		    code        = "",
 		    virtualFile = path.normalize(
@@ -230,7 +257,7 @@ module.exports = {
 			                                                       .replace(/[^\w\.]/ig, '_') +
 				    '.gen.scss'));
 		
-		input = input.replace(/\/$/, '').replace(/^App\//, '');
+		input = input.replace(/\/$/, '').replace(RootAliasRe, '').substr(1); // rm App/
 		roots.forEach(
 			( _root, lvl ) => {
 				contextDependencies.push(
@@ -243,10 +270,10 @@ module.exports = {
 				glob.sync([_root + '/' + path.normalize(input)])
 				    .forEach(
 					    file => {
-						    !files["App" + file.substr(_root.length)]
+						    !files[RootAlias + file.substr(_root.length)]
 						    && fileDependencies.push(path.normalize(file));
 						
-						    files["App" + file.substr(_root.length)] = true
+						    files[RootAlias + file.substr(_root.length)] = true
 					    }
 				    )
 			}

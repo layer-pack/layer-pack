@@ -12,32 +12,20 @@
  *  @contact : caipilabs@gmail.com
  */
 
-'use strict';
+var wpInherit = require('..'),
+    is        = require('is'),
+    cfg       = wpInherit.getSuperWebpackCfg(process.env.__WPI_PROFILE__);
 
-var path     = require('path'),
-    util     = require('util'),
-    resolve  = require('resolve'),
-    execSync = require('child_process').execSync,
-    cmd,
-    wpCli,
-    argz     = process.argv.slice(2),
-    profile  = 'default';
+if ( !is.array(cfg) )
+	cfg = [cfg];
 
-var wpi = require('../src');
+cfg = cfg.map(
+	cfg => (
+		{
+			...cfg,
+			context: wpInherit.getHeadRoot(process.env.__WPI_PROFILE__)
+		}
+	)
+)
 
-if ( argz[0] && /^\:.*$/.test(argz[0]) )
-	profile = argz.shift().replace(/^\:(.*)$/, '$1');
-
-if ( !wpi.getConfig(profile) )
-	throw new Error("Can't find profile '" + profile + "' in the inherited packages");
-
-// find da good webpack
-wpCli = resolve.sync('webpack', { basedir: path.dirname(wpi.getConfig(profile).allWebpackCfg[0]) });
-wpCli = path.join(wpCli.substr(0, wpCli.lastIndexOf("node_modules")), 'node_modules/.bin/webpack-dev-server');
-
-console.info("Compile using profile id : ", profile);
-
-cmd = execSync(wpCli + (process.platform == 'win32'
-                        ? '.cmd'
-                        : '') + ' --config ' + __dirname + '/../etc/webpack.config.js' + ' ' +
-	               argz.join(' '), { stdio: 'inherit', env: {'__WPI_PROFILE__': profile} });
+module.exports = cfg;
