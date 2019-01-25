@@ -25,7 +25,7 @@ var path     = require('path'),
     profile  = 'default';
 
 var wpi = require('../src');
-try {
+//try {
 	if ( argz[0] && /^\:.*$/.test(argz[0]) )
 		profile = argz.shift().replace(/^\:(.*)$/, '$1');
 	
@@ -42,7 +42,7 @@ try {
 	                        ? '.cmd'
 	                        : '') + ' --config ' + wpi.getConfig(profile).allWebpackCfg[0] + ' ' +
 		               argz.join(' '), { stdio: 'inherit' });
-} catch ( e ) {
-	console.warn('\n\nFail with err : ' + e + '\n\n');
-	process.exit();
-}
+//} catch ( e ) {
+//	console.warn('\n\nFail with err : ' + e + '\n\n');
+//	process.exit();
+//}

@@ -28,7 +28,9 @@
   },
   "scripts": {},
   "devDependencies": {},
-  "peerDependencies": {},
+  "peerDependencies": {
+    "webpack": "^2.7.0 || ^4.0.0"
+  },
   "dependencies": {
     "app-module-path": "^2.2.0",
     "fast-glob": "^2.2.6",
@@ -37,6 +39,7 @@
     "resolve": "^1.9.0",
     "shortid": "^2.2.14",
     "virtual-module-webpack-plugin": "^0.3.0",
-    "walk": "^2.3.9"
+    "walk": "^2.3.9",
+    "webpack-merge": "^4.2.1"
   }
 }
