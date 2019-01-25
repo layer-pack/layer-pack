@@ -227,7 +227,7 @@ module.exports = function ( cfg, opts ) {
 						                }
 						
 						                if ( mkExt ) {
-							                console.warn("ext!", mkExt + '/' + found, data.request)
+							                //console.warn("ext!", mkExt + '/' + found, data.request)
 							                return callback(null, new ExternalModule(
 								                data.wpiOriginRrequest || data.request,
 								                compiler.options.output.libraryTarget

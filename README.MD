@@ -70,16 +70,18 @@ Add in package.json :
    			"config": "./webpack.config.www.js",
 
    			// optional profile id to use in the inherited packages
-   			"basedOn": "someSuperProfile",
+   			"basedOn": "someSuperProfile_in_parents",
 
    			// optional vars used in the webpack config ( overrided by child/head package )
    			"vars"  : {
-   				// @optional
+   				// all @optional
    				// override the root folder alias ( default to "App" )
    				// So all inner build inheritable files will be requierable using require("Comp/some/stuff")
-   				"externals"   : true,
    				"rootAlias"   : "Comp",
-   				"target"      : "./build",
+
+   				// make anything outside the inheritable folder external
+   				"externals"   : true,
+
    				"webpackPatch": {
    					/* some webpack config patch that will be merged */
    				}

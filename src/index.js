@@ -41,7 +41,7 @@ module.exports = {
 		
 		try {
 			currentProfile = profile;
-			wpCfg          = require(cfg.allWebpackCfg[0])
+			wpCfg = require(cfg.allWebpackCfg[0])
 			if ( cfg.vars.webpackPatch ) {
 				wpCfg = merge.smart(wpCfg, cfg.vars.webpackPatch)
 			}

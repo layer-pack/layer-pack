@@ -51,8 +51,7 @@ module.exports = {
 		    allWebpackCfg  = [],
 		    allModuleRoots = [],
 		    allCfg         = [],
-		    vars           = {
-		    },
+		    vars           = {},
 		    rootDir        = pkgConfig.rootFolder || './App',
 		    /**
 		     * Find & return all  inherited pkg paths
