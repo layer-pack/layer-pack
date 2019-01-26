@@ -58,7 +58,7 @@ module.exports = {
 		     * @type {Array}
 		     */
 		    allExtPath     = (() => {
-			    let list = [], seen = {};
+			    let list = [], flist = [], lmid = [], seen = {};
 			
 			    pkgConfig.extend.forEach(function walk( p, i, x, mRoot, cProfile ) {
 				    mRoot     = mRoot || projectRoot;
@@ -79,13 +79,18 @@ module.exports = {
 				    }
 				
 				    list.push(path.normalize(mRoot + where + p));
-				    allModId.push(p);
+				    lmid.push(p);
 			    })
 			
-			
-			    list     = list.filter(e => (seen[e] ? false : (seen[e] = true)));
-			    seen     = {};
-			    allModId = allModId.filter(e => (seen[e] ? false : (seen[e] = true)));
+			    /**
+			     * dedupe inherited ( last is first )
+			     */
+			    for ( let i = 0; i < lmid.length; i++ ) {
+				    if ( lmid.lastIndexOf(lmid[i]) == i ) {
+					    allModId.push(lmid[i]);
+					    flist.push(list[i]);
+				    }
+			    }
 			
 			    return list;
 		    })(),
