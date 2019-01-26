@@ -47,7 +47,7 @@ module.exports = {
 	getConfigByProfiles( projectRoot, pkgConfig, profile ) {
 		var extAliases     = {},
 		    allModulePath  = [],
-		    allExternals   = [],
+		    allModId       = [],
 		    allWebpackCfg  = [],
 		    allModuleRoots = [],
 		    allCfg         = [],
@@ -79,10 +79,14 @@ module.exports = {
 				    }
 				
 				    list.push(path.normalize(mRoot + where + p));
+				    allModId.push(p);
 			    })
 			
 			
-			    list.filter(e => (seen[e] ? true : (seen[e] = true, false)))
+			    list     = list.filter(e => (seen[e] ? false : (seen[e] = true)));
+			    seen     = {};
+			    allModId = allModId.filter(e => (seen[e] ? false : (seen[e] = true)));
+			
 			    return list;
 		    })(),
 		    allRoots       = (function () {
@@ -149,8 +153,18 @@ module.exports = {
 				...vars,
 				...pkgConfig.vars
 			};
-		allCfg.push(pkgConfig)
-		return { allWebpackCfg, allModulePath, allRoots, allExtPath, extAliases, allModuleRoots, allCfg, vars };
+		allCfg.unshift(pkgConfig);
+		return {
+			allWebpackCfg,
+			allModulePath,
+			allRoots,
+			allExtPath,
+			extAliases,
+			allModuleRoots,
+			allCfg,
+			allModId,
+			vars
+		};
 	},
 	
 	// find a $super file in the available roots
