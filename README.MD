@@ -172,6 +172,9 @@ wpi-dev-server
 wpi :api # use webpack params here
 # or
 wpi-dev-server :anotherProfile
+
+
+wpi :? # get available profiles
 ```
 
 Or retrieve the config by creating a new webpack config :

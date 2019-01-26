@@ -18,18 +18,37 @@ var merge                          = require('webpack-merge');
 let allConfigs, allPluginInstances = {}, allCfgInstances = {};
 
 module.exports = {
+	/**
+	 * Retrieve all available configs by profile id
+	 * @returns {{}}
+	 */
 	getAllConfigs() {
 		return allConfigs = allConfigs || utils.getAllConfigs()
 	},
+	/**
+	 * Retrieve the current profile config or the asked one
+	 * @param profile
+	 * @returns {*}
+	 */
 	getConfig( profile = process.env.__WPI_PROFILE__ || 'default' ) {
 		return this.getAllConfigs()[profile];
 	},
+	/**
+	 * Add inherited node_modules paths to node
+	 * @todo : somethink needed as it could lead to absurd node_modules list
+	 * @param profile
+	 */
 	loadModulePath( profile = process.env.__WPI_PROFILE__ || "default" ) {
 		let cfg = this.getAllConfigs()[profile];
 		
 		let addModulePath = require('app-module-path').addPath;
 		cfg.allModulePath.map(addModulePath)
 	},
+	/**
+	 * Retrieve the inherited wp cfg for the given or current profile id
+	 * @param profile
+	 * @returns {*}
+	 */
 	getSuperWebpackCfg( profile = process.env.__WPI_PROFILE__ || "default" ) {
 		let cfg = this.getAllConfigs()[profile],
 		    wpCfg;
@@ -51,13 +70,30 @@ module.exports = {
 		allCfgInstances[profile] = wpCfg;
 		return wpCfg;
 	},
+	/**
+	 * Return a 'singleton' of the plugin for the given or current profile id
+	 * @param cfg
+	 * @param profile
+	 * @returns {*}
+	 */
 	plugin( cfg, profile = process.env.__WPI_PROFILE__ || 'default' ) {
 		return allPluginInstances[profile] = allPluginInstances[profile] || InheritPlugin(cfg, this.getAllConfigs()[profile])
 	},
+	/**
+	 * Return a tester fn for the given or current profile id
+	 * Tester return true if the given file path is outside inheritable dir
+	 * @param profile
+	 * @returns {{test: (function(*): boolean)}}
+	 */
 	isFileExcluded( profile = process.env.__WPI_PROFILE__ || 'default' ) {
 		let allRoots = this.getAllConfigs()[profile].allRoots;
 		return { test: ( path ) => !allRoots.find(r => path.startsWith(r)) }
 	},
+	/**
+	 * Return the root directory of the head package
+	 * @param profile
+	 * @returns {*}
+	 */
 	getHeadRoot( profile = process.env.__WPI_PROFILE__ || 'default' ) {
 		let allModuleRoots = this.getAllConfigs()[profile].allModuleRoots;
 		return allModuleRoots[0]

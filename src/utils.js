@@ -14,7 +14,6 @@
 
 
 var path                = require("path"),
-    fs                  = require("fs"),
     fs                  = require('fs'),
     VirtualModulePlugin = require('virtual-module-webpack-plugin'),
     glob                = require('fast-glob');
@@ -47,7 +46,7 @@ module.exports = {
 	getConfigByProfiles( projectRoot, pkgConfig, profile ) {
 		var extAliases     = {},
 		    allModulePath  = [],
-		    allExternals   = [],
+		    allModId       = [],
 		    allWebpackCfg  = [],
 		    allModuleRoots = [],
 		    allCfg         = [],
@@ -58,7 +57,7 @@ module.exports = {
 		     * @type {Array}
 		     */
 		    allExtPath     = (() => {
-			    let list = [], seen = {};
+			    let list = [], flist = [], lmid = [], seen = {};
 			
 			    pkgConfig.extend.forEach(function walk( p, i, x, mRoot, cProfile ) {
 				    mRoot     = mRoot || projectRoot;
@@ -79,10 +78,19 @@ module.exports = {
 				    }
 				
 				    list.push(path.normalize(mRoot + where + p));
+				    lmid.push(p);
 			    })
 			
+			    /**
+			     * dedupe inherited ( last is first )
+			     */
+			    for ( let i = 0; i < lmid.length; i++ ) {
+				    if ( lmid.lastIndexOf(lmid[i]) == i ) {
+					    allModId.push(lmid[i]);
+					    flist.push(list[i]);
+				    }
+			    }
 			
-			    list.filter(e => (seen[e] ? true : (seen[e] = true, false)))
 			    return list;
 		    })(),
 		    allRoots       = (function () {
@@ -149,8 +157,18 @@ module.exports = {
 				...vars,
 				...pkgConfig.vars
 			};
-		allCfg.push(pkgConfig)
-		return { allWebpackCfg, allModulePath, allRoots, allExtPath, extAliases, allModuleRoots, allCfg, vars };
+		allCfg.unshift(pkgConfig);
+		return {
+			allWebpackCfg,
+			allModulePath,
+			allRoots,
+			allExtPath,
+			extAliases,
+			allModuleRoots,
+			allCfg,
+			allModId,
+			vars
+		};
 	},
 	
 	// find a $super file in the available roots

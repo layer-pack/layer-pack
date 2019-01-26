@@ -28,6 +28,19 @@ var path     = require('path'),
 if ( argz[0] && /^\:.*$/.test(argz[0]) )
 	profile = argz.shift().replace(/^\:(.*)$/, '$1');
 
+if ( profile == "?" ) {
+	console.info("Here the available profiles :")
+	let confs = wpi.getAllConfigs();
+	Object.keys(confs)
+	      .forEach(
+		      p => {
+			      console.info(p + " using rootAlias '" + confs[p].vars.rootAlias + "' inheriting : ",
+			                   confs[p].allModId[0] + ":" + (confs[p].allCfg[0].basedOn || p))
+		      }
+	      )
+	return;
+}
+
 if ( !wpi.getConfig(profile) )
 	throw new Error("Can't find profile '" + profile + "' in the inherited packages");
 
