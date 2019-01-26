@@ -254,10 +254,10 @@ module.exports = function ( cfg, opts ) {
 							                &&
 							                !(!isInRoot && /^\./.test(data.request)) // so it's relative to an internal
 						                ) {
-							                //console.warn("ext!", data)
+							                //console.warn("ext!", request);
 							                return callback(null, new ExternalModule(
-								                data.request,
-								                compiler.options.output.libraryTarget
+								                request,
+								                opts.vars.externalMode || "commonjs"
 							                ));
 							
 						                }

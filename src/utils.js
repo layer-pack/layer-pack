@@ -151,6 +151,10 @@ module.exports = {
 				...extAliases,
 				...pkgConfig.aliases
 			};
+		vars = {
+			rootAlias: 'App',
+			...vars
+		}
 		if ( pkgConfig && pkgConfig.vars )
 			vars = {
 				rootAlias: 'App',
