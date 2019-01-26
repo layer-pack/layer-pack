@@ -14,7 +14,6 @@
 
 
 var path                = require("path"),
-    fs                  = require("fs"),
     fs                  = require('fs'),
     VirtualModulePlugin = require('virtual-module-webpack-plugin'),
     glob                = require('fast-glob');
