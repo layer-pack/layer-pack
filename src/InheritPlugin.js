@@ -159,7 +159,7 @@ module.exports = function ( cfg, opts ) {
 								return resolve(e, "", "/* Parent not found for " + requireOrigin + '*/\n');
 							}
 							
-							resolve(null, filePath);
+							resolve(null, path.relative(opts.allModuleRoots[0], filePath));
 						}
 					);
 				}
@@ -179,7 +179,7 @@ module.exports = function ( cfg, opts ) {
 								              data.request, requireOrigin);
 								return resolve(404)
 							}
-							resolve(null, filePath);
+							resolve(null, path.relative(opts.allModuleRoots[0], filePath));
 						}
 					);
 				}
