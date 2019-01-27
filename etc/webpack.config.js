@@ -14,7 +14,7 @@
 
 var wpInherit = require('..'),
     is        = require('is'),
-    cfg       = wpInherit.getSuperWebpackCfg(process.env.__WPI_PROFILE__);
+    cfg       = wpInherit.getSuperWebpackCfg(process.env.__WPI_PROFILE__, true);
 
 if ( !is.array(cfg) )
 	cfg = [cfg];

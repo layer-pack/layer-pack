@@ -49,7 +49,7 @@ module.exports = {
 	 * @param profile
 	 * @returns {*}
 	 */
-	getSuperWebpackCfg( profile = process.env.__WPI_PROFILE__ || "default" ) {
+	getSuperWebpackCfg( profile = process.env.__WPI_PROFILE__ || "default", head ) {
 		let cfg = this.getAllConfigs()[profile],
 		    wpCfg;
 		
@@ -59,7 +59,11 @@ module.exports = {
 		this.loadModulePath(profile);
 		
 		try {
-			wpCfg = require(cfg.allWebpackCfg[0])
+			if ( !head && cfg.allCfg[0].config && cfg.allWebpackCfg[1] )
+				wpCfg = require(cfg.allWebpackCfg[1]);
+			else
+				wpCfg = require(cfg.allWebpackCfg[0]);
+			
 			if ( cfg.vars.webpackPatch ) {
 				wpCfg = merge.smart(wpCfg, cfg.vars.webpackPatch)
 			}
