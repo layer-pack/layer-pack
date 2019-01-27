@@ -2,7 +2,7 @@
 <h1 align="center">webpack-inherit</h1>
 <br/>
 <p align="center">
-Webpack plugin for creating advanced code architectures and pipelines.<br/>
+Webpack plugin for creating advanced code architectures & pipelines.<br/>
 Easily namespace, compose, extend and build your Webpack projects with minimal and versioned configs
 </p>
 <h1></h1>
@@ -32,15 +32,36 @@ So you can easily override & extend any files in a project, share most of the co
 
 ```jsx
 import $super from "$super";
-// or require('$super')
+
+// Add some stuff or HOCs fn
 class MyOverrided extend $super{
 //...
 }
 ```
 
+```scss
+@import "$super";
+
+// do some css additions
+.theSameWithA{
+    backgroud : red
+}
+```
+
 ### Do glob require on inherited directory
 
-So you can easily create/inherit modules & extensions and require them with some import("App/extensions/*.(js|scss)")
+So you can easily create/inherit modules & extensions and require them using :
+
+```jsx
+import allModules from "App/modules/*.module.js";
+// or import allModules from "App/modules/*/index.js";
+```
+
+```scss
+
+@import "App/modules/*.module.scss"; // 1 import to rulz them all
+
+```
 
 ### Even more :
 
