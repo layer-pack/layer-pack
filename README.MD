@@ -44,7 +44,7 @@ class MyOverrided extend $super{
 
 // do some css additions
 .theSameWithA{
-    backgroud : red
+    backgroud : red;
 }
 ```
 
