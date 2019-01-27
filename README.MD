@@ -40,7 +40,15 @@ class MyOverrided extend $super{
 
 ### Do glob require on inherited directory
 
-So you can easily create/inherit modules & extensions and require them with some import("App/extensions/*.(js|scss)")
+So you can easily create/inherit modules & extensions and require them using :
+
+```jsx
+import allModules from "App/modules/*.module.js";
+// or import allModules from "App/modules/*/index.js";
+```
+```scss
+@import "App/modules/*.module.scss";
+```
 
 ### Even more :
 
