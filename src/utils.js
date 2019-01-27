@@ -9,7 +9,7 @@
  * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  *  @author : Nathanael Braun
- *  @contact : caipilabs@gmail.com
+ *  @contact : n8tz.js@gmail.com
  */
 
 
@@ -68,7 +68,7 @@ module.exports = {
 				
 				    list.push(path.normalize(mRoot + where + p));
 				    lmid.push(p);
-				    
+				
 				    if ( cfg.wpInherit && cfg.wpInherit[cProfile] && cfg.wpInherit[cProfile].extend )
 					    cfg.wpInherit[cProfile].extend.forEach(( mid, y ) => walk(mid, y, null, mRoot + where + p, cfg.wpInherit[cProfile].basedOn))
 				    else {
@@ -124,8 +124,8 @@ module.exports = {
 						    };
 					    if ( cfg && cfg.vars )
 						    vars = {
-							    ...vars,
-							    ...cfg.vars
+							    ...cfg.vars,
+							    ...vars
 						    };
 					    if ( cfg )
 						    allCfg.push(cfg);

@@ -1,12 +1,36 @@
-# webpack-inherit
 
+<h1 align="center">webpack-inherit</h1>
+<h1 align="center">
 <a href="https://www.npmjs.com/package/webpack-inherit">
 <img src="https://img.shields.io/npm/v/webpack-inherit.svg" alt="NPM" /></a>
+<img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat" />
+</h1>
+<br/>
+<p align="center">
+Webpack plugin for creating advanced code architectures and pipelines<br/>
+Easily namespace, compose, extend and build your Webpack projects with minimal and versioned configurations
+</p>
+<br/>
+
+____
 
 What you can do with it :
-- Inherit multiple projects ( using webpack-inherit )
 
- So you can override any files in you're project & use cool things like that :
+- **Namespace you're application**
+
+So you can stop using easily broken relative imports :
+```
+// import stuff from "../../../config"; // no more
+import stuff from "App/config"; // aw yeah
+```
+
+- **Inherit some webpack config, and use it on you're project**
+
+Thus, you can put your configuration in npm packages that can be inherited; and easily exchanged !
+
+- **Inherit multiple source tree in the same namespace**
+
+So you can easily override & extend any files in a project, share most of code between them & use cool things like that :
 ```
 import $super from "$super";
 // or require('$super')
@@ -15,21 +39,16 @@ class MyOverrided extend $super{
 }
 ```
 
-- Inherit a project with its webpack config, and use it on you're project
-
-So you can put you'r config in some inheritable npm packages;
-and switch them easily !
-
-- Do glob require on inherited directory
+- **Do glob require on inherited directory**
 
 So you can easily create/inherit modules & extensions and require them with some import("App/extensions/*.(js|scss)")
 
 - Easily override node_modules
-- Compile multiples inherited & versioned projects in 1 head package
+- Combine different namespaces & versioned projects in 1 head package
+- Share unique build conf package for projects, modules or extensions
 - Etc...
 
-
-This plugin is working, but still in beta stage  ( not well tested/optimized for now )<br/>
+This awesome plugin is working, but still in beta stage  ( not well tested/optimized for now )<br/>
 
 Feel free to test / feedback / make contribs<br/>
 
