@@ -14,10 +14,6 @@ Allows to easily namespace, compose, extend and build your Webpack projects usin
 
 ## What you can do with it :
 
-### Inherit and/or extend webpack config from dependencies packages, and use it on you're project
-
-Thus, you can put your configuration in npm packages that can be extended or easily switched !
-
 ### Inherit multiple source tree in the same namespace
 
 So you can easily override & extend any files in a project, share most of the code between them & use cool things like that :
@@ -39,6 +35,10 @@ class MyOverrided extend $super{
     backgroud : red;
 }
 ```
+
+### Inherit and/or extend webpack config from dependencies packages, and use it on you're project
+
+So you can put your configuration in some npm packages and easily extend / switch them !
 
 ### Namespace you're application
 
@@ -218,7 +218,7 @@ wpi-dev-server :anotherProfile
 wpi :? # get available profiles
 ```
 
-Or create a new webpack config in your package to make some additions :
+Or create a new webpack config, directly usable with the webpack cli, to make some additions :
 
 webpack.config.js
 ```jsx
