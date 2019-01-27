@@ -3,7 +3,7 @@
 <br/>
 <p align="center">
 Webpack plugin for better code pipelines & architectures.<br/>
-Allows to easily namespace, compose, extend and build your Webpack projects with shared and versioned configs
+Allows to easily namespace, compose, extend and build your Webpack projects using shared and versioned configs
 </p>
 <h1></h1>
 <p align="center">
@@ -14,17 +14,9 @@ Allows to easily namespace, compose, extend and build your Webpack projects with
 
 ## What you can do with it :
 
-### Namespace you're application
+### Inherit and/or extend webpack config from dependencies packages, and use it on you're project
 
-So you can stop using easily broken relative imports :
-```jsx
-// import stuff from "../../../config"; // no more
-import stuff from "App/config"; // aw yeah
-```
-
-### Inherit some webpack config, and use it on you're project
-
-Thus, you can put your configuration in npm packages that can be inherited; and easily exchanged !
+Thus, you can put your configuration in npm packages that can be extended or easily switched !
 
 ### Inherit multiple source tree in the same namespace
 
@@ -46,6 +38,14 @@ class MyOverrided extend $super{
 .theSameWithA{
     backgroud : red;
 }
+```
+
+### Namespace you're application
+
+So you can stop using easily broken relative imports :
+```jsx
+// import stuff from "../../../config"; // no more
+import stuff from "App/config"; // aw yeah
 ```
 
 ### Do glob require on inherited directory
@@ -218,16 +218,18 @@ wpi-dev-server :anotherProfile
 wpi :? # get available profiles
 ```
 
-Or retrieve the config by creating a new webpack config :
+Or create a new webpack config in your package to make some additions :
 
 webpack.config.js
 ```jsx
 var wpInherit = require('webpack-inherit');
 
 
-module.exports = wpInherit.getSuperWebpackCfg();
+let wpCfg = wpInherit.getSuperWebpackCfg(/* "profileId" */);
 
-//module.exports = wpInherit.getSuperWebpackCfg(/* "profileId" */);
+/* extend the conf from parent */
+
+module.exports = wpCfg;
 
 ```
 

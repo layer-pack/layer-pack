@@ -14,7 +14,6 @@
 
 'use strict';
 
-
 var path     = require('path'),
     util     = require('util'),
     resolve  = require('resolve'),
@@ -22,8 +21,9 @@ var path     = require('path'),
     cmd,
     wpCli,
     argz     = process.argv.slice(2),
-    profile  = 'default',
-    wpi      = require('../src');
+    profile  = 'default';
+
+var wpi = require('../src');
 
 if ( argz[0] && /^\:.*$/.test(argz[0]) )
 	profile = argz.shift().replace(/^\:(.*)$/, '$1');
@@ -46,11 +46,11 @@ if ( !wpi.getConfig(profile) )
 
 // find da good webpack
 wpCli = resolve.sync('webpack', { basedir: path.dirname(wpi.getConfig(profile).allWebpackCfg[0]) });
-wpCli = path.join(wpCli.substr(0, wpCli.lastIndexOf("node_modules")), 'node_modules/.bin/webpack');
+wpCli = path.join(wpCli.substr(0, wpCli.lastIndexOf("node_modules")), 'node_modules/.bin/webpack-dev-server');
 
 console.info("Compile using profile id : ", profile);
 
 cmd = execSync(wpCli + (process.platform == 'win32'
                         ? '.cmd'
-                        : '') + ' --config ' + __dirname + '/../etc/webpack.config.js' + ' ' +
+                        : '') + ' --config ' + __dirname + '/../wp/webpack.config.js' + ' ' +
 	               argz.join(' '), { stdio: 'inherit', env: { '__WPI_PROFILE__': profile } });

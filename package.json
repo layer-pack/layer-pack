@@ -9,8 +9,8 @@
     "npm": ">= 5.6.0"
   },
   "bin": {
-    "wpi": "cli/wpi",
-    "wpi-dev-server": "cli/wpi-dev-server"
+    "wpi": "etc/cli/wpi",
+    "wpi-dev-server": "etc/cli/wpi-dev-server"
   },
   "author": "N8tz <n8tz.js@gmail.com>",
   "maintainers": [
