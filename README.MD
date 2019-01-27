@@ -3,7 +3,7 @@
 <br/>
 <p align="center">
 Webpack plugin for better code pipelines & architectures.<br/>
-Allows to easily namespace, compose, extend and build your Webpack projects with minimal and versioned configs
+Allows to easily namespace, compose, extend and build your Webpack projects with shared and versioned configs
 </p>
 <h1></h1>
 <p align="center">
