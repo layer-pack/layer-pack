@@ -58,7 +58,9 @@ import allModules from "App/modules/*.module.js";
 ```
 
 ```scss
-@import "App/modules/*.module.scss";
+
+@import "App/modules/*.module.scss"; // 1 import to rulz them all
+
 ```
 
 ### Even more :
