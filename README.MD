@@ -32,9 +32,19 @@ So you can easily override & extend any files in a project, share most of the co
 
 ```jsx
 import $super from "$super";
-// or require('$super')
+
+// Add some stuff or HOCs fn
 class MyOverrided extend $super{
 //...
+}
+```
+
+```scss
+@import "$super";
+
+// do some css additions
+.theSameWithA{
+    backgroud : red
 }
 ```
 
@@ -46,6 +56,7 @@ So you can easily create/inherit modules & extensions and require them using :
 import allModules from "App/modules/*.module.js";
 // or import allModules from "App/modules/*/index.js";
 ```
+
 ```scss
 @import "App/modules/*.module.scss";
 ```
