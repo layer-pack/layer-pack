@@ -66,8 +66,11 @@ module.exports = {
 				        cfg   = fs.existsSync(path.normalize(mRoot + where + p + "/package.json")) &&
 					        JSON.parse(fs.readFileSync(path.normalize(mRoot + where + p + "/package.json")))
 				
+				    list.push(path.normalize(mRoot + where + p));
+				    lmid.push(p);
+				    
 				    if ( cfg.wpInherit && cfg.wpInherit[cProfile] && cfg.wpInherit[cProfile].extend )
-					    cfg.wpInherit[cProfile].extend.forEach(( mid, y ) => walk(mid, y, null, mRoot + where + p, cfg.wpInherit[profile].basedOn))
+					    cfg.wpInherit[cProfile].extend.forEach(( mid, y ) => walk(mid, y, null, mRoot + where + p, cfg.wpInherit[cProfile].basedOn))
 				    else {
 					    if ( !cfg )
 						    throw new Error("webpack-inherit : Can't inherit an not installed module :\nNot found :" + mRoot + where + p)
@@ -77,8 +80,6 @@ module.exports = {
 						    throw new Error("webpack-inherit : Can't inherit a module without the requested profile\nAt :" + mRoot + where + p + "\nRequested profile :" + cProfile)
 				    }
 				
-				    list.push(path.normalize(mRoot + where + p));
-				    lmid.push(p);
 			    })
 			
 			    /**
@@ -151,6 +152,10 @@ module.exports = {
 				...extAliases,
 				...pkgConfig.aliases
 			};
+		vars = {
+			rootAlias: 'App',
+			...vars
+		}
 		if ( pkgConfig && pkgConfig.vars )
 			vars = {
 				rootAlias: 'App',
