@@ -2,7 +2,7 @@
 <h1 align="center">webpack-inherit</h1>
 <br/>
 <p align="center">
-Webpack plugin for creating advanced code architectures and pipelines.<br/>
+Webpack plugin for creating advanced code architectures & pipelines.<br/>
 Easily namespace, compose, extend and build your Webpack projects with minimal and versioned configs
 </p>
 <h1></h1>
