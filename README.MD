@@ -2,8 +2,8 @@
 <h1 align="center">webpack-inherit</h1>
 <br/>
 <p align="center">
-Webpack plugin for creating advanced code architectures & pipelines.<br/>
-Easily namespace, compose, extend and build your Webpack projects with minimal and versioned configs
+Webpack plugin for better code pipelines & architectures.<br/>
+Allows to easily namespace, compose, extend and build your Webpack projects with minimal and versioned configs
 </p>
 <h1></h1>
 <p align="center">
@@ -80,7 +80,7 @@ Check the samples here : https://github.com/n8tz/webpack-inherit-sample
 
 Add webpack-inherit to deps
 
-```
+```bash
 npm i -s webpack-inherit // on all inheritable projects with wp conf & on the head project
 ```
 
@@ -145,7 +145,7 @@ Add in package.json :
 ```
 
 In wp configs :
-```
+```es6
 
 var wpInherit = require('webpack-inherit');
 
@@ -202,7 +202,7 @@ module.exports = [
 
 Then you can use the wpi CLI to call the first inherited webpack config using the webpack bin of the same package
 
-```
+```bash
 # from the head project
 wpi # use webpack params here
 # or
@@ -221,7 +221,7 @@ wpi :? # get available profiles
 Or retrieve the config by creating a new webpack config :
 
 webpack.config.js
-```
+```jsx
 var wpInherit = require('webpack-inherit');
 
 
