@@ -12,12 +12,12 @@
     "wpi": "cli/wpi",
     "wpi-dev-server": "cli/wpi-dev-server"
   },
-  "author": "N8tz <caipilabs@gmail.com>",
+  "author": "N8tz <n8tz.js@gmail.com>",
   "maintainers": [
-    "Nathan Braun <caipilabs@gmail.com>"
+    "Nathan Braun <n8tz.js@gmail.com>"
   ],
   "sponsors": [
-    "Nathan Braun <caipilabs@gmail.com>"
+    "Nathan Braun <n8tz.js@gmail.com>"
   ],
   "contributors": [
     "N8tz (https://github.com/N8tz)"
