@@ -64,16 +64,25 @@ module.exports = {
 				    cProfile  = cProfile || pkgConfig.basedOn || profile;
 				    let where = "/node_modules/",
 				        cfg   = fs.existsSync(path.normalize(mRoot + where + p + "/package.json")) &&
-					        JSON.parse(fs.readFileSync(path.normalize(mRoot + where + p + "/package.json")))
+					        JSON.parse(fs.readFileSync(path.normalize(mRoot + where + p + "/package.json")));
 				
-				    list.push(path.normalize(mRoot + where + p));
+				    // if the package is not here it could be sibling this one...
+				    if ( !cfg || !cfg.wpInherit ) {
+					    where = "/../";
+					    cfg   = fs.existsSync(path.resolve(path.normalize(mRoot + where + p + "/package.json"))) &&
+						    JSON.parse(fs.readFileSync(path.resolve(path.normalize(mRoot + where + p + "/package.json"))));
+					
+				    }
+				
+				    list.push(path.resolve(path.normalize(mRoot + where + p)));
 				    lmid.push(p);
 				
-				    if ( cfg.wpInherit && cfg.wpInherit[cProfile] && cfg.wpInherit[cProfile].extend )
+				    if ( cfg && cfg.wpInherit && cfg.wpInherit[cProfile] && cfg.wpInherit[cProfile].extend )
 					    cfg.wpInherit[cProfile].extend.forEach(( mid, y ) => walk(mid, y, null, mRoot + where + p, cfg.wpInherit[cProfile].basedOn))
 				    else {
-					    if ( !cfg )
+					    if ( !cfg ) {
 						    throw new Error("webpack-inherit : Can't inherit an not installed module :\nNot found :" + mRoot + where + p)
+					    }
 					    if ( !cfg.wpInherit )
 						    throw new Error("webpack-inherit : Can't inherit a module with no wpInherit in the package.json :\nAt :" + mRoot + where + p)
 					    if ( !cfg.wpInherit[cProfile] )
@@ -105,7 +114,7 @@ module.exports = {
 			    allModuleRoots.push(projectRoot);
 			
 			    if ( pkgConfig.config )
-				    allWebpackCfg.push(path.normalize(projectRoot + '/' + pkgConfig.config))
+				    allWebpackCfg.push(path.resolve(path.normalize(projectRoot + '/' + pkgConfig.config)))
 			
 			    allExtPath.forEach(
 				    function ( where, i, arr, cProfile ) {
@@ -130,7 +139,7 @@ module.exports = {
 					    if ( cfg )
 						    allCfg.push(cfg);
 					    if ( cfg.config )
-						    allWebpackCfg.push(path.normalize(where + '/' + cfg.config));
+						    allWebpackCfg.push(path.resolve(path.normalize(where + '/' + cfg.config)));
 					
 					    roots.push(fs.realpathSync(path.normalize(where + "/" + (cfg.rootFolder || 'App'))));
 					

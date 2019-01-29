@@ -23,7 +23,7 @@ var path     = require('path'),
     wpCli,
     argz     = process.argv.slice(2),
     profile  = 'default',
-    wpi      = require('../src');
+    wpi      = require('../../src');
 
 if ( argz[0] && /^\:.*$/.test(argz[0]) )
 	profile = argz.shift().replace(/^\:(.*)$/, '$1');
@@ -45,7 +45,7 @@ if ( !wpi.getConfig(profile) )
 	throw new Error("Can't find profile '" + profile + "' in the inherited packages");
 
 // find da good webpack
-wpCli = resolve.sync('webpack', { basedir: path.dirname(wpi.getConfig(profile).allWebpackCfg[0]) });
+wpCli = resolve.sync('webpack', { basedir: path.resolve(path.dirname(wpi.getConfig(profile).allWebpackCfg[0])) });
 wpCli = path.join(wpCli.substr(0, wpCli.lastIndexOf("node_modules")), 'node_modules/.bin/webpack');
 
 console.info("Compile using profile id : ", profile);
