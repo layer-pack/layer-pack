@@ -60,8 +60,8 @@ module.exports = function ( cfg, opts ) {
 			compiler.options.resolveLoader.modules.unshift(...opts.allModulePath);
 			
 			// detect resolvable ext
-			if ( compiler.options.resolve.modules.extensions ) {
-				availableExts.push(...compiler.options.resolve.modules.extensions);
+			if ( compiler.options.resolve.extensions ) {
+				availableExts.push(...compiler.options.resolve.extensions);
 			}
 			else availableExts = ["", ".webpack.js", ".web.js", ".js"];
 			availableExts = availableExts.filter(ext => ((ext != '.')));
