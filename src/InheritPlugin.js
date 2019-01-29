@@ -67,6 +67,7 @@ module.exports = function ( cfg, opts ) {
 			availableExts = availableExts.filter(ext => ((ext != '.')));
 			availableExts.push(...availableExts.filter(ext => ext).map(ext => ('/index' + ext)));
 			
+			//console.log(compiler)
 			
 			/**
 			 * The main resolver / glob mngr
@@ -78,20 +79,17 @@ module.exports = function ( cfg, opts ) {
 				
 				data.wpiOriginRequest = data.request;
 				
-				for ( var i = 0; i < alias.length; i++ ) {
-					if ( alias[i][0].test(data.request) ) {
-						data.request = data.request.replace(alias[i][0], alias[i][1]);
-						break;
-					}
-				}
-				
 				// resolve inheritable & relative @todo
 				if ( context && /^\./.test(data.request) && (tmpPath = roots.find(r => path.resolve(context + '/' + data.request).startsWith(r))) ) {
 					data.request = (RootAlias + path.resolve(context + '/' + data.request).substr(tmpPath.length)).replace(/\\/g, '/');
 				}
 				
+				let isSuper = /^\$super$/.test(data.request),
+				    isGlob  = data.request.indexOf('*') != -1,
+				    isRoot  = RootAliasRe.test(data.request);
+				
 				// glob resolving...
-				if ( data.request.indexOf('*') != -1 ) {
+				if ( isGlob ) {
 					return (/\.s?css$/.test(requireOrigin) ? utils.indexOfScss : utils.indexOf)(
 						compiler.inputFileSystem,
 						roots,
@@ -107,6 +105,10 @@ module.exports = function ( cfg, opts ) {
 							cb(e, data, content);
 						}
 					)
+				}
+				
+				if ( !isRoot && !isSuper ) { // let wp deal with it
+					return cb(null, data)
 				}
 				
 				// small caching system as we are hooking before resolve
@@ -127,7 +129,7 @@ module.exports = function ( cfg, opts ) {
 				
 				key = data.context + '##' + data.request;
 				
-				if ( /^\$super$/.test(data.request) ) {
+				if ( isSuper ) {
 					key = "$super<" + requireOrigin;
 				}
 				
@@ -144,9 +146,8 @@ module.exports = function ( cfg, opts ) {
 				}
 				cache[key] = [apply];
 				
-				
 				// $super resolving..
-				if ( /^\$super$/.test(data.request) ) {
+				if ( isSuper ) {
 					return utils.findParent(
 						compiler.inputFileSystem,
 						roots,
@@ -165,7 +166,7 @@ module.exports = function ( cfg, opts ) {
 				}
 				
 				// Inheritable root based resolving
-				if ( RootAliasRe.test(data.request) ) {
+				if ( isRoot ) {
 					return utils.findParentPath(
 						compiler.inputFileSystem,
 						roots,
@@ -185,7 +186,6 @@ module.exports = function ( cfg, opts ) {
 				}
 				resolve(null, data.request);
 			}
-			
 			
 			// sass resolver
 			this._sassImporter = function ( url, requireOrigin, cb, next ) {
@@ -269,6 +269,7 @@ module.exports = function ( cfg, opts ) {
 						
 					                };
 				                });
+				
 				                nmf.plugin("before-resolve", wpiResolve);
 			                }
 			);

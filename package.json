@@ -10,7 +10,8 @@
   },
   "bin": {
     "wpi": "etc/cli/wpi",
-    "wpi-dev-server": "etc/cli/wpi-dev-server"
+    "wpi-dev-server": "etc/cli/wpi-dev-server",
+    "wpi-init": "etc/cli/wpi-init"
   },
   "author": "N8tz <n8tz.js@gmail.com>",
   "maintainers": [

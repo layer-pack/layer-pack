@@ -113,23 +113,20 @@ Add in package.json :
    			// optional profile id to use in the inherited packages
    			"basedOn": "someSuperProfile_in_parents",
 
-   			// optional vars used in the webpack config ( overrided by child/head package )
+   			// optional vars
    			"vars"  : {
    				// all @optional
 
-
    				// override the root folder alias ( default to "App" )
    				// So all inner build inheritable files will be requierable using require("Comp/some/stuff")
-   				"rootAlias"   : "Comp",
+   				"rootAlias"   : "MyApp",
 
    				// make anything outside the inheritable folder external
    				// ( for nodes builds & components )
    				// * this could be a RegExp like "^(?!react|@babel)" but packed libs can require externalized
    				"externals"   : true,
 
-   				"webpackPatch": {
-   					/* some webpack config patch that will be merged using require('webpack-merge').smart */
-   				}
+   				// all theses values are available in the webpack config using wpiCfg.vars.*
    			},
    			"extend": [
    				"parentProject"
