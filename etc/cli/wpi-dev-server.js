@@ -23,7 +23,7 @@ var path     = require('path'),
     argz     = process.argv.slice(2),
     profile  = 'default';
 
-var wpi = require('../src');
+var wpi = require('../../src');
 
 if ( argz[0] && /^\:.*$/.test(argz[0]) )
 	profile = argz.shift().replace(/^\:(.*)$/, '$1');
