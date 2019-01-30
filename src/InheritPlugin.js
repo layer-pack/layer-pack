@@ -14,6 +14,7 @@
 
 var path    = require('path'),
     is      = require('is'),
+    fs      = require('fs'),
     resolve = require('resolve');
 
 const utils           = require("./utils");
@@ -27,8 +28,12 @@ module.exports = function ( cfg, opts ) {
 	
 	// find da good webpack
 	let wp               = resolve.sync('webpack', { basedir: path.dirname(opts.allWebpackCfg[0]) }),
+	    webpack          = require(wp),
 	    ExternalModule   = require(path.join(path.dirname(wp), 'ExternalModule')),
 	    excludeExternals = opts.vars.externals,
+	    currentProfile   = process.env.__WPI_PROFILE__ || 'default',
+	    projectPkg       = fs.existsSync(path.normalize(opts.allModuleRoots[0] + "/package.json")) &&
+		    JSON.parse(fs.readFileSync(path.normalize(opts.allModuleRoots[0] + "/package.json"))),
 	    externalRE       = is.string(opts.vars.externals) && new RegExp(opts.vars.externals);
 	
 	return plugin = {
@@ -48,7 +53,32 @@ module.exports = function ( cfg, opts ) {
 			                                .map(( k ) => ([new RegExp(k), opts.extAliases[k]])),
 			    contextDependencies = [],
 			    fileDependencies    = [],
-			    availableExts       = [];
+			    availableExts       = [],
+			    buildTarget         = compiler.options.target || "web";
+			
+			// Add some wpi build vars...
+			compiler.options.plugins.push(
+				new webpack.DefinePlugin(
+					{
+						'__WPI_PROFILE__': currentProfile
+					}));
+			
+			
+			if ( /^(async-)?node$/.test(buildTarget) ) {
+				
+				excludeExternals &&
+				compiler.options.plugins.push(
+					new webpack.BannerPlugin({
+						                         banner: "/** wpi externals - add module path **/\n" +
+							                         "{\n" +
+							                         "let ___wpi_amp = require('webpack-inherit/etc/node/loadModulePaths.js')(" +
+							                         JSON.stringify(opts.allModulePath) + ");\n" +
+							                         "}\n",
+						                         raw   : true
+					                         })
+				)
+			}
+			;
 			
 			
 			// add resolve paths
@@ -223,6 +253,23 @@ module.exports = function ( cfg, opts ) {
 			compiler.plugin("normal-module-factory",
 			                function ( nmf ) {
 				
+				                utils.addVirtualFile(
+					                compiler.inputFileSystem,
+					                path.normalize(roots[0] + '/.wpiConfig.json'),
+					                JSON.stringify(
+						                {
+							                project : {
+								                name       : projectPkg.name,
+								                description: projectPkg.description,
+								                author     : projectPkg.author,
+								                version    : projectPkg.version
+							                },
+							                vars    : opts.vars,
+							                allCfg  : opts.allCfg,
+							                allModId: opts.allModId,
+						                }
+					                )
+				                );
 				
 				                excludeExternals && nmf.plugin('factory', function ( factory ) {
 					                return function ( data, callback ) {

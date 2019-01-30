@@ -27,12 +27,15 @@ function checkIfDir( fs, file ) {
 	}
 }
 
-module.exports = {
+const utils = {
 	getAllConfigs() {
 		var projectRoot = process.cwd(),
 		    pkgConfig   = fs.existsSync(path.normalize(projectRoot + "/package.json")) &&
 			    JSON.parse(fs.readFileSync(path.normalize(projectRoot + "/package.json"))),
 		    allCfg      = {};
+		
+		if ( !pkgConfig || !pkgConfig.wpInherit )
+			throw new Error("Can't find any wpi config !")
 		
 		Object.keys(pkgConfig.wpInherit)
 		      .forEach(
@@ -148,7 +151,7 @@ module.exports = {
 					    && libPath.push(
 						    fs.realpathSync(path.normalize(where + "/" + cfg.libsPath)));
 					
-					    allModulePath.push(path.normalize(where + "/node_modules"));
+					    allModulePath.push(fs.realpathSync(path.normalize(where + "/node_modules")));
 					    //console.warn(allModulePath)
 				    }
 			    );
@@ -172,6 +175,11 @@ module.exports = {
 				...pkgConfig.vars
 			};
 		allCfg.unshift(pkgConfig);
+		//allRoots = [
+		//	allRoots[0],
+		//
+		//]
+		//console.log(allRoots)
 		return {
 			allWebpackCfg,
 			allModulePath,
@@ -269,11 +277,7 @@ module.exports = {
 		code += "export default _exports;";
 		//console.log(code)
 		//fs.writeFileSync(virtualFile, code);
-		vfs.purge([virtualFile]);
-		VirtualModulePlugin.populateFilesystem(
-			{ fs: vfs, modulePath: virtualFile, contents: code, ctime: Date.now() });
-		VirtualModulePlugin.populateFilesystem(
-			{ fs: vfs, modulePath: virtualFile + '.map', contents: "", ctime: Date.now() });
+		utils.addVirtualFile(vfs, virtualFile, code);
 		cb(null, virtualFile, code);
 	},
 	
@@ -325,12 +329,14 @@ module.exports = {
 			+ '\n';
 		//console.log(code)
 		//fs.writeFileSync(virtualFile, code);
-		vfs.purge([virtualFile]);
-		VirtualModulePlugin.populateFilesystem(
-			{ fs: vfs, modulePath: virtualFile, contents: code, ctime: Date.now() });
-		VirtualModulePlugin.populateFilesystem(
-			{ fs: vfs, modulePath: virtualFile + '.map', contents: "", ctime: Date.now() });
+		utils.addVirtualFile(vfs, virtualFile, code);
 		cb(null, virtualFile, code);
 	},
-	
-}
+	addVirtualFile( vfs, fileName, content ) {
+		vfs.purge([fileName]);
+		VirtualModulePlugin.populateFilesystem(
+			{ fs: vfs, modulePath: fileName, contents: content, ctime: Date.now() });
+	}
+};
+
+module.exports = utils;
