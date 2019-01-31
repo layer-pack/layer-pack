@@ -258,15 +258,16 @@ module.exports = function ( cfg, opts ) {
 					                path.normalize(roots[0] + '/.wpiConfig.json'),
 					                JSON.stringify(
 						                {
-							                project : {
+							                project    : {
 								                name       : projectPkg.name,
 								                description: projectPkg.description,
 								                author     : projectPkg.author,
 								                version    : projectPkg.version
 							                },
-							                vars    : opts.vars,
-							                allCfg  : opts.allCfg,
-							                allModId: opts.allModId,
+							                projectRoot: opts.projectRoot,
+							                vars       : opts.vars,
+							                allCfg     : opts.allCfg,
+							                allModId   : opts.allModId,
 						                }
 					                )
 				                );

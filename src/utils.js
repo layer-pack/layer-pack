@@ -189,7 +189,8 @@ const utils = {
 			allModuleRoots,
 			allCfg,
 			allModId,
-			vars
+			vars,
+			projectRoot
 		};
 	},
 	
