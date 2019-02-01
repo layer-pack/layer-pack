@@ -121,9 +121,10 @@ const utils = {
 			
 			    allExtPath.forEach(
 				    function ( where, i, arr, cProfile ) {
-					    cProfile = cProfile || pkgConfig.basedOn || profile;
-					    let cfg  = fs.existsSync(path.normalize(where + "/package.json")) &&
-						    JSON.parse(fs.readFileSync(path.normalize(where + "/package.json")));
+					    cProfile    = cProfile || pkgConfig.basedOn || profile;
+					    let cfg     = fs.existsSync(path.normalize(where + "/package.json")) &&
+						    JSON.parse(fs.readFileSync(path.normalize(where + "/package.json"))),
+					        modPath = path.normalize(where + "/node_modules");
 					
 					    allModuleRoots.push(where)
 					
@@ -145,13 +146,14 @@ const utils = {
 						    allWebpackCfg.push(path.resolve(path.normalize(where + '/' + cfg.config)));
 					
 					    roots.push(fs.realpathSync(path.normalize(where + "/" + (cfg.rootFolder || 'App'))));
+					    //
+					    //cfg.libsPath &&
+					    //fs.existsSync(path.normalize(where + "/" + cfg.libsPath))
+					    //&& libPath.push(
+					    //    fs.realpathSync(path.normalize(where + "/" + cfg.libsPath)));
 					
-					    cfg.libsPath &&
-					    fs.existsSync(path.normalize(where + "/" + cfg.libsPath))
-					    && libPath.push(
-						    fs.realpathSync(path.normalize(where + "/" + cfg.libsPath)));
-					
-					    allModulePath.push(fs.realpathSync(path.normalize(where + "/node_modules")));
+					    checkIfDir(fs, modPath)
+					    && allModulePath.push(fs.realpathSync(modPath));
 					    //console.warn(allModulePath)
 				    }
 			    );
@@ -195,24 +197,22 @@ const utils = {
 	},
 	
 	// find a $super file in the available roots
-	findParentPath( fs, roots, file, i, possible_ext, cb, _curExt, _ext ) {
-		_ext    = _ext || '';
-		var fn  = path.normalize(roots[i] + file + _ext);
-		_curExt = _curExt || 0;
-		//console.warn("check !!! ", fn, _curExt);
+	findParentPath( fs, roots, file, i, possible_ext, cb, _curExt = 0 ) {
+		var fn = path.normalize(roots[i] + file + possible_ext[_curExt]);
+		//console.warn("check !!! ", fn, possible_ext[_curExt]);
 		fs.stat(fn, ( err, stats ) => {
 			if ( stats && stats.isFile() ) {
 				//console.warn("Find parent !!! ", fn);
 				cb && cb(null, fn, fn.substr(roots[i].length + 1));
 			}
 			else {
-				//console.warn("Not found !!! ", fn, _curExt);
+				//console.warn("Not found !!! ", fn);
 				// check by path first then by ext
 				if ( i + 1 < roots.length ) {
-					this.findParentPath(fs, roots, file, i + 1, possible_ext, cb, _curExt, possible_ext[_curExt]);
+					this.findParentPath(fs, roots, file, i + 1, possible_ext, cb, _curExt);
 				}
-				else if ( possible_ext.length > _curExt ) {
-					this.findParentPath(fs, roots, file, 0, possible_ext, cb, _curExt + 1, possible_ext[_curExt])
+				else if ( possible_ext.length >= _curExt ) {
+					this.findParentPath(fs, roots, file, 0, possible_ext, cb, _curExt + 1)
 				}
 				else {
 					cb && cb(true);
@@ -228,7 +228,7 @@ const utils = {
 		while ( ++i < roots.length ) {
 			tmp = file.substr(0, roots[i].length);
 			if ( roots[i] == tmp ) {// found
-				return (i != roots.length - 1) && this.findParentPath(fs, roots, file.substr(tmp.length), i + 1, possible_ext, cb);
+				return (i != roots.length - 1) && this.findParentPath(fs, roots, file.substr(tmp.length), i + 1, possible_ext, cb, 0);
 			}
 		}
 		cb && cb(true);

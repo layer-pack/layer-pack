@@ -96,6 +96,7 @@ module.exports = function ( cfg, opts ) {
 			else availableExts = ["", ".webpack.js", ".web.js", ".js"];
 			availableExts = availableExts.filter(ext => ((ext != '.')));
 			availableExts.push(...availableExts.filter(ext => ext).map(ext => ('/index' + ext)));
+			availableExts.unshift('');
 			
 			//console.log(compiler)
 			
@@ -182,7 +183,7 @@ module.exports = function ( cfg, opts ) {
 						compiler.inputFileSystem,
 						roots,
 						requireOrigin,
-						[path.extname(requireOrigin)],
+						[''],
 						function ( e, filePath, file ) {
 							
 							if ( e ) {// silently deal when there is no parents
