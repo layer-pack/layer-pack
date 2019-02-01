@@ -14,6 +14,7 @@
 
 var path    = require('path'),
     is      = require('is'),
+    fs      = require('fs'),
     resolve = require('resolve');
 
 const utils           = require("./utils");
@@ -27,8 +28,12 @@ module.exports = function ( cfg, opts ) {
 	
 	// find da good webpack
 	let wp               = resolve.sync('webpack', { basedir: path.dirname(opts.allWebpackCfg[0]) }),
+	    webpack          = require(wp),
 	    ExternalModule   = require(path.join(path.dirname(wp), 'ExternalModule')),
 	    excludeExternals = opts.vars.externals,
+	    currentProfile   = process.env.__WPI_PROFILE__ || 'default',
+	    projectPkg       = fs.existsSync(path.normalize(opts.allModuleRoots[0] + "/package.json")) &&
+		    JSON.parse(fs.readFileSync(path.normalize(opts.allModuleRoots[0] + "/package.json"))),
 	    externalRE       = is.string(opts.vars.externals) && new RegExp(opts.vars.externals);
 	
 	return plugin = {
@@ -48,7 +53,32 @@ module.exports = function ( cfg, opts ) {
 			                                .map(( k ) => ([new RegExp(k), opts.extAliases[k]])),
 			    contextDependencies = [],
 			    fileDependencies    = [],
-			    availableExts       = [];
+			    availableExts       = [],
+			    buildTarget         = compiler.options.target || "web";
+			
+			// Add some wpi build vars...
+			compiler.options.plugins.push(
+				new webpack.DefinePlugin(
+					{
+						'__WPI_PROFILE__': currentProfile
+					}));
+			
+			
+			if ( /^(async-)?node$/.test(buildTarget) ) {
+				
+				excludeExternals &&
+				compiler.options.plugins.push(
+					new webpack.BannerPlugin({
+						                         banner: "/** wpi externals - add module path **/\n" +
+							                         "{\n" +
+							                         "let ___wpi_amp = require('webpack-inherit/etc/node/loadModulePaths.js')(" +
+							                         JSON.stringify(opts.allModulePath) + ");\n" +
+							                         "}\n",
+						                         raw   : true
+					                         })
+				)
+			}
+			;
 			
 			
 			// add resolve paths
@@ -67,6 +97,7 @@ module.exports = function ( cfg, opts ) {
 			availableExts = availableExts.filter(ext => ((ext != '.')));
 			availableExts.push(...availableExts.filter(ext => ext).map(ext => ('/index' + ext)));
 			
+			//console.log(compiler)
 			
 			/**
 			 * The main resolver / glob mngr
@@ -78,20 +109,17 @@ module.exports = function ( cfg, opts ) {
 				
 				data.wpiOriginRequest = data.request;
 				
-				for ( var i = 0; i < alias.length; i++ ) {
-					if ( alias[i][0].test(data.request) ) {
-						data.request = data.request.replace(alias[i][0], alias[i][1]);
-						break;
-					}
-				}
-				
 				// resolve inheritable & relative @todo
 				if ( context && /^\./.test(data.request) && (tmpPath = roots.find(r => path.resolve(context + '/' + data.request).startsWith(r))) ) {
 					data.request = (RootAlias + path.resolve(context + '/' + data.request).substr(tmpPath.length)).replace(/\\/g, '/');
 				}
 				
+				let isSuper = /^\$super$/.test(data.request),
+				    isGlob  = data.request.indexOf('*') != -1,
+				    isRoot  = RootAliasRe.test(data.request);
+				
 				// glob resolving...
-				if ( data.request.indexOf('*') != -1 ) {
+				if ( isGlob ) {
 					return (/\.s?css$/.test(requireOrigin) ? utils.indexOfScss : utils.indexOf)(
 						compiler.inputFileSystem,
 						roots,
@@ -107,6 +135,10 @@ module.exports = function ( cfg, opts ) {
 							cb(e, data, content);
 						}
 					)
+				}
+				
+				if ( !isRoot && !isSuper ) { // let wp deal with it
+					return cb(null, data)
 				}
 				
 				// small caching system as we are hooking before resolve
@@ -127,7 +159,7 @@ module.exports = function ( cfg, opts ) {
 				
 				key = data.context + '##' + data.request;
 				
-				if ( /^\$super$/.test(data.request) ) {
+				if ( isSuper ) {
 					key = "$super<" + requireOrigin;
 				}
 				
@@ -144,9 +176,8 @@ module.exports = function ( cfg, opts ) {
 				}
 				cache[key] = [apply];
 				
-				
 				// $super resolving..
-				if ( /^\$super$/.test(data.request) ) {
+				if ( isSuper ) {
 					return utils.findParent(
 						compiler.inputFileSystem,
 						roots,
@@ -165,7 +196,7 @@ module.exports = function ( cfg, opts ) {
 				}
 				
 				// Inheritable root based resolving
-				if ( RootAliasRe.test(data.request) ) {
+				if ( isRoot ) {
 					return utils.findParentPath(
 						compiler.inputFileSystem,
 						roots,
@@ -185,7 +216,6 @@ module.exports = function ( cfg, opts ) {
 				}
 				resolve(null, data.request);
 			}
-			
 			
 			// sass resolver
 			this._sassImporter = function ( url, requireOrigin, cb, next ) {
@@ -223,6 +253,24 @@ module.exports = function ( cfg, opts ) {
 			compiler.plugin("normal-module-factory",
 			                function ( nmf ) {
 				
+				                utils.addVirtualFile(
+					                compiler.inputFileSystem,
+					                path.normalize(roots[0] + '/.wpiConfig.json'),
+					                JSON.stringify(
+						                {
+							                project    : {
+								                name       : projectPkg.name,
+								                description: projectPkg.description,
+								                author     : projectPkg.author,
+								                version    : projectPkg.version
+							                },
+							                projectRoot: opts.projectRoot,
+							                vars       : opts.vars,
+							                allCfg     : opts.allCfg,
+							                allModId   : opts.allModId,
+						                }
+					                )
+				                );
 				
 				                excludeExternals && nmf.plugin('factory', function ( factory ) {
 					                return function ( data, callback ) {
@@ -269,6 +317,7 @@ module.exports = function ( cfg, opts ) {
 						
 					                };
 				                });
+				
 				                nmf.plugin("before-resolve", wpiResolve);
 			                }
 			);
