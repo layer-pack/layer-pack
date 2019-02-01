@@ -12,7 +12,10 @@ Allows to easily namespace, compose, extend and build your Webpack projects usin
 <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat" />
 </p>
 
-/!\ This awesome plugin is working, but still in beta stage  ( not well tested/optimized for now ) /!\<br/>
+/!\ This awesome plugin is working, but still in beta stage  ( not well tested/optimized for now ) /!\ <br/>
+
+Feel free to test / feedback / make contribs<br/>
+
 
 ## What you can do with it :
 
