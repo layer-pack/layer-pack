@@ -12,6 +12,8 @@ Allows to easily namespace, compose, extend and build your Webpack projects usin
 <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat" />
 </p>
 
+/!\ This awesome plugin is working, but still in beta stage  ( not well tested/optimized for now ) /!\<br/>
+
 ## What you can do with it :
 
 ### Inherit multiple source tree in the same namespace
@@ -69,8 +71,6 @@ import allModules from "App/modules/*.module.js";
 - Combine projects with different namespaces in 1 head package
 - Easily override node_modules
 - Etc...
-
-This awesome plugin is working, but still in beta stage  ( not well tested/optimized for now )<br/>
 
 Feel free to test / feedback / make contribs<br/>
 
