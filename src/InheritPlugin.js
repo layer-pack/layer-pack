@@ -183,7 +183,7 @@ module.exports = function ( cfg, opts ) {
 						compiler.inputFileSystem,
 						roots,
 						requireOrigin,
-						[path.extname(requireOrigin)],
+						[''],
 						function ( e, filePath, file ) {
 							
 							if ( e ) {// silently deal when there is no parents

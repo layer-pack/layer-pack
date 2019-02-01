@@ -197,9 +197,9 @@ const utils = {
 	},
 	
 	// find a $super file in the available roots
-	findParentPath( fs, roots, file, i, possible_ext, cb, _curExt ) {
+	findParentPath( fs, roots, file, i, possible_ext, cb, _curExt = 0 ) {
 		var fn = path.normalize(roots[i] + file + possible_ext[_curExt]);
-		//console.warn("check !!! ", fn);
+		//console.warn("check !!! ", fn, possible_ext[_curExt]);
 		fs.stat(fn, ( err, stats ) => {
 			if ( stats && stats.isFile() ) {
 				//console.warn("Find parent !!! ", fn);
@@ -211,7 +211,7 @@ const utils = {
 				if ( i + 1 < roots.length ) {
 					this.findParentPath(fs, roots, file, i + 1, possible_ext, cb, _curExt);
 				}
-				else if ( possible_ext.length > _curExt ) {
+				else if ( possible_ext.length >= _curExt ) {
 					this.findParentPath(fs, roots, file, 0, possible_ext, cb, _curExt + 1)
 				}
 				else {
