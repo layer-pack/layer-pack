@@ -121,9 +121,10 @@ const utils = {
 			
 			    allExtPath.forEach(
 				    function ( where, i, arr, cProfile ) {
-					    cProfile = cProfile || pkgConfig.basedOn || profile;
-					    let cfg  = fs.existsSync(path.normalize(where + "/package.json")) &&
-						    JSON.parse(fs.readFileSync(path.normalize(where + "/package.json")));
+					    cProfile    = cProfile || pkgConfig.basedOn || profile;
+					    let cfg     = fs.existsSync(path.normalize(where + "/package.json")) &&
+						    JSON.parse(fs.readFileSync(path.normalize(where + "/package.json"))),
+					        modPath = path.normalize(where + "/node_modules");
 					
 					    allModuleRoots.push(where)
 					
@@ -145,13 +146,14 @@ const utils = {
 						    allWebpackCfg.push(path.resolve(path.normalize(where + '/' + cfg.config)));
 					
 					    roots.push(fs.realpathSync(path.normalize(where + "/" + (cfg.rootFolder || 'App'))));
+					    //
+					    //cfg.libsPath &&
+					    //fs.existsSync(path.normalize(where + "/" + cfg.libsPath))
+					    //&& libPath.push(
+					    //    fs.realpathSync(path.normalize(where + "/" + cfg.libsPath)));
 					
-					    cfg.libsPath &&
-					    fs.existsSync(path.normalize(where + "/" + cfg.libsPath))
-					    && libPath.push(
-						    fs.realpathSync(path.normalize(where + "/" + cfg.libsPath)));
-					
-					    allModulePath.push(fs.realpathSync(path.normalize(where + "/node_modules")));
+					    checkIfDir(fs, modPath)
+					    && allModulePath.push(fs.realpathSync(modPath));
 					    //console.warn(allModulePath)
 				    }
 			    );
