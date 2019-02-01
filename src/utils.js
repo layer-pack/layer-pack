@@ -207,11 +207,12 @@ const utils = {
 			}
 			else {
 				//console.warn("Not found !!! ", fn, _curExt);
-				if ( possible_ext.length > _curExt ) {
-					this.findParentPath(fs, roots, file, i, possible_ext, cb, _curExt + 1, possible_ext[_curExt])
+				// check by path first then by ext
+				if ( i + 1 < roots.length ) {
+					this.findParentPath(fs, roots, file, i + 1, possible_ext, cb, _curExt, possible_ext[_curExt]);
 				}
-				else if ( i + 1 < roots.length ) {
-					this.findParentPath(fs, roots, file, i + 1, possible_ext, cb, 0, '');
+				else if ( possible_ext.length > _curExt ) {
+					this.findParentPath(fs, roots, file, 0, possible_ext, cb, _curExt + 1, possible_ext[_curExt])
 				}
 				else {
 					cb && cb(true);
