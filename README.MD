@@ -12,9 +12,12 @@ Allows to easily namespace, compose, extend and build your Webpack projects usin
 <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat" />
 </p>
 
-/!\ This awesome plugin is working, but still in beta stage  ( not well tested/optimized for now ) /!\ <br/>
-
+<p align="center">
+/!\ This awesome plugin is working, but still in beta stage  ( not well tested/optimized for now ) /!\
+</p>
+<p align="center">
 Feel free to test / feedback / make contribs<br/>
+</p>
 
 
 ## What you can do with it :
@@ -75,9 +78,7 @@ import allModules from "App/modules/*.module.js";
 - Easily override node_modules
 - Etc...
 
-Feel free to test / feedback / make contribs<br/>
-
-Check the samples here : https://github.com/n8tz/webpack-inherit-sample
+## Check the samples [here](https://github.com/n8tz/webpack-inherit-sample)
 
 ## How to use ?
 
