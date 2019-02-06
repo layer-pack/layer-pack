@@ -12,45 +12,50 @@
  *  @contact : wpilabs@gmail.com
  */
 
-var path    = require('path'),
-    is      = require('is'),
-    fs      = require('fs'),
-    resolve = require('resolve');
+const path            = require('path'),
+      is              = require('is'),
+      fs              = require('fs'),
+      resolve         = require('resolve'),
+      utils           = require("./utils"),
+      isBuiltinModule = require('is-builtin-module');
 
-const utils           = require("./utils");
-const isBuiltinModule = require('is-builtin-module');
-/**
- * Main wpi plugin
- *
- */
 module.exports = function ( cfg, opts ) {
 	let plugin;
 	
-	// find da good webpack
+	// find da good webpack ( the one where the wp cfg is set )
 	let wp               = resolve.sync('webpack', { basedir: path.dirname(opts.allWebpackCfg[0]) }),
 	    webpack          = require(wp),
 	    ExternalModule   = require(path.join(path.dirname(wp), 'ExternalModule')),
-	    excludeExternals = opts.vars.externals,
-	    currentProfile   = process.env.__WPI_PROFILE__ || 'default',
+	
 	    projectPkg       = fs.existsSync(path.normalize(opts.allModuleRoots[0] + "/package.json")) &&
 		    JSON.parse(fs.readFileSync(path.normalize(opts.allModuleRoots[0] + "/package.json"))),
+	
+	    excludeExternals = opts.vars.externals,
+	    currentProfile   = process.env.__WPI_PROFILE__ || 'default',
 	    externalRE       = is.string(opts.vars.externals) && new RegExp(opts.vars.externals);
 	
 	return plugin = {
+		/**
+		 * Return a sass resolver fn
+		 * @param next {function} resolver that will be called if wpi fail resolving the query
+		 * @returns {function(*=, *=, *=): *}
+		 */
 		sassImporter: function ( next ) {
 			return ( url, requireOrigin, cb ) =>
 				plugin._sassImporter(url, requireOrigin, cb, next
 				                                             ? e => next(url, requireOrigin, cb)
 				                                             : null)
 		},
+		/**
+		 * The main plugin fn
+		 * @param compiler
+		 */
 		apply       : function ( compiler ) {
 			var cache               = {},
 			    plugin              = this,
 			    RootAlias           = opts.vars.rootAlias || "App",
 			    RootAliasRe         = new RegExp("^" + RootAlias, ''),
 			    roots               = opts.allRoots,
-			    alias               = Object.keys(opts.extAliases || {})
-			                                .map(( k ) => ([new RegExp(k), opts.extAliases[k]])),
 			    contextDependencies = [],
 			    fileDependencies    = [],
 			    availableExts       = [],
@@ -63,7 +68,7 @@ module.exports = function ( cfg, opts ) {
 						'__WPI_PROFILE__': currentProfile
 					}));
 			
-			
+			// include node modules path allowing node executables to require external modules
 			if ( /^(async-)?node$/.test(buildTarget) ) {
 				
 				excludeExternals &&
@@ -98,7 +103,6 @@ module.exports = function ( cfg, opts ) {
 			availableExts.push(...availableExts.filter(ext => ext).map(ext => ('/index' + ext)));
 			availableExts.unshift('');
 			
-			//console.log(compiler)
 			
 			/**
 			 * The main resolver / glob mngr
@@ -353,7 +357,7 @@ module.exports = function ( cfg, opts ) {
 						compilation.contextDependencies.add(context);
 					});
 				}
-				cb()
+				cb();
 				cache = {};
 			});
 		}

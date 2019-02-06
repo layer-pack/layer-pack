@@ -12,9 +12,10 @@
  *  @contact : n8tz.js@gmail.com
  */
 
-const utils                        = require("./utils");
-const InheritPlugin                = require("./InheritPlugin");
-var merge                          = require('webpack-merge');
+const utils         = require("./utils"),
+      InheritPlugin = require("./InheritPlugin"),
+      merge         = require('webpack-merge');
+
 let allConfigs, allPluginInstances = {}, allCfgInstances = {};
 
 module.exports = {
@@ -27,7 +28,7 @@ module.exports = {
 	},
 	/**
 	 * Retrieve the current profile config or the asked one
-	 * @param profile
+	 * @param profile {string} optional profile id
 	 * @returns {*}
 	 */
 	getConfig( profile = process.env.__WPI_PROFILE__ || 'default' ) {
@@ -36,7 +37,7 @@ module.exports = {
 	/**
 	 * Add inherited node_modules paths to node
 	 * @todo : somethink needed as it could lead to absurd node_modules list
-	 * @param profile
+	 * @param profile {string} optional profile id
 	 */
 	loadModulePath( profile = process.env.__WPI_PROFILE__ || "default" ) {
 		let cfg = this.getAllConfigs()[profile];
@@ -46,7 +47,9 @@ module.exports = {
 	},
 	/**
 	 * Retrieve the inherited wp cfg for the given or current profile id
-	 * @param profile
+	 *
+	 * @param profile {string} optional profile id
+	 * @param head {boolean} use the current package config
 	 * @returns {*}
 	 */
 	getSuperWebpackCfg( profile = process.env.__WPI_PROFILE__ || "default", head ) {
@@ -76,8 +79,9 @@ module.exports = {
 	},
 	/**
 	 * Return a 'singleton' of the plugin for the given or current profile id
+	 *
 	 * @param cfg
-	 * @param profile
+	 * @param profile {string} optional profile id
 	 * @returns {*}
 	 */
 	plugin( cfg, profile = process.env.__WPI_PROFILE__ || 'default' ) {
@@ -86,7 +90,8 @@ module.exports = {
 	/**
 	 * Return a tester fn for the given or current profile id
 	 * Tester return true if the given file path is outside inheritable dir
-	 * @param profile
+	 *
+	 * @param profile {string} optional profile id
 	 * @returns {{test: (function(*): boolean)}}
 	 */
 	isFileExcluded( profile = process.env.__WPI_PROFILE__ || 'default' ) {
@@ -95,7 +100,8 @@ module.exports = {
 	},
 	/**
 	 * Return the root directory of the head package
-	 * @param profile
+	 *
+	 * @param profile {string} optional profile id
 	 * @returns {*}
 	 */
 	getHeadRoot( profile = process.env.__WPI_PROFILE__ || 'default' ) {
