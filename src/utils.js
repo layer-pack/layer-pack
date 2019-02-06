@@ -28,6 +28,9 @@ function checkIfDir( fs, file ) {
 }
 
 const utils = {
+	/**
+	 * Return all configs for the available profiles
+	 */
 	getAllConfigs() {
 		var projectRoot = process.cwd(),
 		    pkgConfig   = fs.existsSync(path.normalize(projectRoot + "/package.json")) &&
@@ -41,11 +44,20 @@ const utils = {
 		      .forEach(
 			      p => {
 				      allCfg[p] = true;
-				      allCfg[p] = this.getConfigByProfiles(projectRoot, pkgConfig.wpInherit[p], p, allCfg);
+				      allCfg[p] = this.getConfigByProfiles(projectRoot, pkgConfig.wpInherit[p], p);
 			      }
 		      )
 		return allCfg;
 	},
+	/**
+	 * Recurse over the inherited package to map all the value for a specified profile id
+	 *
+	 * @param projectRoot
+	 * @param pkgConfig
+	 * @param profile
+	 * @returns {{projectRoot: *, allModId: Array, allModulePath: Array, allRoots: *, extAliases, allWebpackCfg: Array,
+	 *     allExtPath: Array, allCfg: Array, vars, allModuleRoots: Array}}
+	 */
 	getConfigByProfiles( projectRoot, pkgConfig, profile ) {
 		var extAliases     = {},
 		    allModulePath  = [],
@@ -106,12 +118,13 @@ const utils = {
 			
 			    return list;
 		    })(),
+		    // deduce all the roots & others values
 		    allRoots       = (function () {
 			    var roots = [projectRoot + '/' + rootDir], libPath = [];
 			
-			    pkgConfig.libsPath
-			    && fs.existsSync(path.normalize(projectRoot + "/" + pkgConfig.libsPath))
-			    && libPath.push(path.normalize(projectRoot + "/" + pkgConfig.libsPath));
+			    //pkgConfig.libsPath
+			    //&& fs.existsSync(path.normalize(projectRoot + "/" + pkgConfig.libsPath))
+			    //&& libPath.push(path.normalize(projectRoot + "/" + pkgConfig.libsPath));
 			
 			    allModulePath.push(path.normalize(projectRoot + '/node_modules'));
 			    allModuleRoots.push(projectRoot);
@@ -154,7 +167,6 @@ const utils = {
 					
 					    checkIfDir(fs, modPath)
 					    && allModulePath.push(fs.realpathSync(modPath));
-					    //console.warn(allModulePath)
 				    }
 			    );
 			    allModulePath.push("node_modules")
@@ -166,22 +178,21 @@ const utils = {
 				...extAliases,
 				...pkgConfig.aliases
 			};
+		
 		vars = {
 			rootAlias: 'App',
 			...vars
-		}
+		};
+		
 		if ( pkgConfig && pkgConfig.vars )
 			vars = {
 				rootAlias: 'App',
 				...vars,
 				...pkgConfig.vars
 			};
+		
 		allCfg.unshift(pkgConfig);
-		//allRoots = [
-		//	allRoots[0],
-		//
-		//]
-		//console.log(allRoots)
+		
 		return {
 			allWebpackCfg,
 			allModulePath,
@@ -334,6 +345,12 @@ const utils = {
 		utils.addVirtualFile(vfs, virtualFile, code);
 		cb(null, virtualFile, code);
 	},
+	/**
+	 * Create a compilable virtual file
+	 * @param vfs
+	 * @param fileName
+	 * @param content
+	 */
 	addVirtualFile( vfs, fileName, content ) {
 		vfs.purge([fileName]);
 		VirtualModulePlugin.populateFilesystem(
