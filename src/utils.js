@@ -281,8 +281,13 @@ const utils = {
 						"req = require.context(" + JSON.stringify(path.normalize(_root + "/" + subPath)) + ", true, /^\\.\\/" + re + "$/);\n" +
 						"\n" +
 						"req.keys().forEach(function (key) {\n" +
-						"    let name=key.substr(2);" +
-						"    _exports[name] = _exports[name]||req(key);\n" +
+						"    let mod, " +
+						"        name=key.match( /^\\.\\/" + re + "$/);" +
+						"    name = name&&name[1]||key.substr(2);" +
+						"    if (!_exports[name]){" +
+						"       mod = req(key);" +
+						"      _exports[name] = Object.keys(mod).length === 1 && mod.default || mod;\n" +
+						"    }" +
 						"});\n";
 				//\"" + RootAlias + "/" + subPath + "/" + "\"+key
 			}
