@@ -68,7 +68,7 @@ module.exports = {
 				wpCfg = require(cfg.allWebpackCfg[0]);
 			
 			if ( cfg.vars.webpackPatch ) {
-				wpCfg = wpCfg.map(cfg => merge.smart(cfg, cfg.vars.webpackPatch));
+				wpCfg = wpCfg.map(cfgItem => merge.smart(cfgItem, cfg.vars.webpackPatch));
 			}
 		} catch ( e ) {
 			console.error(e)
