@@ -33,14 +33,13 @@ const utils = {
 	/**
 	 * Return all configs for the available profiles
 	 */
-	getAllConfigs() {
-		var projectRoot = process.cwd(),
-		    pkgConfig   = fs.existsSync(path.normalize(projectRoot + "/package.json")) &&
-			    JSON.parse(fs.readFileSync(path.normalize(projectRoot + "/package.json"))),
-		    allCfg      = {};
+	getAllConfigs( projectRoot = process.cwd() ) {
+		var pkgConfig = fs.existsSync(path.normalize(projectRoot + "/package.json")) &&
+			JSON.parse(fs.readFileSync(path.normalize(projectRoot + "/package.json"))),
+		    allCfg    = {};
 		
 		if ( !pkgConfig || !pkgConfig.wpInherit )
-			throw new Error("Can't find any wpi config !")
+			throw new Error("Can't find any wpi config ! ( searched in " + projectRoot + " )")
 		
 		Object.keys(pkgConfig.wpInherit)
 		      .forEach(
@@ -67,6 +66,7 @@ const utils = {
 		    allWebpackCfg  = [],
 		    allModuleRoots = [],
 		    allCfg         = [],
+		    allTemplates   = {},
 		    vars           = {},
 		    rootDir        = pkgConfig.rootFolder || './App',
 		    /**
@@ -134,6 +134,13 @@ const utils = {
 			    if ( pkgConfig.config )
 				    allWebpackCfg.push(path.resolve(path.normalize(projectRoot + '/' + pkgConfig.config)))
 			
+			    if ( pkgConfig.templates )
+				    Object.keys(pkgConfig.templates)
+				          .reduce(
+					          ( h, k ) => (h[k] = h[k] || path.resolve(path.normalize(projectRoot + '/' + pkgConfig.templates[k]))),
+					          allTemplates
+				          );
+			
 			    allExtPath.forEach(
 				    function ( where, i, arr, cProfile ) {
 					    cProfile    = cProfile || pkgConfig.basedOn || profile;
@@ -199,6 +206,7 @@ const utils = {
 			allWebpackCfg,
 			allModulePath,
 			allRoots,
+			allTemplates,
 			allExtPath,
 			extAliases,
 			allModuleRoots,

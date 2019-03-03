@@ -97,7 +97,15 @@ Add in package.json :
    	"version"      : "1.0.0",
    	"wpInherit"    : {
    		"default": {// default profile id
-   			"rootFolder": "App",// local root that will be mapped on App/...
+
+   		    // local root that will be mapped on App/...
+   			"rootFolder": "App",
+
+   			// optional list of templates folder to init an app / comp
+   			"templates": {
+   			    "default":"./templates/ssrApp"
+   			    "ssrApp":"./templates/ssrApp"
+   			},
    			"extend"    : [
    				"parentProject" // parentProject must have wpInherit.default with his own extend value
    			]

@@ -23,8 +23,8 @@ module.exports = {
 	 * Retrieve all available configs by profile id
 	 * @returns {{}}
 	 */
-	getAllConfigs() {
-		return allConfigs = allConfigs || utils.getAllConfigs()
+	getAllConfigs( dir, reset ) {
+		return allConfigs = !reset && allConfigs || utils.getAllConfigs(dir)
 	},
 	/**
 	 * Retrieve the current profile config or the asked one
