@@ -105,7 +105,18 @@ Add in package.json :
    		// optionally we can define multiple profile
    		"api"    : {// same profiles must exist in all inherited project
    			"rootFolder": "App",
-   			"config"    : "./webpack.config.api.js", // optional webpack config
+
+   			// optional folder containing libs overrides for dev purposes
+   			// ( these libs will have precedence over node_modules )
+   			//
+   			// /!\ Use this to hard patch bugged npm libs /!\
+   			// /!\ theirs node_modules ( ./libs/*/node_modules ) will be ignored /!\
+   			// /!\ should not be used unless there no other solutions /!\
+   			"libsPath": "./libs",
+
+   			// optional webpack config
+   			"config"    : "./webpack.config.api.js",
+
    			"extend"    : [
    				"parentProject"
    			]
