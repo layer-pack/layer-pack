@@ -18,9 +18,7 @@
 var path             = require('path'),
     mustache         = require('mustache'),
     fs               = require('fs-extra'),
-    resolve          = require('resolve'),
     execSync         = require('child_process').execSync,
-    tplCopy          = require('copy-template-dir'),
     cDir             = process.cwd(),
     projectDir,
     tmp,
@@ -39,21 +37,29 @@ var path             = require('path'),
 
 if ( argz[0] && /^[\w\-_]+$/.test(argz[0]) ) {
 	projectName = argz[0];
+	argz.shift();
 }
-if ( argz[1] && iniRe.test(argz[1]) ) {
-	tmp              = argz[1].match(iniRe);
+if ( argz[0] && iniRe.test(argz[0]) ) {
+	tmp              = argz[0].match(iniRe);
 	originTemplateId = tmp[3] || originTemplateId;
 	originProfile    = tmp[2] || originProfile;
 	originPackage    = tmp[1];
+	argz.shift();
 }
-
 vars = {
-	...vars, ...require('minimist')(process.argv.slice(4)),
+	...vars, ...require('minimist')(process.argv.slice(2)),
 	projectName,
 	originTemplateId,
 	originProfile,
 	originPackage
 };
+if ( vars.h || vars.help ) {
+	console.info("Create a new project using wpi :");
+	console.info("Syntax : wpi-init project_name inheritedPackage::profileId:templateId");
+	console.info(" ( Or ): wpi-init project_name inheritedPackage (using default profile & default template");
+	return;
+}
+
 
 projectDir = path.join(cDir, vars.projectName);
 stdIoOpts  = { stdio: 'inherit', env: { '__WPI_PROFILE__': originProfile }, cwd: projectDir };
@@ -92,7 +98,7 @@ glob.sync(
 		        targetFile = path.join(projectDir, file.substr(baseTplPath.length + 1));
 		    try {
 			    fs.ensureDirSync(dir);
-			    fs.writeFileSync(targetFile, mustache.render(fs.readFileSync(file).toString(), vars, undefined, ['{_', '_}']));
+			    fs.writeFileSync(targetFile, mustache.render(fs.readFileSync(file).toString(), vars, undefined, ['{%', '%}']));
 			    console.log('created :' + targetFile)
 		    } catch ( e ) {
 			    console.warn('fail :' + targetFile, e + '')
@@ -101,14 +107,3 @@ glob.sync(
     )
 
 execSync('npm i', stdIoOpts);
-//tplCopy(
-//	configs[originProfile].allTemplates[originTemplateId],
-//	projectDir,
-//	vars,
-//	( err, createdFiles ) => {
-//		if ( err ) throw err
-//		createdFiles.forEach(filePath => console.log(`Created ${ filePath }`))
-//		console.log('done!')
-//
-//	}
-//)

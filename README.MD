@@ -253,6 +253,19 @@ module.exports = wpCfg;
 
 ```
 
+## Extra ?
+
+Wpi allow to define bootstrap templates to create new projects easily (experimental) :
+
+Here how to init a new project :
+```
+$ wpi-init -h
+   Create a new project using wpi :
+   Syntax : wpi-init project_name inheritedPackage::profileId:templateId
+    ( Or ): wpi-init project_name inheritedPackage (using default profile & default template
+
+```
+
 
 ## Caveats / bugs ?
 
