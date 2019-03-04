@@ -120,6 +120,7 @@ Add in package.json :
    			// /!\ Use this to hard patch bugged npm libs /!\
    			// /!\ theirs node_modules ( ./libs/*/node_modules ) will be ignored /!\
    			// /!\ should not be used unless there no other solutions /!\
+   			// /!\ (& overrided lib version must be fixed) /!\
    			"libsPath": "./libs",
 
    			// optional webpack config
