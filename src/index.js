@@ -23,8 +23,8 @@ module.exports = {
 	 * Retrieve all available configs by profile id
 	 * @returns {{}}
 	 */
-	getAllConfigs() {
-		return allConfigs = allConfigs || utils.getAllConfigs()
+	getAllConfigs( dir, reset ) {
+		return allConfigs = !reset && allConfigs || utils.getAllConfigs(dir)
 	},
 	/**
 	 * Retrieve the current profile config or the asked one
@@ -68,7 +68,7 @@ module.exports = {
 				wpCfg = require(cfg.allWebpackCfg[0]);
 			
 			if ( cfg.vars.webpackPatch ) {
-				wpCfg = merge.smart(wpCfg, cfg.vars.webpackPatch)
+				wpCfg = wpCfg.map(cfgItem => merge.smart(cfgItem, cfg.vars.webpackPatch));
 			}
 		} catch ( e ) {
 			console.error(e)

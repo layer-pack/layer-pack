@@ -1,6 +1,6 @@
 {
   "name": "webpack-inherit",
-  "version": "1.4.5",
+  "version": "2.0.0",
   "description": "Webpack plugin for better code pipelines & architectures; Allows to easily namespace, compose, extend and build your Webpack projects with minimal and versioned configs",
   "license": "MIT",
   "main": "src/index.js",
@@ -35,9 +35,11 @@
   "dependencies": {
     "app-module-path": "^2.2.0",
     "fast-glob": "^2.2.6",
+    "fs-extra": "^7.0.1",
     "is": "^3.3.0",
     "is-builtin-module": "^3.0.0",
     "minimist": "^1.2.0",
+    "mustache": "^3.0.1",
     "resolve": "^1.9.0",
     "shortid": "^2.2.14",
     "virtual-module-webpack-plugin": "^0.3.0",

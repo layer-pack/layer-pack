@@ -13,16 +13,13 @@ Allows to easily namespace, compose, extend and build your Webpack projects usin
 </p>
 
 <p align="center">
-/!\ This awesome plugin is working, but still in beta stage  ( not well tested/optimized for now ) /!\
-</p>
-<p align="center">
-Feel free to test / feedback / make contribs<br/>
+this is beta; feel free to test / feedback / make contribs<br/>
 </p>
 
 
 ## What you can do with it :
 
-### Inherit multiple source tree in the same namespace
+### Inherit multiple npm packages like a class
 
 So you can easily override & extend any files in a project, share most of the code between them & use cool things like that :
 
@@ -44,9 +41,9 @@ class MyOverrided extend $super{
 }
 ```
 
-### Inherit and/or extend webpack config from dependencies packages, and use it on you're project
+### Inherit, use & extend multiple webpack config from dependencies packages
 
-So you can put your configuration in some npm packages and easily extend / switch them !
+So you can share, version, extend & switch your webpack conf via npm
 
 ### Namespace you're application
 
@@ -97,7 +94,15 @@ Add in package.json :
    	"version"      : "1.0.0",
    	"wpInherit"    : {
    		"default": {// default profile id
-   			"rootFolder": "App",// local root that will be mapped on App/...
+
+   		    // local root that will be mapped on App/...
+   			"rootFolder": "App",
+
+   			// optional list of templates folder to init an app / comp
+   			"templates": {
+   			    "default":"./templates/ssrApp"
+   			    "ssrApp":"./templates/ssrApp"
+   			},
    			"extend"    : [
    				"parentProject" // parentProject must have wpInherit.default with his own extend value
    			]
@@ -105,7 +110,19 @@ Add in package.json :
    		// optionally we can define multiple profile
    		"api"    : {// same profiles must exist in all inherited project
    			"rootFolder": "App",
-   			"config"    : "./webpack.config.api.js", // optional webpack config
+
+   			// optional folder containing libs overrides for dev purposes
+   			// ( these libs will have precedence over node_modules )
+   			//
+   			// /!\ Use this to hard patch bugged npm libs /!\
+   			// /!\ theirs node_modules ( ./libs/*/node_modules ) will be ignored /!\
+   			// /!\ should not be used unless there no other solutions /!\
+   			// /!\ (& overrided lib version must be fixed) /!\
+   			"libsPath": "./libs",
+
+   			// optional webpack config
+   			"config"    : "./webpack.config.api.js",
+
    			"extend"    : [
    				"parentProject"
    			]
@@ -231,6 +248,19 @@ let wpCfg = wpInherit.getSuperWebpackCfg(/* "profileId" */);
 /* extend the conf from parent */
 
 module.exports = wpCfg;
+
+```
+
+## Extra ?
+
+Wpi allow to define bootstrap templates to create new projects easily (experimental) :
+
+Here how to init a new project :
+```
+$ wpi-init -h
+   Create a new project using wpi :
+   Syntax : wpi-init project_name inheritedPackage::profileId:templateId
+    ( Or ): wpi-init project_name inheritedPackage (using default profile & default template
 
 ```
 
