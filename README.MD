@@ -13,16 +13,13 @@ Allows to easily namespace, compose, extend and build your Webpack projects usin
 </p>
 
 <p align="center">
-/!\ This awesome plugin is working, but still in beta stage  ( not well tested/optimized for now ) /!\
-</p>
-<p align="center">
-Feel free to test / feedback / make contribs<br/>
+this is beta; feel free to test / feedback / make contribs<br/>
 </p>
 
 
 ## What you can do with it :
 
-### Inherit multiple source tree in the same namespace
+### Inherit multiple npm packages like a class
 
 So you can easily override & extend any files in a project, share most of the code between them & use cool things like that :
 
@@ -44,9 +41,9 @@ class MyOverrided extend $super{
 }
 ```
 
-### Inherit and/or extend webpack config from dependencies packages, and use it on you're project
+### Inherit, use & extend multiple webpack config from dependencies packages
 
-So you can put your configuration in some npm packages and easily extend / switch them !
+So you can share, version, extend & switch your webpack conf via npm
 
 ### Namespace you're application
 
