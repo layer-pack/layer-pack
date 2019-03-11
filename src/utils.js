@@ -76,10 +76,12 @@ const utils = {
 		    allExtPath     = (() => {
 			    let list = [], flist = [], lmid = [], seen = {};
 			
-			    pkgConfig.extend.forEach(function walk( p, i, x, mRoot, cProfile ) {
+			    pkgConfig.extend.forEach(function walk( p, i, x, mRoot, cProfile, libsPath = pkgConfig.libsPath ) {
 				    mRoot     = mRoot || projectRoot;
 				    cProfile  = cProfile || pkgConfig.basedOn || profile;
-				    let where = "/node_modules/",
+				    let where = libsPath && fs.existsSync(path.normalize(projectRoot + "/" + libsPath + "/" + p))
+				                ? "/" + libsPath + "/" :
+				                "/node_modules/",
 				        cfg   = fs.existsSync(path.normalize(mRoot + where + p + "/package.json")) &&
 					        JSON.parse(fs.readFileSync(path.normalize(mRoot + where + p + "/package.json")));
 				
@@ -95,7 +97,7 @@ const utils = {
 				    lmid.push(p);
 				
 				    if ( cfg && cfg.wpInherit && cfg.wpInherit[cProfile] && cfg.wpInherit[cProfile].extend )
-					    cfg.wpInherit[cProfile].extend.forEach(( mid, y ) => walk(mid, y, null, mRoot + where + p, cfg.wpInherit[cProfile].basedOn))
+					    cfg.wpInherit[cProfile].extend.forEach(( mid, y ) => walk(mid, y, null, mRoot + where + p, cfg.wpInherit[cProfile].basedOn, cfg.wpInherit[cProfile].libsPath))
 				    else {
 					    if ( !cfg ) {
 						    throw new Error("webpack-inherit : Can't inherit an not installed module :\nNot found :" + mRoot + where + p)
