@@ -117,8 +117,7 @@ Add in package.json :
    			// optional folder containing libs overrides for dev purposes
    			// ( these libs will have precedence over node_modules )
    			//
-   			// /!\ Use this to hard patch bugged npm libs /!\
-   			// /!\ theirs node_modules ( ./libs/*/node_modules ) will be ignored /!\
+   			// /!\ Use this to hard patch bugged npm libs or add work in progress libs /!\
    			// /!\ should not be used unless there no other solutions /!\
    			// /!\ (& overrided lib version must be fixed) /!\
    			"libsPath": "./libs",
