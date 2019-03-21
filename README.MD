@@ -59,7 +59,10 @@ So you can easily create/inherit modules & extensions and require them using :
 
 ```jsx
 import allModules from "App/modules/*.module.js";
-// or import allModules from "App/modules/*/index.js";
+// or
+// import allModules from "App/modules/*/index.js";
+// or
+// import {MyCompByFileName} from "App/ui/components/(*).jsx"; // ( index file with big import to maintain ) no more ! :)
 ```
 
 ```scss
@@ -269,8 +272,7 @@ $ wpi-init -h
 
 - All devDependencies of inheritable packages must be move to normal deps in order to define theirs own webpack conf
 - Context based webpack requires are not processed
-- This plugin probably need some optimisations
-- This plugin probably need some bugs fixes ( find them ! :) )
+- This plugin probably need some optimisations for (big) big projects
 
 ## Contributors ?
 
