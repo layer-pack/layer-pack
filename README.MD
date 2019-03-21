@@ -59,7 +59,10 @@ So you can easily create/inherit modules & extensions and require them using :
 
 ```jsx
 import allModules from "App/modules/*.module.js";
-// or import allModules from "App/modules/*/index.js";
+// or
+// import allModules from "App/modules/*/index.js";
+// or
+// import {MyCompByFileName} from "App/ui/components/(*).jsx"; // ( index file with big import to maintain ) no more ! :)
 ```
 
 ```scss
