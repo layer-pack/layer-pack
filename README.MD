@@ -19,7 +19,7 @@ this is beta; feel free to test / feedback / make contribs<br/>
 
 ## What you can do with it :
 
-### Do glob require on inherited directory
+### Do glob require on inherited directories
 
 So you can easily create/inherit modules & extensions and require them using :
 
