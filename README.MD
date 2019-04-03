@@ -19,7 +19,7 @@ this is beta; feel free to test / feedback / make contribs<br/>
 
 ## What you can do with it :
 
-### Do glob require on inherited directory
+### Do glob require on inherited directories
 
 So you can easily create/inherit modules & extensions and require them using :
 
@@ -118,8 +118,7 @@ Add in package.json :
    			// optional folder containing libs overrides for dev purposes
    			// ( these libs will have precedence over node_modules )
    			//
-   			// /!\ Use this to hard patch bugged npm libs /!\
-   			// /!\ theirs node_modules ( ./libs/*/node_modules ) will be ignored /!\
+   			// /!\ Use this to hard patch bugged npm libs or add work in progress libs /!\
    			// /!\ should not be used unless there no other solutions /!\
    			// /!\ (& overrided lib version must be fixed) /!\
    			"libsPath": "./libs",
@@ -274,7 +273,6 @@ $ wpi-init -h
 - All devDependencies of inheritable packages must be move to normal deps in order to define theirs own webpack conf
 - Context based webpack requires are not processed
 - This plugin probably need some optimisations
-- This plugin probably need some bugs fixes ( find them ! :) )
 
 ## Contributors ?
 
