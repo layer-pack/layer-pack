@@ -19,7 +19,25 @@ this is beta; feel free to test / feedback / make contribs<br/>
 
 ## What you can do with it :
 
-### Inherit multiple npm packages like a class
+### Do glob require on inherited directory
+
+So you can easily create/inherit modules & extensions and require them using :
+
+```jsx
+import allModules from "App/modules/*.module.js";
+// or
+// import allModules from "App/modules/*/index.js";
+// or
+// import {MyCompByFileName} from "App/ui/components/(*).jsx"; // ( index file with big import to maintain ) no more ! :)
+```
+
+```scss
+
+@import "App/modules/*.module.scss"; // 1 import to rulz them all
+
+```
+
+### Split you're projects into multiple inheritable npm packages  
 
 So you can easily override & extend any files in a project, share most of the code between them & use cool things like that :
 
@@ -43,7 +61,7 @@ class MyOverrided extend $super{
 
 ### Inherit, use & extend multiple webpack config from dependencies packages
 
-So you can share, version, extend & switch your webpack conf via npm
+So you can share, version, extend & switch your webpack conf & boilerplate via npm
 
 ### Namespace you're application
 
@@ -53,29 +71,12 @@ So you can stop using easily broken relative imports :
 import stuff from "App/config"; // aw yeah
 ```
 
-### Do glob require on inherited directory
-
-So you can easily create/inherit modules & extensions and require them using :
-
-```jsx
-import allModules from "App/modules/*.module.js";
-// or
-// import allModules from "App/modules/*/index.js";
-// or
-// import {MyCompByFileName} from "App/ui/components/(*).jsx"; // ( index file with big import to maintain ) no more ! :)
-```
-
-```scss
-
-@import "App/modules/*.module.scss"; // 1 import to rulz them all
-
-```
 
 ### Even more :
 
 - Share unique build conf package between projects, modules & extensions
 - Combine projects with different namespaces in 1 head package
-- Easily override node_modules
+- Easily override node_modules ( drop a module in a "lib directory" & dev/test you're patchs )
 - Etc...
 
 ## Check the samples [here](https://github.com/n8tz/webpack-inherit-sample)
