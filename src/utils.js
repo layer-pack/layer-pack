@@ -295,8 +295,11 @@ const utils = {
 						"    let mod, " +
 						"        name=key.match( /^\\.\\/" + re + "$/);" +
 						"    name = name&&name[1]||key.substr(2);" +
+						"    name = name.split('/');" +
+						//"    name.forEach( = name.split('/');" +
 						"    if (!_exports[name]){" +
 						"       mod = req(key);" +
+						"       " +
 						"      _exports[name] = Object.keys(mod).length === 1 && mod.default || mod;\n" +
 						"    }" +
 						"});\n";
