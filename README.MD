@@ -28,7 +28,9 @@ import allModules from "App/modules/*.module.js";
 // or
 // import allModules from "App/modules/*/index.js";
 // or
-// import {MyCompByFileName} from "App/ui/components/(*).jsx"; // ( index file with big import to maintain ) no more ! :)
+// import {MyCompByFileName} from "App/ui/components/(*).jsx"; // ( big import list to maintain ) no more ! :)
+// or
+// import {myFolder} from "App/ui/components/(**).jsx"; // ( walk & set myFolder/MyComp in myFolder.MyComp )
 ```
 
 ```scss

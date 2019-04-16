@@ -51,7 +51,7 @@ module.exports = function ( cfg, opts ) {
 		 * @param compiler
 		 */
 		apply       : function ( compiler ) {
-			var cache               = {},
+			let cache               = {},
 			    plugin              = this,
 			    RootAlias           = opts.vars.rootAlias || "App",
 			    RootAliasRe         = new RegExp("^" + RootAlias, ''),
@@ -65,7 +65,8 @@ module.exports = function ( cfg, opts ) {
 			compiler.options.plugins.push(
 				new webpack.DefinePlugin(
 					{
-						'__WPI_PROFILE__': currentProfile
+						'__WPI_PROFILE__'    : currentProfile,
+						'__WP_BUILD_TARGET__': buildTarget
 					}));
 			
 			// include node modules path allowing node executables to require external modules
@@ -108,7 +109,7 @@ module.exports = function ( cfg, opts ) {
 			 * The main resolver / glob mngr
 			 */
 			function wpiResolve( data, cb ) {
-				var requireOrigin = data.contextInfo.issuer,
+				let requireOrigin = data.contextInfo.issuer,
 				    context       = data.context || path.dirname(requireOrigin),
 				    tmpPath;
 				
@@ -147,7 +148,7 @@ module.exports = function ( cfg, opts ) {
 				}
 				
 				// small caching system as we are hooking before resolve
-				var resolve = function ( e, filePath, content ) {
+				let resolve = function ( e, filePath, content ) {
 					    while ( cache[key].length )
 						    cache[key].pop()(e, filePath, content);
 					    cache[key] = filePath || true;
@@ -255,6 +256,13 @@ module.exports = function ( cfg, opts ) {
 			};
 			
 			// wp hook
+			compiler.plugin(
+				"module-loader-module",
+				function ( mlf ) {
+					mlf.plugin("before-resolve", wpiResolve);
+				}
+			);
+			// wp hook
 			compiler.plugin("normal-module-factory",
 			                function ( nmf ) {
 				
@@ -279,7 +287,7 @@ module.exports = function ( cfg, opts ) {
 				
 				                excludeExternals && nmf.plugin('factory', function ( factory ) {
 					                return function ( data, callback ) {
-						                var requireOrigin = data.contextInfo.issuer,
+						                let requireOrigin = data.contextInfo.issuer,
 						                    context       = data.context || path.dirname(requireOrigin),
 						                    request       = data.wpiOriginRequest || data.request,
 						                    mkExt         = isBuiltinModule(data.request),
