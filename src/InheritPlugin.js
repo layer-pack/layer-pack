@@ -256,13 +256,6 @@ module.exports = function ( cfg, opts ) {
 			};
 			
 			// wp hook
-			compiler.plugin(
-				"module-loader-module",
-				function ( mlf ) {
-					mlf.plugin("before-resolve", wpiResolve);
-				}
-			);
-			// wp hook
 			compiler.plugin("normal-module-factory",
 			                function ( nmf ) {
 				
