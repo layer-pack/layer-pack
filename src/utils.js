@@ -82,13 +82,18 @@ const utils = {
 				    let where = libsPath && fs.existsSync(path.normalize(projectRoot + "/" + libsPath + "/" + p))
 				                ? "/" + libsPath + "/" :
 				                "/node_modules/",
-				        cfg   = fs.existsSync(path.normalize(mRoot + where + p + "/package.json")) &&
+				        cfg   = fs.existsSync(path.normalize(mRoot + where + p + "/.wpi.json")) &&
+					        { wpInherit: JSON.parse(fs.readFileSync(path.normalize(mRoot + where + p + "/.wpi.json"))) }
+					        ||
+					        fs.existsSync(path.normalize(mRoot + where + p + "/package.json")) &&
 					        JSON.parse(fs.readFileSync(path.normalize(mRoot + where + p + "/package.json")));
 				
 				    // if the package is not here it could be sibling this one...
 				    if ( !cfg || !cfg.wpInherit ) {
 					    where = "/../";
-					    cfg   = fs.existsSync(path.resolve(path.normalize(mRoot + where + p + "/package.json"))) &&
+					    cfg   = fs.existsSync(path.normalize(mRoot + where + p + "/.wpi.json")) &&
+						    { wpInherit: JSON.parse(fs.readFileSync(path.normalize(mRoot + where + p + "/.wpi.json"))) }
+						    || fs.existsSync(path.resolve(path.normalize(mRoot + where + p + "/package.json"))) &&
 						    JSON.parse(fs.readFileSync(path.resolve(path.normalize(mRoot + where + p + "/package.json"))));
 					
 				    }
@@ -146,8 +151,11 @@ const utils = {
 			    allExtPath.forEach(
 				    function ( where, i, arr, cProfile ) {
 					    cProfile    = cProfile || pkgConfig.basedOn || profile;
-					    let cfg     = fs.existsSync(path.normalize(where + "/package.json")) &&
+					    let cfg     = fs.existsSync(path.normalize(where + "/.wpi.json")) &&
+						    { wpInherit: JSON.parse(fs.readFileSync(path.normalize(where + "/.wpi.json"))) }
+						    || fs.existsSync(path.normalize(where + "/package.json")) &&
 						    JSON.parse(fs.readFileSync(path.normalize(where + "/package.json"))),
+					
 					        modPath = path.normalize(where + "/node_modules");
 					
 					    allModuleRoots.push(where)
