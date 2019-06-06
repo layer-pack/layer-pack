@@ -13,6 +13,7 @@
  */
 
 
-let addModulePath = require('app-module-path').addPath;
-
+let addModulePath    = require('app-module-path').addPath;
+let removeModulePath = require('app-module-path').removePath;
+removeModulePath("node_modules")
 module.exports = ( obj ) => obj.map(addModulePath);
