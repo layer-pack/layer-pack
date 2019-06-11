@@ -12,8 +12,16 @@
  *  @contact : n8tz.js@gmail.com
  */
 
-
-let addModulePath    = require('app-module-path').addPath;
-let removeModulePath = require('app-module-path').removePath;
-removeModulePath("node_modules")
-module.exports = ( obj ) => obj.map(addModulePath);
+{
+	var Module              = require('module').Module,
+	    modPath             = [],
+	    __oldNMP            = Module._nodeModulePaths;
+	Module._nodeModulePaths = function ( from ) {
+		return [].concat(modPath).concat(__oldNMP(from)).filter(function ( el, i, arr ) {
+			return arr.indexOf(el) === i;
+		});
+	};
+	module.exports          = function ( paths ) {
+		modPath = paths;
+	}
+}
