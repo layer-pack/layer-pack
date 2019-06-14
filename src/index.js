@@ -42,16 +42,6 @@ module.exports = {
 		return this.getAllConfigs()[profile];
 	},
 	/**
-	 * Add inherited node_modules paths to node
-	 * @todo : somethink needed as it could lead to absurd node_modules list
-	 * @param profile {string} optional profile id
-	 */
-	loadModulePath( profile = process.env.__WPI_PROFILE__ || "default" ) {
-		let cfg           = this.getAllConfigs()[profile];
-		let addModulePath = require('app-module-path').addPath;
-		cfg.allModulePath.map(addModulePath)
-	},
-	/**
 	 * Retrieve the inherited wp cfg for the given or current profile id
 	 *
 	 * @param profile {string} optional profile id

@@ -38,7 +38,9 @@ Module._nodeModulePaths = function ( from ) {
 		return paths;
 	}
 	else {
-		return [path.join(from, 'node_modules'), path.resolve(from, '..'), ...modPath];
+		if ( !baseDir )
+			return [...__oldNMP(from), ...modPath];
+		return [path.join(from, 'node_modules'), path.resolve(from, '..'), ...modPath, ...__oldNMP(from)];
 	}
 };
 module.exports          = function ( paths, roots, dist ) {
