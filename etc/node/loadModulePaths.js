@@ -17,32 +17,34 @@
  */
 
 var Module         = require('module').Module,
+    path           = require('path'),
     modPath        = [],
     allRoots       = [],
     baseDir        = false,
-    __initialPaths = module.parent.paths,
-    __oldRF        = Module._resolveFilename,
+    __initialPaths = [].concat(module.parent.paths),
     __oldNMP       = Module._nodeModulePaths;
 
 
 Module._nodeModulePaths = function ( from ) {
 	let paths;
 	if (
-		baseDir && from.substr(0, baseDir.length) === baseDir
+		from === baseDir
 		||
 		allRoots.find(path => (from.substr(0, path.length) === path))
 	) {
-		
 		paths = [].concat(modPath).concat(__oldNMP(from)).filter(function ( el, i, arr ) {
 			return arr.indexOf(el) === i;
 		});
 		return paths;
 	}
-	else return __oldNMP.call(this, from);
+	else {
+		return [path.join(from, 'node_modules'), path.resolve(from, '..'), ...modPath];
+	}
 };
 module.exports          = function ( paths, roots, dist ) {
-	modPath             = paths;
-	allRoots            = roots;
-	baseDir             = dist;
-	module.parent.paths = [].concat(paths).concat(__initialPaths);
+	modPath                    = paths;
+	allRoots                   = roots;
+	baseDir                    = dist;
+	module.parent.paths.length = 0;
+	module.parent.paths.push(...paths, ...__initialPaths);
 }
