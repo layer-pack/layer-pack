@@ -78,7 +78,11 @@ module.exports = function ( cfg, opts ) {
 						                         banner: "/** wpi externals - add module path **/\n" +
 							                         "{\n" +
 							                         "let ___wpi_amp = require('webpack-inherit/etc/node/loadModulePaths.js')(" +
-							                         JSON.stringify(opts.allModulePath) + ");\n" +
+							                         JSON.stringify(opts.allModulePath) + "," +
+							                         JSON.stringify(opts.allRoots) +
+							                         "," +
+							                         JSON.stringify(compiler.options.output.path) +
+							                         ");\n" +
 							                         "}\n",
 						                         raw   : true
 					                         })

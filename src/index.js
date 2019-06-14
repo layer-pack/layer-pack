@@ -13,7 +13,10 @@
  */
 
 const utils         = require("./utils"),
+      Module        = require('module').Module,
+      path          = require('path'),
       InheritPlugin = require("./InheritPlugin"),
+      ModPathLoader = require("../etc/node/loadModulePaths"),
       merge         = require('webpack-merge');
 
 let allConfigs, allPluginInstances = {}, allCfgInstances = {};
@@ -40,8 +43,7 @@ module.exports = {
 	 * @param profile {string} optional profile id
 	 */
 	loadModulePath( profile = process.env.__WPI_PROFILE__ || "default" ) {
-		let cfg = this.getAllConfigs()[profile];
-		
+		let cfg           = this.getAllConfigs()[profile];
 		let addModulePath = require('app-module-path').addPath;
 		cfg.allModulePath.map(addModulePath)
 	},
@@ -59,6 +61,7 @@ module.exports = {
 		if ( allCfgInstances[profile] )
 			return allCfgInstances[profile];
 		
+		ModPathLoader(cfg.allModulePath, cfg.allWebpackCfg.map(fp => path.dirname(fp)))
 		this.loadModulePath(profile);
 		
 		try {
