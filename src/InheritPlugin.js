@@ -31,6 +31,7 @@ module.exports = function ( cfg, opts ) {
 		    JSON.parse(fs.readFileSync(path.normalize(opts.allModuleRoots[0] + "/package.json"))),
 	
 	    excludeExternals = opts.vars.externals,
+	    constDef         = opts.vars.DefinePluginCfg || {},
 	    currentProfile   = process.env.__WPI_PROFILE__ || 'default',
 	    externalRE       = is.string(opts.vars.externals) && new RegExp(opts.vars.externals);
 	
@@ -66,7 +67,8 @@ module.exports = function ( cfg, opts ) {
 				new webpack.DefinePlugin(
 					{
 						'__WPI_PROFILE__'    : currentProfile,
-						'__WP_BUILD_TARGET__': buildTarget
+						'__WP_BUILD_TARGET__': buildTarget,
+						...constDef
 					}));
 			
 			// include node modules path allowing node executables to require external modules
