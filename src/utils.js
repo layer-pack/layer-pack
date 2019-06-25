@@ -12,7 +12,6 @@
  *  @contact : n8tz.js@gmail.com
  */
 
-
 const path                = require("path"),
       fs                  = require('fs'),
       is                  = require('is'),
@@ -34,12 +33,14 @@ const utils = {
 	 * Return all configs for the available profiles
 	 */
 	getAllConfigs( projectRoot = process.cwd() ) {
-		let pkgConfig = fs.existsSync(path.normalize(projectRoot + "/package.json")) &&
+		let pkgConfig = fs.existsSync(path.normalize(projectRoot + "/.wi.json")) &&
+			{ wpInherit: JSON.parse(fs.readFileSync(path.normalize(projectRoot + "/.wi.json"))) }
+			|| fs.existsSync(path.normalize(projectRoot + "/package.json")) &&
 			JSON.parse(fs.readFileSync(path.normalize(projectRoot + "/package.json"))),
 		    allCfg    = {};
 		
 		if ( !pkgConfig || !pkgConfig.wpInherit )
-			throw new Error("Can't find any wpi config ! ( searched in " + projectRoot + " )")
+			throw new Error("Can't find any wpi config ! ( searched in " + projectRoot + "/.wi.json" + " )")
 		
 		Object.keys(pkgConfig.wpInherit)
 		      .forEach(
@@ -82,8 +83,8 @@ const utils = {
 				    let where = libsPath && fs.existsSync(path.normalize(projectRoot + "/" + libsPath + "/" + p))
 				                ? "/" + libsPath + "/" :
 				                "/node_modules/",
-				        cfg   = fs.existsSync(path.normalize(mRoot + where + p + "/.wpi.json")) &&
-					        { wpInherit: JSON.parse(fs.readFileSync(path.normalize(mRoot + where + p + "/.wpi.json"))) }
+				        cfg   = fs.existsSync(path.normalize(mRoot + where + p + "/.wi.json")) &&
+					        { wpInherit: JSON.parse(fs.readFileSync(path.normalize(mRoot + where + p + "/.wi.json"))) }
 					        ||
 					        fs.existsSync(path.normalize(mRoot + where + p + "/package.json")) &&
 					        JSON.parse(fs.readFileSync(path.normalize(mRoot + where + p + "/package.json")));
@@ -91,8 +92,8 @@ const utils = {
 				    // if the package is not here it could be sibling this one...
 				    if ( !cfg || !cfg.wpInherit ) {
 					    where = "/../";
-					    cfg   = fs.existsSync(path.normalize(mRoot + where + p + "/.wpi.json")) &&
-						    { wpInherit: JSON.parse(fs.readFileSync(path.normalize(mRoot + where + p + "/.wpi.json"))) }
+					    cfg   = fs.existsSync(path.normalize(mRoot + where + p + "/.wi.json")) &&
+						    { wpInherit: JSON.parse(fs.readFileSync(path.normalize(mRoot + where + p + "/.wi.json"))) }
 						    || fs.existsSync(path.resolve(path.normalize(mRoot + where + p + "/package.json"))) &&
 						    JSON.parse(fs.readFileSync(path.resolve(path.normalize(mRoot + where + p + "/package.json"))));
 					
@@ -108,7 +109,7 @@ const utils = {
 						    throw new Error("webpack-inherit : Can't inherit an not installed module :\nNot found :" + mRoot + where + p)
 					    }
 					    if ( !cfg.wpInherit )
-						    throw new Error("webpack-inherit : Can't inherit a module with no wpInherit in the package.json :\nAt :" + mRoot + where + p)
+						    throw new Error("webpack-inherit : Can't inherit a module with no wpInherit in the package.json/.wi.json :\nAt :" + mRoot + where + p)
 					    if ( !cfg.wpInherit[cProfile] )
 						    throw new Error("webpack-inherit : Can't inherit a module without the requested profile\nAt :" + mRoot + where + p + "\nRequested profile :" + cProfile)
 				    }
@@ -151,8 +152,8 @@ const utils = {
 			    allExtPath.forEach(
 				    function ( where, i, arr, cProfile ) {
 					    cProfile    = cProfile || pkgConfig.basedOn || profile;
-					    let cfg     = fs.existsSync(path.normalize(where + "/.wpi.json")) &&
-						    { wpInherit: JSON.parse(fs.readFileSync(path.normalize(where + "/.wpi.json"))) }
+					    let cfg     = fs.existsSync(path.normalize(where + "/.wi.json")) &&
+						    { wpInherit: JSON.parse(fs.readFileSync(path.normalize(where + "/.wi.json"))) }
 						    || fs.existsSync(path.normalize(where + "/package.json")) &&
 						    JSON.parse(fs.readFileSync(path.normalize(where + "/package.json"))),
 					
@@ -299,11 +300,11 @@ const utils = {
 			( _root, lvl ) => {
 				if ( checkIfDir(fs, path.normalize(_root + "/" + subPath)) )
 					code += `
-						req = require.context(${ JSON.stringify(path.normalize(_root + "/" + subPath)) }, true, /^\\.\\/${ re }$/);
+						req = require.context(${JSON.stringify(path.normalize(_root + "/" + subPath))}, true, /^\\.\\/${re}$/);
 						
 						req.keys().forEach(function (key) {
 						    let mod,
-						        name=key.match( /^\\.\\/${ re }$/),
+						        name=key.match( /^\\.\\/${re}$/),
 						        i=0,
 						        modExport=_exports;
 						    name = name&&name[1]||key.substr(2);

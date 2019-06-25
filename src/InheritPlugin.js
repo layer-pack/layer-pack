@@ -77,15 +77,14 @@ module.exports = function ( cfg, opts ) {
 				excludeExternals &&
 				compiler.options.plugins.push(
 					new webpack.BannerPlugin({
-						                         banner: "/** wpi externals - add module path **/\n" +
-							                         "{\n" +
-							                         "let ___wpi_amp = require('webpack-inherit/etc/node/loadModulePaths.js')(" +
-							                         JSON.stringify(opts.allModulePath) + "," +
-							                         JSON.stringify(opts.allRoots) +
-							                         "," +
+						                         banner: "/** wi externals **/\n" +
+							                         "require('webpack-inherit/etc/node/loadModulePaths.js').loadPaths(" +
+							                         "{" +
+							                         "allModulePath:" + JSON.stringify(opts.allModulePath.map(p => path.relative(opts.projectRoot, p))) + "," +
+							                         "cDir:process.cwd()" +
+							                         "}," +
 							                         JSON.stringify(compiler.options.output.path) +
-							                         ");\n" +
-							                         "}\n",
+							                         ");\"/** /wi externals **/\n",
 						                         raw   : true
 					                         })
 				)

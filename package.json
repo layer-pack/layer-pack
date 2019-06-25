@@ -1,6 +1,6 @@
 {
   "name": "webpack-inherit",
-  "version": "1.5.8",
+  "version": "1.5.9",
   "description": "Webpack plugin for better code pipelines & architectures; Allows to easily namespace, compose, extend and build your Webpack projects with minimal and versioned configs",
   "license": "MIT",
   "main": "src/index.js",
@@ -9,6 +9,9 @@
     "npm": ">= 5.6.0"
   },
   "bin": {
+    "wi": "etc/cli/wpi",
+    "wi-dev-server": "etc/cli/wpi-dev-server",
+    "wi-init": "etc/cli/wpi-init",
     "wpi": "etc/cli/wpi",
     "wpi-dev-server": "etc/cli/wpi-dev-server",
     "wpi-init": "etc/cli/wpi-init"
