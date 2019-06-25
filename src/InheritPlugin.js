@@ -84,7 +84,7 @@ module.exports = function ( cfg, opts ) {
 							                         "cDir:process.cwd()" +
 							                         "}," +
 							                         JSON.stringify(compiler.options.output.path) +
-							                         ");\"/** /wi externals **/\n",
+							                         ");/** /wi externals **/\n",
 						                         raw   : true
 					                         })
 				)
