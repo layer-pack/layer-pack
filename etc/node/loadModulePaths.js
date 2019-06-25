@@ -42,7 +42,7 @@ module.exports          = {
 	loadPaths  : function ( { allModulePath, cDir }, dist ) {
 		modPath = allModulePath.map(p => path.join(cDir, p));
 		baseDir = dist;
-		console.info("Using external modules from :", modPath, __initialPaths);
+		//console.info("Using external modules from :", modPath, __initialPaths);
 		module.parent.paths.length = 0;
 		module.parent.paths.push(...modPath, ...__initialPaths);
 	},
