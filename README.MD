@@ -28,6 +28,8 @@ import allModules from "App/modules/*.module.js";
 // or
 // import allModules from "App/modules/*/index.js";
 // or
+// import AllActions from "App/store/(*)/actions.js";
+// or
 // import {MyCompByFileName} from "App/ui/components/(*).jsx"; // ( big import list to maintain ) no more ! :)
 // or
 // import {myFolder} from "App/ui/components/(**/*).jsx"; // ( walk & set myFolder/MyComp in myFolder.MyComp )
@@ -91,14 +93,10 @@ Add webpack-inherit to deps
 npm i -s webpack-inherit // on all inheritable projects with wp conf & on the head project
 ```
 
-Add in package.json :
+Add a ".wi.json" file near the package.json :
 
-```js
+```json
 {
-    {
-   	"name"         : "daProject",
-   	"version"      : "1.0.0",
-   	"wpInherit"    : {
    		"default": {// default profile id
 
    		    // local root that will be mapped on App/...
@@ -106,11 +104,11 @@ Add in package.json :
 
    			// optional list of templates folder to init an app / comp
    			"templates": {
-   			    "default":"./templates/ssrApp"
+   			    "default":"./templates/ssrApp",
    			    "ssrApp":"./templates/ssrApp"
    			},
    			"extend"    : [
-   				"parentProject" // parentProject must have wpInherit.default with his own extend value
+   				"parentProject" // parentProject must have wpInherit.default with his own extend value & be in node_modules or in "libsPath" value
    			]
    		},
    		// optionally we can define multiple profile
@@ -158,16 +156,10 @@ Add in package.json :
    				"parentProject"
    			]
    		}
-   	}
-  //...
-  devDependencies:{
-    "parentProject":"^1.0.0"
-  //...
-  }
 }
 ```
 
-In wp configs :
+Example webpack config :
 ```es6
 
 var wpInherit = require('webpack-inherit');
