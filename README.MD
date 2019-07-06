@@ -95,7 +95,7 @@ npm i -s webpack-inherit // on all inheritable projects with wp conf & on the he
 
 Add a ".wi.json" file near the package.json :
 
-```json
+```jsx
 {
    		"default": {// default profile id
 
