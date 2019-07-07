@@ -1,15 +1,19 @@
 /*
- * The MIT License (MIT)
- * Copyright (c) 2019. Wise Wild Web
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+ * Copyright (C) 2019 Nathanael Braun
  *
- * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
  *
- *  @author : Nathanael Braun
- *  @contact : n8tz.js@gmail.com
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 const path                = require("path"),
@@ -31,12 +35,19 @@ function checkIfDir( fs, file ) {
 const utils = {
 	/**
 	 * Return all configs for the available profiles
+	 *
+	 * @param projectRoot {string} @optional directory where to start searching wpi cfg
+	 * @param customConfig {object} @optional wpi config in json
 	 */
-	getAllConfigs( projectRoot = process.cwd() ) {
-		let pkgConfig = fs.existsSync(path.normalize(projectRoot + "/.wi.json")) &&
-			{ wpInherit: JSON.parse(fs.readFileSync(path.normalize(projectRoot + "/.wi.json"))) }
-			|| fs.existsSync(path.normalize(projectRoot + "/package.json")) &&
-			JSON.parse(fs.readFileSync(path.normalize(projectRoot + "/package.json"))),
+	getAllConfigs( projectRoot = process.cwd(), customConfig ) {
+		let pkgConfig =
+			    customConfig && { wpInherit: customConfig }
+			    ||
+			    fs.existsSync(path.normalize(projectRoot + "/.wi.json")) &&
+			    { wpInherit: JSON.parse(fs.readFileSync(path.normalize(projectRoot + "/.wi.json"))) }
+			    ||
+			    fs.existsSync(path.normalize(projectRoot + "/package.json")) &&
+			    JSON.parse(fs.readFileSync(path.normalize(projectRoot + "/package.json"))),
 		    allCfg    = {};
 		
 		if ( !pkgConfig || !pkgConfig.wpInherit )
@@ -77,7 +88,7 @@ const utils = {
 		    allExtPath     = (() => {
 			    let list = [], flist = [], lmid = [], seen = {};
 			
-			    pkgConfig.extend.forEach(function walk( p, i, x, mRoot, cProfile, libsPath = pkgConfig.libsPath ) {
+			    pkgConfig.extend && pkgConfig.extend.forEach(function walk( p, i, x, mRoot, cProfile, libsPath = pkgConfig.libsPath ) {
 				    mRoot     = mRoot || projectRoot;
 				    cProfile  = cProfile || pkgConfig.basedOn || profile;
 				    let where = libsPath && fs.existsSync(path.normalize(projectRoot + "/" + libsPath + "/" + p))
@@ -212,7 +223,9 @@ const utils = {
 				...pkgConfig.vars
 			};
 		allCfg.unshift(pkgConfig);
-		
+		console.log(allWebpackCfg,
+		            allModulePath,
+		            allRoots)
 		return {
 			allWebpackCfg,
 			allModulePath,
@@ -285,16 +298,16 @@ const utils = {
 		input   = input.replace(/\/$/, '').replace(RootAliasRe, '').substr(1); // rm App/
 		subPath = path.dirname(input.substr(0, input.indexOf('*')) + "a");
 		re      =
-			input.substr(subPath.length + 1)
-			     .replace(/\//ig, '\\/')
-			     .replace(/\./ig, '\\.')
-			     .replace(/\*\*\\\//ig, '(?:(?:*\\/)+)?')
-			     .replace(/\*/ig, '[^\\\\\\/]+');
+			(subPath === '.' ? input : input.substr(subPath.length + 1))
+				.replace(/\//ig, '\\/')
+				.replace(/\./ig, '\\.')
+				.replace(/\*\*\\\//ig, '(?:(?:*\\/)+)?')
+				.replace(/\*/ig, '[^\\\\\\/]+');
 		
 		input = input.replace(/[\(\)]/g, '');
 		
 		code += "let req, _exports = {}, root;";
-		
+		console.log(subPath, input, re)
 		// generate require.context code so wp will detect changes
 		roots.forEach(
 			( _root, lvl ) => {

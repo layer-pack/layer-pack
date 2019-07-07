@@ -23,7 +23,7 @@ module.exports = function ( cfg, opts ) {
 	let plugin;
 	
 	// find da good webpack ( the one where the wp cfg is set )
-	let wp               = resolve.sync('webpack', { basedir: path.dirname(opts.allWebpackCfg[0]) }),
+	let wp               = resolve.sync('webpack', { basedir: path.dirname(opts.allWebpackCfg[0] || ".") }),
 	    webpack          = require(wp),
 	    ExternalModule   = require(path.join(path.dirname(wp), 'ExternalModule')),
 	

@@ -43,7 +43,7 @@ import allModules from "App/modules/*.module.js";
 
 ### Split you're projects into multiple inheritable npm packages  
 
-So you can easily override & extend any files in a project, share most of the code between them & use cool things like that :
+So you can easily layerize & share most of the code between projects & use cool things like that :
 
 ```jsx
 import $super from "$super";
@@ -84,6 +84,11 @@ import stuff from "App/config"; // aw yeah
 - Etc...
 
 ## Check the samples [here](https://github.com/n8tz/webpack-inherit-sample)
+
+## Whats the difference with YeoMan ?
+
+Yeoman "generate" boilerplates, Wpi inherit them from npm; not only the boilerplate, but any code layer/scaffold you want. <br/>
+This way, projects can be splited into specialized, updatable & reusable code layers.    
 
 ## How to use ?
 
@@ -250,7 +255,7 @@ module.exports = wpCfg;
 
 ## Extra ?
 
-Wpi allow to define bootstrap templates to create new projects easily (experimental) :
+Wpi allow to define bootstrap templates to create new projects easily (experimental you better use yeoman for that) :
 
 Here how to init a new project :
 ```
