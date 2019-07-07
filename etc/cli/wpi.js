@@ -44,13 +44,12 @@ if ( profile == "?" ) {
 if ( !wpi.getConfig(profile) )
 	throw new Error("Can't find profile '" + profile + "' in the inherited packages");
 
+
 // find da good webpack
 wpCli = resolve.sync('webpack', { basedir: path.resolve(path.dirname(wpi.getConfig(profile).allWebpackCfg[0])) });
-wpCli = path.join(wpCli.substr(0, wpCli.lastIndexOf("node_modules")), 'node_modules/.bin/webpack');
+wpCli = path.join(wpCli.substr(0, wpCli.lastIndexOf("node_modules")), 'node_modules/webpack-cli/bin/cli.js');
 
 console.info("Compile using profile id : ", profile);
 
-cmd = execSync(wpCli + (process.platform == 'win32'
-                        ? '.cmd'
-                        : '') + ' --config ' + __dirname + '/../wp/webpack.config.js' + ' ' +
+cmd = execSync('"' + path.normalize(process.execPath) + "\" " + wpCli + ' --config ' + __dirname + '/../wp/webpack.config.js' + ' ' +
 	               argz.join(' '), { stdio: 'inherit', env: { '__WPI_PROFILE__': profile } });
