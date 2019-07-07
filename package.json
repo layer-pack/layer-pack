@@ -1,6 +1,6 @@
 {
   "name": "webpack-inherit",
-  "version": "1.6.1",
+  "version": "1.6.2",
   "description": "Webpack plugin for better code pipelines & architectures; Allows to easily namespace, compose, extend and build your Webpack projects with minimal and versioned configs",
   "license": "MIT",
   "main": "src/index.js",
