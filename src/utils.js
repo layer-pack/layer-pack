@@ -223,9 +223,7 @@ const utils = {
 				...pkgConfig.vars
 			};
 		allCfg.unshift(pkgConfig);
-		console.log(allWebpackCfg,
-		            allModulePath,
-		            allRoots)
+		
 		return {
 			allWebpackCfg,
 			allModulePath,
@@ -307,7 +305,6 @@ const utils = {
 		input = input.replace(/[\(\)]/g, '');
 		
 		code += "let req, _exports = {}, root;";
-		console.log(subPath, input, re)
 		// generate require.context code so wp will detect changes
 		roots.forEach(
 			( _root, lvl ) => {
