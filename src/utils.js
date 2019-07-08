@@ -75,6 +75,7 @@ const utils = {
 		    allModuleRoots = [],
 		    allCfg         = [],
 		    allTemplates   = {},
+		    allScripts     = {},
 		    vars           = {},
 		    rootDir        = pkgConfig.rootFolder || './App',
 		    /**
@@ -155,6 +156,13 @@ const utils = {
 					          ( h, k ) => (h[k] = h[k] || path.resolve(path.normalize(projectRoot + '/' + pkgConfig.templates[k]))),
 					          allTemplates
 				          );
+			    
+			    if ( pkgConfig.scripts )
+				    Object.keys(pkgConfig.scripts)
+				          .reduce(
+					          ( h, k ) => (h[k] = h[k] || path.resolve(path.normalize(projectRoot + '/' + pkgConfig.scripts[k]))),
+					          allScripts
+				          );
 			
 			    allExtPath.forEach(
 				    function ( where, i, arr, cProfile ) {
@@ -186,6 +194,13 @@ const utils = {
 						    allWebpackCfg.push(path.resolve(path.normalize(where + '/' + cfg.config)));
 					
 					    roots.push(fs.realpathSync(path.normalize(where + "/" + (cfg.rootFolder || 'App'))));
+					
+					    if ( cfg.scripts )
+						    Object.keys(cfg.scripts)
+						          .reduce(
+							          ( h, k ) => (h[k] = h[k] || path.resolve(path.normalize(where + '/' + cfg.scripts[k]))),
+							          allScripts
+						          );
 					    //
 					    cfg.libsPath &&
 					    fs.existsSync(path.normalize(where + "/" + cfg.libsPath))
@@ -225,6 +240,7 @@ const utils = {
 			allModulePath,
 			allRoots,
 			allTemplates,
+			allScripts,
 			allExtPath,
 			extAliases,
 			allModuleRoots,

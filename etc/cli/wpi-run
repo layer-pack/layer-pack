@@ -13,7 +13,6 @@
  *  @contact : n8tz.js@gmail.com
  */
 
-
 'use strict';
 
-require('./wpi-init.js');
+require('./wpi-run.js');
