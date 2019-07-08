@@ -9,6 +9,8 @@ Allows to easily namespace, compose, extend and build your Webpack projects usin
 <p align="center">
 <a href="https://www.npmjs.com/package/webpack-inherit">
 <img src="https://img.shields.io/npm/v/webpack-inherit.svg" alt="NPM" /></a>
+<a href="https://travis-ci.org/n8tz/webpack-inherit-samples">
+<img src="https://travis-ci.org/n8tz/webpack-inherit-samples.svg?branch=master" alt="Build Status" /></a>
 <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat" />
 </p>
 
