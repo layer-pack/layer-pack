@@ -15,7 +15,7 @@ Allows to easily namespace, compose, extend and build your Webpack projects usin
 </p>
 
 <p align="center">
-this is beta; feel free to test / feedback / make contribs<br/>
+This is solid beta; Feel free to test / feedback / make contribs<br/>
 </p>
 
 
