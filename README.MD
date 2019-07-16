@@ -21,7 +21,7 @@ This is solid beta; Feel free to test / feedback / make contribs<br/>
 
 ## What you can do with it :
 
-### Do glob require on inherited directories
+### Do glob require on inherited directories ( from local or node_modules packages )
 
 So you can easily create/inherit modules & extensions and require them using :
 
@@ -43,7 +43,7 @@ import allModules from "App/modules/*.module.js";
 
 ```
 
-### Split you're projects into multiple inheritable npm packages  
+### Split you're projects into multiple inheritable npm packages ( monorepos )
 
 So you can easily layerize & share most of the code between projects & use cool things like that :
 

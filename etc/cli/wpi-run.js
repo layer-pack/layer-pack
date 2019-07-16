@@ -55,7 +55,7 @@ if ( cmd ) {
 		'"' + process.execPath + '" ' + cmd + ' ' + argz.join(' '),
 		{
 			stdio: 'inherit',
-			env  : { '__WPI_PROFILE__': profile }
+			env  : { ...process.env, '__WPI_PROFILE__': profile }
 		});
 }
 else {

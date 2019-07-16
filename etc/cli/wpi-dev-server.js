@@ -50,5 +50,11 @@ wpCli = path.join(wpCli.substr(0, wpCli.lastIndexOf("node_modules")), 'node_modu
 
 console.info("Compile using profile id : ", profile);
 
-cmd = execSync('"' + process.execPath + "\" " + wpCli + ' --config ' + __dirname + '/../wp/webpack.config.js' + ' ' +
-	               argz.join(' '), { stdio: 'inherit', env: { '__WPI_PROFILE__': profile } });
+cmd = execSync(
+	'"' + process.execPath + "\" " + wpCli + ' --config ' + __dirname + '/../wp/webpack.config.js' + ' ' +
+	argz.join(' '),
+	{
+		stdio: 'inherit',
+		env  : { ...process.env, '__WPI_PROFILE__': profile }
+	}
+);
