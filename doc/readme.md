@@ -9,14 +9,21 @@
 </p>
 
 
+# How it works
+
+## Dependencies & profiles
+## Resolving
+## Virtual index files (glob)
+
 # Configuration
 
+## [Plugin config & profiles](./wiConfig.md)
 ## [Webpack config](./wpConfig.md)
-## [Plugin config & profiles](./pConfig.md)
 
 # Using it
 
+## CLI
+## [Requiring glob & file tree](./requiering-glob.md)
 ## [Multi package, monorepo & code sharing](./splicedPackaging.md)
-## Requiring glob & file tree
 ## Inheriting
 ## Sharing webpack config
