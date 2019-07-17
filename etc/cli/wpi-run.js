@@ -15,24 +15,24 @@
 'use strict';
 
 
-var path     = require('path'),
-    util     = require('util'),
-    resolve  = require('resolve'),
-    execSync = require('child_process').execSync,
+var path    = require('path'),
+    util    = require('util'),
+    resolve = require('resolve'),
+    spawn   = require('child_process').spawn,
     cmd,
-    argz     = process.argv.slice(2),
-    profile  = 'default',
-    script   = 'run',
-    wpi      = require('../../src');
+    argz    = process.argv.slice(2),
+    profile = 'default',
+    script  = 'run',
+    wpi     = require('../../src');
 
 if ( argz[0] && /^\:.*$/.test(argz[0]) )
 	profile = argz.shift().replace(/^\:(.*)$/, '$1');
 if ( argz[0] )
 	script = argz.shift();
 
+let confs = wpi.getAllConfigs();
 if ( profile == "?" ) {
-	console.info("Here the available profiles :")
-	let confs = wpi.getAllConfigs();
+	console.info("Here the available profiles :");
 	Object.keys(confs)
 	      .forEach(
 		      p => {
@@ -43,20 +43,24 @@ if ( profile == "?" ) {
 	return;
 }
 
-if ( !wpi.getConfig(profile) )
+if ( !confs[profile] )
 	throw new Error("Can't find profile '" + profile + "' in the inherited packages");
 
-cmd = wpi.getConfig(profile).allScripts[script];
+
+cmd = confs[profile].allScripts[script];
 
 if ( cmd ) {
 	console.info("Running " + profile + "::" + script);
 	
-	execSync(
-		'"' + process.execPath + '" ' + cmd + ' ' + argz.join(' '),
+	cmd = spawn(
+		"node", [cmd, ...argz],
 		{
 			stdio: 'inherit',
 			env  : { ...process.env, '__WPI_PROFILE__': profile }
-		});
+		}
+	);
+	process.on('SIGINT', e => cmd.kill()); // catch ctrl-c
+	process.on('SIGTERM', e => cmd.kill()); // catch kill
 }
 else {
 	console.info("Script not found " + profile + "::" + script);

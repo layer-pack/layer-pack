@@ -14,23 +14,23 @@
 
 'use strict';
 
-var path     = require('path'),
-    util     = require('util'),
-    resolve  = require('resolve'),
-    execSync = require('child_process').execSync,
+var path    = require('path'),
+    util    = require('util'),
+    resolve = require('resolve'),
+    spawn   = require('child_process').spawn,
     cmd,
     wpCli,
-    argz     = process.argv.slice(2),
-    profile  = 'default';
+    argz    = process.argv.slice(2),
+    profile = 'default';
 
 var wpi = require('../../src');
 
 if ( argz[0] && /^\:.*$/.test(argz[0]) )
 	profile = argz.shift().replace(/^\:(.*)$/, '$1');
 
+let confs = wpi.getAllConfigs();
 if ( profile == "?" ) {
-	console.info("Here the available profiles :")
-	let confs = wpi.getAllConfigs();
+	console.info("Here the available profiles :");
 	Object.keys(confs)
 	      .forEach(
 		      p => {
@@ -41,20 +41,22 @@ if ( profile == "?" ) {
 	return;
 }
 
-if ( !wpi.getConfig(profile) )
+if ( !confs[profile] )
 	throw new Error("Can't find profile '" + profile + "' in the inherited packages");
 
+
 // find da good webpack
-wpCli = resolve.sync('webpack-dev-server', { basedir: path.dirname(wpi.getConfig(profile).allWebpackCfg[0]) });
+wpCli = resolve.sync('webpack-dev-server', { basedir: path.resolve(path.dirname(confs[profile].allWebpackCfg[0])) });
 wpCli = path.join(wpCli.substr(0, wpCli.lastIndexOf("node_modules")), 'node_modules/webpack-dev-server/bin/webpack-dev-server.js');
 
 console.info("Compile using profile id : ", profile);
 
-cmd = execSync(
-	'"' + process.execPath + "\" " + wpCli + ' --config ' + __dirname + '/../wp/webpack.config.js' + ' ' +
-	argz.join(' '),
+cmd = spawn(
+	"node", [wpCli, '--config', __dirname + '/../wp/webpack.config.js', ...argz],
 	{
 		stdio: 'inherit',
 		env  : { ...process.env, '__WPI_PROFILE__': profile }
 	}
 );
+process.on('SIGINT', e => cmd.kill()); // catch ctrl-c
+process.on('SIGTERM', e => cmd.kill()); // catch kill
