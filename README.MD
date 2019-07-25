@@ -21,6 +21,10 @@ This is solid beta; Feel free to test / feedback / make contribs<br/>
 
 ## What you can do with it :
 
+### Split you're projects into multiple inheritable npm packages 
+
+So you can easily layerize & share most of the code between projects, using monorepo structure and/or npm dependencies.
+
 ### Do glob require on inherited directories ( from local or node_modules packages )
 
 So you can easily create/inherit modules & extensions and require them using :
@@ -43,15 +47,23 @@ import allModules from "App/modules/*.module.js";
 
 ```
 
-### Split you're projects into multiple inheritable npm packages ( monorepos )
+### Namespace you're application
 
-So you can easily layerize & share most of the code between projects & use cool things like that :
+So you can stop using easily broken relative imports :
+```jsx
+// import stuff from "../../../config"; // no more
+import stuff from "App/config"; // aw yeah
+```
+
+### Easily override inherited project
+
+By enhancing / replacing any file 
 
 ```jsx
-import $super from "$super";
+import $super from "$super";// require the 1st file with the same path name in the inherited packages
 
 // Add some stuff or HOCs fn
-class MyOverrided extend $super{
+export default class MyOverrided extend $super{
 //...
 }
 ```
@@ -69,205 +81,16 @@ class MyOverrided extend $super{
 
 So you can share, version, extend & switch your webpack conf & boilerplate via npm
 
-### Namespace you're application
-
-So you can stop using easily broken relative imports :
-```jsx
-// import stuff from "../../../config"; // no more
-import stuff from "App/config"; // aw yeah
-```
-
 
 ### Even more :
 
-- Share unique build conf package between projects, modules & extensions
 - Combine projects with different namespaces in 1 head package
 - Easily override node_modules ( drop a module in a "lib directory" & dev/test you're patchs )
 - Etc...
 
 ## Check the samples [here](https://github.com/n8tz/webpack-inherit-sample)
 
-## Whats the difference with YeoMan ?
-
-Yeoman "generate" boilerplates, Wpi inherit them from npm; not only the boilerplate, but any code layer/scaffold you want. <br/>
-This way, projects can be splited into specialized, updatable & reusable code layers.    
-
-## How to use ?
-
-Add webpack-inherit to deps
-
-```bash
-npm i -s webpack-inherit // on all inheritable projects with wp conf & on the head project
-```
-
-Add a ".wi.json" file near the package.json :
-
-```jsx
-{
-   		"default": {// default profile id
-
-   		    // local root that will be mapped on App/...
-   			"rootFolder": "App",
-
-   			// optional list of templates folder to init an app / comp
-   			"templates": {
-   			    "default":"./templates/ssrApp",
-   			    "ssrApp":"./templates/ssrApp"
-   			},
-   			"extend"    : [
-   				"parentProject" // parentProject must have wpInherit.default with his own extend value & be in node_modules or in "libsPath" value
-   			]
-   		},
-   		// optionally we can define multiple profile
-   		"api"    : {// same profiles must exist in all inherited project
-   			"rootFolder": "App",
-
-   			// optional folder containing libs overrides for dev purposes
-   			// ( these libs will have precedence over node_modules )
-   			//
-   			// /!\ Use this to hard patch bugged npm libs or add work in progress libs /!\
-   			// /!\ should not be used unless there no other solutions /!\
-   			// /!\ (& overrided lib version must be fixed) /!\
-   			"libsPath": "./libs",
-
-   			// optional webpack config
-   			"config"    : "./webpack.config.api.js",
-
-   			"extend"    : [
-   				"parentProject"
-   			]
-   		},
-   		// optionally we can define profile with some wp config overrides
-   		"Comp"   : {
-   			"config": "./webpack.config.www.js",
-
-   			// optional profile id to use in the inherited packages
-   			"basedOn": "someSuperProfile_in_parents",
-
-   			// optional vars
-   			"vars"  : {
-   				// all @optional
-
-   				// override the root folder alias ( default to "App" )
-   				// So all inner build inheritable files will be requierable using require("Comp/some/stuff")
-   				"rootAlias"   : "MyApp",
-
-   				// make anything outside the inheritable folder external
-   				// ( for nodes builds & components )
-   				// * this could be a RegExp like "^(?!react|@babel)" but packed libs can require externalized
-   				"externals"   : true,
-
-   				// all theses values are available in the webpack config using wpiCfg.vars.*
-   			},
-   			"extend": [
-   				"parentProject"
-   			]
-   		}
-}
-```
-
-Example webpack config :
-```es6
-
-var wpInherit = require('webpack-inherit');
-
-module.exports = [
-	{
-		// The jsx App entry point
-		entry: {
-		    // App entry point default wpiCfg.vars.rootAlias is 'App' wich will be resolved as App/index.js
-		    // * we can also use glob ( eg: App/ep/*.js )
-			App: wpiCfg.vars.rootAlias
-		},
-
-		// The resulting build
-		output: {
-			path      : wpInherit.getHeadRoot() + "/dist/",
-		},
-
-		// Global build plugin & option
-		plugins: (
-			[
-				wpInherit.plugin(),
-			]
-		),
-
-		module: {
-			rules: [
-				{
-					test   : /\.jsx?$/,
-					exclude: wpInherit.isFileExcluded()
-					//...
-				}
-				//...
-
-				{
-					test: /\.(scss|css)$/,
-					use : [
-				        //...
-						{
-							loader : "sass-loader",
-							options: {
-								importer  : wpInherit.plugin().sassImporter(/* add others importers here */),
-							}
-						}
-					]
-				}
-				//...
-			]
-		}
-		//...
-	}
-	//...
-]
-```
-
-Then you can use the wpi CLI to call the first inherited webpack config using the webpack bin of the same package
-
-```bash
-# from the head project
-wpi # use webpack params here
-# or
-wpi-dev-server
-
-# or using profiles
-
-wpi :api # use webpack params here
-# or
-wpi-dev-server :anotherProfile
-
-
-wpi :? # get available profiles
-```
-
-Or create a new webpack config, directly usable with the webpack cli, to make some additions :
-
-webpack.config.js
-```jsx
-var wpInherit = require('webpack-inherit');
-
-
-let wpCfg = wpInherit.getSuperWebpackCfg(/* "profileId" */);
-
-/* extend the conf from parent */
-
-module.exports = wpCfg;
-
-```
-
-## Extra ?
-
-Wpi allow to define bootstrap templates to create new projects easily (experimental you better use yeoman for that) :
-
-Here how to init a new project :
-```
-$ wpi-init -h
-   Create a new project using wpi :
-   Syntax : wpi-init project_name inheritedPackage::profileId:templateId
-    ( Or ): wpi-init project_name inheritedPackage (using default profile & default template
-
-```
-
+## Draft doc [here](DOC.MD)
 
 ## Caveats / bugs ?
 
