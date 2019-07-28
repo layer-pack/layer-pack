@@ -11,6 +11,8 @@
 
 # How to use
 
+Samples [here](https://github.com/n8tz/webpack-inherit-sample)
+
 ## Create & inherit packages
 
 Add webpack-inherit to packages deps
@@ -28,11 +30,6 @@ Add a ".wi.json" file near the package.json of each projects :
    		    // local root that will be mapped on App/...
    			"rootFolder": "App",
 
-   			// optional list of templates folder to init an app / comp
-   			"templates": {
-   			    "default":"./templates/ssrApp",
-   			    "ssrApp":"./templates/ssrApp"
-   			},
    			"extend"    : [
    				"parentProject" // parentProject must have wpInherit.default with his own extend value & be in node_modules or in "libsPath" value
    			]
@@ -43,10 +40,7 @@ Add a ".wi.json" file near the package.json of each projects :
 
    			// optional folder containing libs overrides for dev purposes
    			// ( these libs will have precedence over node_modules )
-   			//
-   			// /!\ Use this to hard patch bugged npm libs or add work in progress libs /!\
-   			// /!\ should not be used unless there no other solutions /!\
-   			// /!\ (& overrided lib version must be fixed) /!\
+   			// ( can contain inherited packages )
    			"libsPath": "./libs",
 
    			// optional webpack config
@@ -90,34 +84,34 @@ Add a ".wi.json" file near the package.json of each projects :
 Add the following webpack config :
 
 ```es6
-
-var wpInherit = require('webpack-inherit');
-
+const wpInherit  = require('webpack-inherit'),
+      wpiPlugin  = wpInherit.plugin(/* json in .wi.conf can be directly used here */),
+      wpiCfg     = wpInherit.getConfig(),
+      isExcluded = wpInherit.isFileExcluded();
+      
 module.exports = [
 	{
-		// The jsx App entry point
 		entry: {
 		    // App entry point default wpiCfg.vars.rootAlias is 'App' wich will be resolved as App/index.js
 		    // * we can also use glob ( eg: App/ep/*.js )
 			App: wpiCfg.vars.rootAlias
 		},
 
-		// The resulting build
 		output: {
+		    // As the config can be in an external npm package the plugin give the project path  
 			path      : wpInherit.getHeadRoot() + "/dist/",
 		},
 
-		// Global build plugin & option
-		plugins: (
-			[
-				wpInherit.plugin(),
-			]
-		),
+		plugins: [
+			wpiPlugin
+			//... 
+		],
 
 		module: {
 			rules: [
 				{
 					test   : /\.jsx?$/,
+					// required while inheriting code from npm packages
 					exclude: wpInherit.isFileExcluded()
 					//...
 				}
@@ -130,7 +124,7 @@ module.exports = [
 						{
 							loader : "sass-loader",
 							options: {
-								importer  : wpInherit.plugin().sassImporter(/* add others importers here */),
+								importer  : wpiPlugin.sassImporter(/* add others importers here */),
 							}
 						}
 					]
@@ -161,6 +155,9 @@ module.exports = wpCfg;
 
 ## CLI
 
+The webpack-inherit CLI just call the webpack CLI basing the specified profile id.<br>
+If the webpack conf reside in an inherited package, the webpack of the same inherited package will be executed.<br>
+Default profile id is "default"
 
 ```bash
 # from the head project
@@ -178,13 +175,25 @@ wi-dev-server :anotherProfile
 wi :? # get available profiles
 ```
 
-
 ## Requiring glob & file tree
-## Multi package, monorepo & code sharing
 
-# How it works
+When using glob with require or es6 import, the plugin generate a virtual file on the fly.<br>
+Basing the string captured by the parenthesis, the plugin generate es6 named exports.
 
-## Dependencies & profiles
-## Resolving
-## Virtual index files (glob)
+If the captured string contain "/" or  "\\", it will be walk & set in JS way
+
+Ex :
+```jsx harmony
+
+import Comps from "App/components/(**/*).jsx";
+// if a file match App/components/(media/VideoPlayer).jsx
+console.log(Comps);
+// it will contain Comps.media.VideoPlayer
+
+import AllActionsByFolder from "App/store/(*)/actions.js";
+// or
+import {MyCompByFileName} from "App/ui/components/(*).jsx"; // ( big import list to maintain ) no more ! :)
+// or
+import {myFolder} from "App/ui/components/(**/*).jsx"; // ( walk & set myFolder/MyComp in myFolder.MyComp )
+```
 
