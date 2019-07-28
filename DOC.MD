@@ -180,7 +180,8 @@ wi :? # get available profiles
 When using glob with require or es6 import, the plugin generate a virtual file on the fly.<br>
 Basing the string captured by the parenthesis, the plugin generate es6 named exports.
 
-If the captured string contain "/" or  "\\", it will be walk & set in JS way
+- If the captured string contain "/" or  "\\", it will be walk & set in JS way
+- If it contain invalid variable identifier it will not be available as named export (only in the default export)
 
 Ex :
 ```jsx harmony
