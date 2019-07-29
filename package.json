@@ -46,6 +46,7 @@
     "mustache": "^3.0.1",
     "resolve": "^1.9.0",
     "shortid": "^2.2.14",
+    "strip-json-comments": "^3.0.1",
     "virtual-module-webpack-plugin": "^0.3.0",
     "walk": "^2.3.9",
     "webpack-merge": "^4.2.1"

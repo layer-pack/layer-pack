@@ -15,35 +15,28 @@
 'use strict';
 
 
-var path    = require('path'),
-    util    = require('util'),
-    resolve = require('resolve'),
-    spawn   = require('child_process').spawn,
-    cmd,
+const path                                        = require('path'),
+      utils                                       = require('./utils'),
+      resolve                                     = require('resolve'),
+      spawn = require('child_process').spawn, wpi = require('../../src');
+
+let cmd,
     wpCli,
     argz    = process.argv.slice(2),
     profile = 'default',
-    wpi     = require('../../src');
+    confs   = wpi.getAllConfigs();
 
 if ( argz[0] && /^\:.*$/.test(argz[0]) )
 	profile = argz.shift().replace(/^\:(.*)$/, '$1');
 
-let confs = wpi.getAllConfigs();
-if ( profile == "?" ) {
-	console.info("Here the available profiles :");
-	Object.keys(confs)
-	      .forEach(
-		      p => {
-			      console.info(p + " using rootAlias '" + confs[p].vars.rootAlias + "' inheriting : ",
-			                   confs[p].allModId[0] + ":" + (confs[p].allCfg[0].basedOn || p))
-		      }
-	      )
-	return;
-}
+if ( profile === "?" )
+	return console.info(utils.printProfilesInfos(confs));
 
 if ( !confs[profile] )
-	throw new Error("Can't find profile '" + profile + "' in the inherited packages");
+	return console.error("Can't find profile '" + profile + "' in the inherited packages\n" + utils.printProfilesInfos(confs));
 
+if ( profile && !confs[profile].allWebpackCfg.length )
+	return console.error("Error : Can't find webpack cfg in the inherited packages using profile id '" + profile + "'\n\r" + utils.printProfilesInfos(confs));
 
 // find da good webpack
 wpCli = resolve.sync('webpack', { basedir: path.resolve(path.dirname(confs[profile].allWebpackCfg[0])) });
