@@ -21,9 +21,14 @@ This is solid beta; Feel free to test / feedback / make contribs<br/>
 
 ## What you can do with it :
 
-### Split you're projects into multiple inheritable npm packages 
+### Split you're projects into multiple inheritable npm packages
 
-So you can easily layerize & share most of the code between projects, using monorepo structure and/or npm dependencies.
+So you can easily :
+- inherit & share most of the code between projects
+- Include or not inherit like dev tools, admin, etc
+- Switch between monorepo and npm dependencies structure
+- Test inherit independently
+- Compile in 1 step, with the source map
 
 ### Do glob require on inherited directories ( from local or node_modules packages )
 
@@ -33,7 +38,7 @@ So you can easily create/inherit modules & extensions and require them using :
 import allModules from "App/modules/*.module.js";
 // or
 // import allModules from "App/modules/*/index.js";
-// or
+// or using es6 named exports
 // import AllActions from "App/store/(*)/actions.js";
 // or
 // import {MyCompByFileName} from "App/ui/components/(*).jsx"; // ( big import list to maintain ) no more ! :)
@@ -57,7 +62,7 @@ import stuff from "App/config"; // aw yeah
 
 ### Easily override inherited project
 
-By enhancing / replacing any file 
+By enhancing / replacing any file
 
 ```jsx
 import $super from "$super";// require the 1st file with the same path name in the inherited packages
@@ -94,8 +99,10 @@ So you can share, version, extend & switch your webpack conf & boilerplate via n
 
 ## Caveats / bugs ?
 
-- All devDependencies of inheritable packages must be move to normal deps in order to define theirs own webpack conf
+- Remember that devDependencies of dependencies are NOT installed so inherit should only use (peer)Dependencies
+- inherit deal with the deps resolving order, even if inherit are in the libPath folder. That's said, when compiling for node the relative paths to the externals libs directories are hard written
 - Context based webpack requires are not processed
+- Actually hot reload don't detect new files overriding an inherited layer file & files deleted from a glob include
 - This plugin probably need some optimisations
 
 ## Contributors ?

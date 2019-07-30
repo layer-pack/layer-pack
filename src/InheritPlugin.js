@@ -274,6 +274,8 @@ module.exports = function ( cfg, opts ) {
 								                author     : projectPkg.author,
 								                version    : projectPkg.version
 							                },
+							                buildDate  : Date.now(),
+							                profile    : currentProfile,
 							                projectRoot: opts.projectRoot,
 							                vars       : opts.vars,
 							                allCfg     : opts.allCfg,

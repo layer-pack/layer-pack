@@ -198,3 +198,32 @@ import {MyCompByFileName} from "App/ui/components/(*).jsx"; // ( big import list
 import {myFolder} from "App/ui/components/(**/*).jsx"; // ( walk & set myFolder/MyComp in myFolder.MyComp )
 ```
 
+## More about building with inherit
+
+### .wpl.infos.json
+
+webpack-inherit add a virtual file with some build info in the root folder.
+It's called ".wpl.infos.json" & contain the following infos :
+```
+{
+    /* from the package.json file */
+    project    : {
+        name
+        description
+        author
+        version
+    },
+    /* the profile id */
+    profile,
+    /* the timestamp when the build has been made */
+    buildDate,
+    /* the original root of the project */
+    projectRoot,
+    /* the merged vars of the profile */
+    vars,
+    allCfg,
+    allModId
+}
+```
+
+
