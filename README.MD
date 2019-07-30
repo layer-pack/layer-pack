@@ -25,9 +25,9 @@ This is solid beta; Feel free to test / feedback / make contribs<br/>
 
 So you can easily :
 - inherit & share most of the code between projects
-- Include or not inherit like dev tools, admin, etc
+- Include or not layers like dev tools, admin, etc
 - Switch between monorepo and npm dependencies structure
-- Test inherit independently
+- Test layers independently
 - Compile in 1 step, with the source map
 
 ### Do glob require on inherited directories ( from local or node_modules packages )
@@ -99,8 +99,8 @@ So you can share, version, extend & switch your webpack conf & boilerplate via n
 
 ## Caveats / bugs ?
 
-- Remember that devDependencies of dependencies are NOT installed so inherit should only use (peer)Dependencies
-- inherit deal with the deps resolving order, even if inherit are in the libPath folder. That's said, when compiling for node the relative paths to the externals libs directories are hard written
+- Remember that devDependencies of dependencies are NOT installed so layers should only use (peer)Dependencies
+- inherit deal with the deps resolving order, even if layers are in the libPath folder. That's said, when compiling for node the relative paths to the externals libs directories are hard written
 - Context based webpack requires are not processed
 - Actually hot reload don't detect new files overriding an inherited layer file & files deleted from a glob include
 - This plugin probably need some optimisations
