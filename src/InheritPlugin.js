@@ -370,3 +370,4 @@ module.exports = function ( cfg, opts ) {
 		}
 	}
 }
+
