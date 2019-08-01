@@ -38,6 +38,7 @@
     "webpack": "^2.7.0 || ^4.0.0"
   },
   "dependencies": {
+    "deep-extend": "^0.6.0",
     "fast-glob": "^2.2.6",
     "fs-extra": "^7.0.1",
     "is": "^3.3.0",

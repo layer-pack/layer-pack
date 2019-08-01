@@ -15,6 +15,7 @@
 const utils         = require("./utils"),
       Module        = require('module').Module,
       path          = require('path'),
+      dMerge        = require('deep-extend'),
       InheritPlugin = require("./InheritPlugin"),
       ModPathLoader = require("../etc/node/loadModulePaths"),
       merge         = require('webpack-merge');
@@ -35,7 +36,14 @@ module.exports = {
 	 * @returns {*}
 	 */
 	getConfig( profile = process.env.__WPI_PROFILE__ || 'default' ) {
-		return this.getAllConfigs()[profile];
+		let cfg = this.getAllConfigs()[profile];
+		if ( process.env.__WPI_VARS_OVERRIDE__ ) {// not good
+			let overrides = JSON.parse(process.env.__WPI_VARS_OVERRIDE__),
+			    vars      = {};
+			dMerge(vars, cfg.vars || {}, overrides);
+			cfg = { ...cfg, vars };
+		}
+		return cfg;
 	},
 	/**
 	 * Load a specific config
@@ -54,7 +62,7 @@ module.exports = {
 	 * @returns {*}
 	 */
 	getSuperWebpackCfg( profile = process.env.__WPI_PROFILE__ || "default", head ) {
-		let cfg = this.getAllConfigs()[profile],
+		let cfg = this.getConfig(profile),
 		    wpCfg;
 		
 		if ( allCfgInstances[profile] )
@@ -86,7 +94,7 @@ module.exports = {
 	 * @returns {*}
 	 */
 	plugin( cfg, profile = process.env.__WPI_PROFILE__ || 'default' ) {
-		return allPluginInstances[profile] = allPluginInstances[profile] || InheritPlugin(cfg, this.getAllConfigs()[profile])
+		return allPluginInstances[profile] = allPluginInstances[profile] || InheritPlugin(cfg, this.getConfig(profile))
 	},
 	/**
 	 * Return a tester fn for the given or current profile id
@@ -96,7 +104,7 @@ module.exports = {
 	 * @returns {{test: (function(*): boolean)}}
 	 */
 	isFileExcluded( profile = process.env.__WPI_PROFILE__ || 'default' ) {
-		let allRoots = this.getAllConfigs()[profile].allRoots;
+		let allRoots = this.getConfig(profile).allRoots;
 		return { test: ( path ) => !allRoots.find(r => path.startsWith(r)) }
 	},
 	/**
@@ -106,7 +114,7 @@ module.exports = {
 	 * @returns {*}
 	 */
 	getHeadRoot( profile = process.env.__WPI_PROFILE__ || 'default' ) {
-		let allModuleRoots = this.getAllConfigs()[profile].allModuleRoots;
+		let allModuleRoots = this.getConfig(profile).allModuleRoots;
 		return allModuleRoots[0]
 	}
 }

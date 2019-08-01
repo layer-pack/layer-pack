@@ -12,7 +12,7 @@
  *  @contact : n8tz.js@gmail.com
  */
 
-var wpInherit = require('../..'),
+let wpInherit = require('../..'),
     is        = require('is'),
     cfg       = wpInherit.getSuperWebpackCfg(process.env.__WPI_PROFILE__, true);
 

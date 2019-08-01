@@ -15,10 +15,11 @@
 'use strict';
 
 
-const path                                        = require('path'),
-      utils                                       = require('./utils'),
-      resolve                                     = require('resolve'),
-      spawn = require('child_process').spawn, wpi = require('../../src');
+const path    = require('path'),
+      utils   = require('./utils'),
+      resolve = require('resolve'),
+      spawn   = require('child_process').spawn,
+      wpi     = require('../../src');
 
 let cmd,
     wpCli,
