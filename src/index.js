@@ -37,6 +37,7 @@ module.exports = {
 	 */
 	getConfig( profile = process.env.__WPI_PROFILE__ || 'default' ) {
 		let cfg = this.getAllConfigs()[profile];
+		
 		if ( process.env.__WPI_VARS_OVERRIDE__ ) {// not good
 			let overrides = JSON.parse(process.env.__WPI_VARS_OVERRIDE__),
 			    vars      = {};
