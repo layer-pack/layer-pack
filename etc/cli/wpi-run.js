@@ -38,9 +38,6 @@ if ( profile === "?" )
 if ( !confs[profile] )
 	return console.error("Can't find profile '" + profile + "' in the inherited packages\n" + utils.printProfilesInfos(confs));
 
-if ( profile && !confs[profile].allWebpackCfg.length )
-	return console.error("Error : Can't find webpack cfg in the inherited packages using profile id '" + profile + "'\n\r" + utils.printProfilesInfos(confs));
-
 
 cmd = confs[profile].allScripts[script];
 

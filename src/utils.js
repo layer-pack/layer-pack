@@ -29,6 +29,21 @@ function checkIfDir( fs, file ) {
 	}
 }
 
+function getWpiConfigFrom( dir ) {
+	let cfg;
+	try {
+		cfg = fs.existsSync(path.normalize(dir + "/.wi.json"))
+			&& { wpInherit: JSON.parse(stripJsonComments(fs.readFileSync(path.normalize(dir + "/.wi.json")).toString())) }
+			||
+			fs.existsSync(path.normalize(dir + "/package.json"))
+			&& JSON.parse(fs.readFileSync(path.normalize(dir + "/package.json")));
+	} catch ( e ) {
+		console.warn("Fail parsing wpi config in " + dir, "\n" + e + "\n", e.stack);
+		process.exit(1000);
+	}
+	return cfg;
+}
+
 const utils = {
 	/**
 	 * Return all configs for the available profiles
@@ -40,11 +55,7 @@ const utils = {
 		let pkgConfig =
 			    customConfig && { wpInherit: customConfig }
 			    ||
-			    fs.existsSync(path.normalize(projectRoot + "/.wi.json")) &&
-			    { wpInherit: JSON.parse(stripJsonComments(fs.readFileSync(path.normalize(projectRoot + "/.wi.json")))) }
-			    ||
-			    fs.existsSync(path.normalize(projectRoot + "/package.json")) &&
-			    JSON.parse(fs.readFileSync(path.normalize(projectRoot + "/package.json"))),
+			    getWpiConfigFrom(projectRoot),
 		    allCfg    = {};
 		
 		if ( !pkgConfig || !pkgConfig.wpInherit )
@@ -94,20 +105,13 @@ const utils = {
 				    let where       = libsPath && fs.existsSync(path.normalize(projectRoot + "/" + libsPath + "/" + layerId))
 				                      ? "/" + libsPath + "/" :
 				                      "/node_modules/",
-				        cfg         = fs.existsSync(path.normalize(mRoot + where + layerId + "/.wi.json")) &&
-					        { wpInherit: JSON.parse(stripJsonComments(fs.readFileSync(path.normalize(mRoot + where + layerId + "/.wi.json")))) }
-					        ||
-					        fs.existsSync(path.normalize(mRoot + where + layerId + "/package.json")) &&
-					        JSON.parse(fs.readFileSync(path.normalize(mRoot + where + layerId + "/package.json"))),
+				        cfg         = getWpiConfigFrom(mRoot + where + layerId),
 				        realProfile = cProfile;
 				
 				    // if the package is not here it may sibling this one...
 				    if ( !cfg || !cfg.wpInherit ) {
 					    where = "/../";
-					    cfg   = fs.existsSync(path.normalize(mRoot + where + layerId + "/.wi.json")) &&
-						    { wpInherit: JSON.parse(stripJsonComments(fs.readFileSync(path.normalize(mRoot + where + layerId + "/.wi.json")))) }
-						    || fs.existsSync(path.resolve(path.normalize(mRoot + where + layerId + "/package.json"))) &&
-						    JSON.parse(fs.readFileSync(path.resolve(path.normalize(mRoot + where + layerId + "/package.json"))));
+					    cfg   = getWpiConfigFrom(mRoot + where + layerId);
 					
 				    }
 				
@@ -190,11 +194,7 @@ const utils = {
 			    allExtPath.forEach(
 				    function ( where, i, arr, cProfile ) {
 					    cProfile    = cProfile || pkgConfig.basedOn || profile;
-					    let cfg     = fs.existsSync(path.normalize(where + "/.wi.json")) &&
-						    { wpInherit: JSON.parse(stripJsonComments(fs.readFileSync(path.normalize(where + "/.wi.json")))) }
-						    || fs.existsSync(path.normalize(where + "/package.json")) &&
-						    JSON.parse(fs.readFileSync(path.normalize(where + "/package.json"))),
-					
+					    let cfg     = getWpiConfigFrom(where),
 					        modPath = path.normalize(where + "/node_modules");
 					
 					    allModuleRoots.push(where);

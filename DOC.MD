@@ -226,4 +226,8 @@ It's called ".wpiConfig.json" & contain the following infos :
 }
 ```
 
+### Glob resolving
 
+Glob imports generate virtual files "just in time".
+
+These files do named exports & use an unique file name, so same glob import use the same files.
