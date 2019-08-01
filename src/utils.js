@@ -110,9 +110,7 @@ const utils = {
 				
 				    // if the package is not here it may sibling this one...
 				    if ( !cfg || !cfg.wpInherit ) {
-					    where = "/../";
-					    cfg   = getWpiConfigFrom(mRoot + where + layerId);
-					
+					    cfg   = getWpiConfigFrom(mRoot + "/../" + layerId);
 				    }
 				
 				    layerPathList.push(path.resolve(path.normalize(mRoot + where + layerId)));
