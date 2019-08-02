@@ -35,7 +35,7 @@ Add a ".wi.json" file near the package.json of each projects :
    			]
    		},
    		// optionally we can define multiple profile
-   		"api"    : {// same profiles must exist in all inherited project
+   		"api"    : {// profiles extend same profile id from inherited packages, if it does'nt exist default will be used 
    			"rootFolder": "App",
 
    			// optional folder containing libs overrides for dev purposes
