@@ -204,6 +204,7 @@ import {myFolder} from "App/ui/components/(**/*).jsx"; // ( walk & set myFolder/
 
 webpack-inherit add a virtual file with some build info in the root folder.
 It's called ".wpiConfig.json" & contain the following infos :
+
 ```
 {
     /* from the package.json file */
