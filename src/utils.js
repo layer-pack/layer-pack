@@ -63,9 +63,13 @@ const utils = {
 		
 		Object.keys(pkgConfig.wpInherit)
 		      .forEach(
-			      p => {
-				      allCfg[p] = true;
-				      allCfg[p] = this.getConfigByProfiles(projectRoot, pkgConfig.wpInherit[p], p);
+			      _pId => {
+				      let pId      = _pId;
+				      allCfg[_pId] = true;
+				      while ( is.string(pkgConfig.wpInherit[pId]) ) {// profile alias
+					      pId = pkgConfig.wpInherit[pId];
+				      }
+				      allCfg[_pId] = this.getConfigByProfiles(projectRoot, pkgConfig.wpInherit[pId], _pId);
 			      }
 		      )
 		return allCfg;
@@ -193,13 +197,21 @@ const utils = {
 			
 			    allExtPath.forEach(
 				    function ( where, i, arr, cProfile ) {
-					    cProfile    = cProfile || pkgConfig.basedOn || profile;
-					    let cfg     = getWpiConfigFrom(where),
-					        modPath = path.normalize(where + "/node_modules");
+					    cProfile        = cProfile || pkgConfig.basedOn || profile;
+					    let cfg         = getWpiConfigFrom(where),
+					        modPath     = path.normalize(where + "/node_modules"),
+					        realProfile = cProfile;
 					
 					    allModuleRoots.push(where);
 					
-					    cfg = cfg.wpInherit[cProfile] || cfg.wpInherit['default'];
+					    while ( cfg && cfg.wpInherit && is.string(cfg.wpInherit[realProfile]) ) {// profile alias
+						    realProfile = cfg.wpInherit[realProfile];
+					    }
+					    if ( cfg && cfg.wpInherit && !cfg.wpInherit[realProfile] ) {
+						    realProfile = "default";
+					    }
+					
+					    cfg = cfg.wpInherit[realProfile];
 					
 					    if ( cfg.aliases )
 						    extAliases = {
