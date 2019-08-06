@@ -80,11 +80,11 @@ const utils = {
 	 * @param projectRoot
 	 * @param pkgConfig
 	 * @param profile
-	 * @returns {{projectRoot: *, allModId: Array, allModulePath: Array, allRoots: *, extAliases, allWebpackCfg: Array,
+	 * @returns {{projectRoot: *, allModId: Array, allModulePath: Array, allRoots: *, localAlias, allWebpackCfg: Array,
 	 *     allExtPath: Array, allCfg: Array, vars, allModuleRoots: Array}}
 	 */
 	getConfigByProfiles( projectRoot, pkgConfig, profile ) {
-		let extAliases     = {},
+		let localAlias     = {},
 		    allModulePath  = [],
 		    allModId       = [],
 		    allWebpackCfg  = [],
@@ -213,10 +213,15 @@ const utils = {
 					
 					    cfg = cfg.wpInherit[realProfile];
 					
-					    if ( cfg.aliases )
-						    extAliases = {
-							    ...extAliases,
-							    ...cfg.aliases
+					    if ( cfg.localAlias )
+						    localAlias = {
+							    ...localAlias,
+							    ...Object
+								    .keys(cfg.localAlias)
+								    .reduce(
+									    ( aliases, alias ) => (aliases[alias] = path.join(where, cfg.aliases[alias])
+									    )
+								    )
 						    };
 					    if ( cfg.vars )
 						    vars = {
@@ -253,8 +258,8 @@ const utils = {
 		    })();
 		
 		if ( pkgConfig && pkgConfig.aliases )
-			extAliases = {
-				...extAliases,
+			localAlias = {
+				...localAlias,
 				...pkgConfig.aliases
 			};
 		
@@ -278,7 +283,7 @@ const utils = {
 			allTemplates,
 			allScripts,
 			allExtPath,
-			extAliases,
+			localAlias,
 			allModuleRoots,
 			allCfg,
 			allModId,
@@ -420,7 +425,7 @@ const utils = {
 			    path.join(roots[0], 'MapOf.' + input.replace(/[^\w]/ig, '_')
 			                                        .replace(/\*/ig, '.W')
 			                                        .replace(/[^\w\.]/ig, '_') +
-				    '.gen.js')),
+				    '.gen.scss')),
 		    subPath         = "",
 		    exportedModules = {};
 		

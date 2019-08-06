@@ -19,6 +19,7 @@ const path            = require('path'),
       utils           = require("./utils"),
       isBuiltinModule = require('is-builtin-module');
 
+
 module.exports = function ( cfg, opts ) {
 	let plugin;
 	
@@ -71,6 +72,30 @@ module.exports = function ( cfg, opts ) {
 						...constDef
 					}));
 			
+			compiler.options.resolve         = compiler.options.resolve || {};
+			compiler.options.resolve.plugins = compiler.options.resolve.plugins || [];
+			compiler.options.resolve.plugins.push(
+				{
+					target: "before-resolve",
+					apply( resolver ) {
+						const target = resolver.ensureHook(this.target);
+						
+						resolver
+							.getHook(this.target)
+							.tapAsync("MyResolverPlugin", ( request, resolveContext, callback ) => {
+								wpiResolve(
+									request,
+									( err, req, data ) => {
+										callback(err, req)
+									},
+									( err, request, data ) => {
+										resolver.doResolve(target, request, null, resolveContext, callback);
+									})
+							});
+					}
+				}
+			)
+			
 			// include node modules path allowing node executables to require external modules
 			if ( /^(async-)?node$/.test(buildTarget) && excludeExternals ) {
 				let buildToProjectPath = path.relative(compiler.options.output.path, opts.projectRoot);
@@ -112,16 +137,17 @@ module.exports = function ( cfg, opts ) {
 			/**
 			 * The main resolver / glob mngr
 			 */
-			function wpiResolve( data, cb ) {
-				let requireOrigin = data.contextInfo.issuer,
-				    context       = data.context || path.dirname(requireOrigin),
+			function wpiResolve( data, cb, proxy ) {
+				let requireOrigin = data.context && data.context.issuer,
+				    context       = requireOrigin && path.dirname(requireOrigin),
+				    oReq          = data.request,
+				    reqPath       = data.request,
 				    tmpPath;
 				
 				data.wpiOriginRequest = data.request;
 				
-				// resolve inheritable & relative @todo
 				if ( context && /^\./.test(data.request) && (tmpPath = roots.find(r => path.resolve(context + '/' + data.request).startsWith(r))) ) {
-					data.request = (RootAlias + path.resolve(context + '/' + data.request).substr(tmpPath.length)).replace(/\\/g, '/');
+					reqPath = (RootAlias + path.resolve(context + '/' + data.request).substr(tmpPath.length)).replace(/\\/g, '/');
 				}
 				
 				let isSuper = /^\$super$/.test(data.request),
@@ -133,58 +159,47 @@ module.exports = function ( cfg, opts ) {
 					return (/\.s?css$/.test(requireOrigin) ? utils.indexOfScss : utils.indexOf)(
 						compiler.inputFileSystem,
 						roots,
-						data.request,
+						reqPath,
 						contextDependencies,
 						fileDependencies,
 						RootAlias,
 						RootAliasRe,
 						function ( e, filePath, content ) {
-							data.path    = '/';
-							data.request = filePath;
-							data.file    = true;
-							cb(e, data, content);
+							//console.warn("glob", filePath)
+							let req = {
+								...data,
+								
+								relativePath: filePath,
+								path        : filePath,
+								request     : filePath,
+								module      : false,
+								directory   : false,
+								file        : true
+							};
+							cb(e, req, content);
 						}
 					)
 				}
 				
 				if ( !isRoot && !isSuper ) { // let wp deal with it
-					return cb(null, data)
+					return cb()
 				}
 				
-				// small caching system as we are hooking before resolve
-				let resolve = function ( e, filePath, content ) {
-					    while ( cache[key].length )
-						    cache[key].pop()(e, filePath, content);
-					    cache[key] = filePath || true;
-				    },
-				    apply   = ( e, r, content ) => {
-					    if ( e && !r ) return cb(null, data, content);
-					
-					    data.request = r;
-					    data.file    = true;
-					    cb(null, data, content);
-				    },
-				    key;
+				let apply = ( e, r, content ) => {
+					if ( e && !r ) return cb();
+					let req = {
+						...data,
+						path        : r,
+						relativePath: data.path && path.relative(data.path, r),
+						request     : r,
+						resource    : r,
+						module      : false,
+						directory   : false,
+						file        : true
+					};
+					cb(null, req, content);
+				};
 				
-				
-				key = data.context + '##' + data.request;
-				
-				if ( isSuper ) {
-					key = "$super<" + requireOrigin;
-				}
-				
-				if ( cache[key] === true )
-					return cb(null, data);
-				
-				if ( cache[key] instanceof Array ) {// deal with concurrent query
-					return cache[key].push(apply)
-				}
-				else if ( cache[key] ) {
-					data.request = cache[key];
-					data.file    = true;
-					return cb(null, data)
-				}
-				cache[key] = [apply];
 				
 				// $super resolving..
 				if ( isSuper ) {
@@ -197,10 +212,10 @@ module.exports = function ( cfg, opts ) {
 							
 							if ( e ) {// silently deal when there is no parents
 								console.warn("Parent not found for " + requireOrigin);
-								return resolve(e, "", "/* Parent not found for " + requireOrigin + '*/\n');
+								return apply(e, "", "/* Parent not found for " + requireOrigin + '*/\n');
 							}
 							
-							resolve(null, filePath);
+							apply(null, filePath);
 						}
 					);
 				}
@@ -210,21 +225,20 @@ module.exports = function ( cfg, opts ) {
 					return utils.findParentPath(
 						compiler.inputFileSystem,
 						roots,
-						data.request.replace(RootAliasRe, ''),
+						reqPath.replace(RootAliasRe, ''),
 						0,
 						availableExts,
 						function ( e, filePath, file ) {
 							if ( e ) {
 								//console.log("find %s\t\t\t=> %s", data.request);
-								console.error("File not found \n'%s' (required in '%s')",
-								              data.request, requireOrigin);
-								return resolve(404)
+								//console.error("File not found \n'%s' (required in '%s')",
+								//              data.request, requireOrigin);
+								return cb()
 							}
-							resolve(null, filePath);
+							apply(null, filePath);
 						}
 					);
 				}
-				resolve(null, data.request);
 			}
 			
 			// sass resolver
@@ -240,10 +254,10 @@ module.exports = function ( cfg, opts ) {
 				if ( RootAliasRe.test(url) || url[0] === '$' || url[0] === '.' ) {
 					wpiResolve(
 						{
-							contextInfo: {
+							context: {
 								issuer: requireOrigin
 							},
-							request    : path.normalize(url)
+							request: path.normalize(url)
 						},
 						( e, found, contents ) => {
 							if ( found || contents ) {
@@ -302,10 +316,9 @@ module.exports = function ( cfg, opts ) {
 								                context &&
 								                /^\./.test(data.request)
 								                ? (isInRoot = roots.find(r => path.resolve(context + '/' + data.request).startsWith(r)))
-								                : (isInRoot = roots.find(r => path.resolve(data.request).startsWith(r)))
-							                );
+								                : (isInRoot = roots.find(r =>
+									                                         path.resolve(data.request).startsWith(r))));
 						                }
-						
 						                if ( mkExt &&
 							                (
 								                !externalRE
@@ -330,7 +343,7 @@ module.exports = function ( cfg, opts ) {
 					                };
 				                });
 				
-				                nmf.plugin("before-resolve", wpiResolve);
+				                //nmf.plugin("before-resolve", wpiResolve);
 			                }
 			);
 			
