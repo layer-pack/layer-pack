@@ -140,7 +140,6 @@ module.exports = function ( cfg, opts ) {
 			function wpiResolve( data, cb, proxy ) {
 				let requireOrigin = data.context && data.context.issuer,
 				    context       = requireOrigin && path.dirname(requireOrigin),
-				    oReq          = data.request,
 				    reqPath       = data.request,
 				    tmpPath;
 				
@@ -150,9 +149,9 @@ module.exports = function ( cfg, opts ) {
 					reqPath = (RootAlias + path.resolve(context + '/' + data.request).substr(tmpPath.length)).replace(/\\/g, '/');
 				}
 				
-				let isSuper = /^\$super$/.test(data.request),
-				    isGlob  = data.request.indexOf('*') != -1,
-				    isRoot  = RootAliasRe.test(data.request);
+				let isSuper = /^\$super$/.test(reqPath),
+				    isGlob  = reqPath.indexOf('*') != -1,
+				    isRoot  = RootAliasRe.test(reqPath);
 				
 				// glob resolving...
 				if ( isGlob ) {
@@ -168,13 +167,12 @@ module.exports = function ( cfg, opts ) {
 							//console.warn("glob", filePath)
 							let req = {
 								...data,
-								
-								relativePath: filePath,
+								//relativePath: filePath,
 								path        : filePath,
 								request     : filePath,
-								module      : false,
-								directory   : false,
-								file        : true
+								//module      : false,
+								//directory   : false,
+								//file        : true
 							};
 							cb(e, req, content);
 						}
@@ -190,12 +188,12 @@ module.exports = function ( cfg, opts ) {
 					let req = {
 						...data,
 						path        : r,
-						relativePath: data.path && path.relative(data.path, r),
+						//relativePath: data.path && path.relative(data.path, r),
 						request     : r,
 						resource    : r,
-						module      : false,
-						directory   : false,
-						file        : true
+						//module      : false,
+						//directory   : false,
+						//file        : true
 					};
 					cb(null, req, content);
 				};
@@ -232,10 +230,10 @@ module.exports = function ( cfg, opts ) {
 							if ( e ) {
 								//console.log("find %s\t\t\t=> %s", data.request);
 								//console.error("File not found \n'%s' (required in '%s')",
-								//              data.request, requireOrigin);
-								return cb()
-							}
-							apply(null, filePath);
+							//	//      eP        data.request, requireOrigin);
+							//return cb()
+						}
+					apply(null, filath);
 						}
 					);
 				}
@@ -306,7 +304,7 @@ module.exports = function ( cfg, opts ) {
 						                    mkExt         = isBuiltinModule(data.request),
 						                    isInRoot;
 						
-						                if ( data.contextInfo.issuer === '' )// entry points ?
+						                if ( data.request === "$super" || data.contextInfo.issuer === '' )// entry points ?
 							                return factory(data, callback);
 						
 						                if ( !mkExt ) {
