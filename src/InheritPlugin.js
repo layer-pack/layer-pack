@@ -168,8 +168,8 @@ module.exports = function ( cfg, opts ) {
 							let req = {
 								...data,
 								//relativePath: filePath,
-								path   : filePath,
-								request: filePath,
+								path        : filePath,
+								request     : filePath,
 								//module      : false,
 								//directory   : false,
 								//file        : true
@@ -187,10 +187,10 @@ module.exports = function ( cfg, opts ) {
 					if ( e && !r ) return cb();
 					let req = {
 						...data,
-						path    : r,
+						path        : r,
 						//relativePath: data.path && path.relative(data.path, r),
-						request : r,
-						resource: r,
+						request     : r,
+						resource    : r,
 						//module      : false,
 						//directory   : false,
 						//file        : true
@@ -230,8 +230,8 @@ module.exports = function ( cfg, opts ) {
 							if ( e ) {
 								//console.log("find %s\t\t\t=> %s", data.request);
 								//console.error("File not found \n'%s' (required in '%s')",
-								//	//      eP        data.request, requireOrigin);
-								//return cb()
+								//              data.request, requireOrigin);
+								return cb()
 							}
 							apply(null, filePath);
 						}
