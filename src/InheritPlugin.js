@@ -84,7 +84,7 @@ module.exports = function ( cfg, opts ) {
 						
 						resolver
 							.getHook(this.source)
-							.tapAsync("MyResolverPlugin", ( request, resolveContext, callback ) => {
+							.tapAsync("InheritPlugin_" + currentProfile, ( request, resolveContext, callback ) => {
 								//console.log("Resolve : ", request.request)
 								wpiResolve(
 									request,
@@ -95,7 +95,7 @@ module.exports = function ( cfg, opts ) {
 										resolver.doResolve(
 											target,
 											req || request,
-											"resolve wpi files", resolveContext,
+											"resolved wpi files using " + currentProfile, resolveContext,
 											( err, result ) => {
 												//console.log("Proxy resolved : ", err, result)
 												if ( err ) return callback(err);
