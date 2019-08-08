@@ -372,11 +372,13 @@ const utils = {
 						        modExport=_exports;
 						    name = name&&name[1]||key.substr(2);
 						    name = name.split('/');
-						    mod  = req(key);
 						    
 						    while(i<name.length-1)
 						       modExport=modExport[name[i]]=modExport[name[i]]||{}, i++;
-						    modExport[name[i]] = Object.keys(mod).length === 1 && mod.default || mod;
+							if (!modExport[name[i]]){
+								mod  = req(key);
+							    modExport[name[i]] = Object.keys(mod).length === 1 && mod.default || mod;
+						    }
 						});
 						`;
 				glob.sync([_root + '/' + path.normalize(input)])
