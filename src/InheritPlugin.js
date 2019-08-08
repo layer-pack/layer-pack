@@ -220,11 +220,6 @@ module.exports = function ( cfg, opts ) {
 						requireOrigin,
 						[''],
 						function ( e, filePath, file ) {
-							
-							if ( e ) {// silently deal when there is no parents
-								console.warn("Parent not found for " + requireOrigin);
-								return apply(e, "", "/* Parent not found for " + requireOrigin + '*/\n');
-							}
 							if ( e && !r ) return cb(e, "", "/* Parent not found for " + requireOrigin + '*/\n');
 							cb(null, {
 								...data,
