@@ -130,7 +130,11 @@ module.exports = function ( cfg, opts ) {
 			
 			
 			// add resolve paths
-			compiler.options.resolve         = compiler.options.resolve || {};
+			compiler.options.resolve = compiler.options.resolve || {};
+			
+			// requiered for $super resolving
+			compiler.options.resolve.cacheWithContext = true;
+			
 			compiler.options.resolve.modules = compiler.options.resolve.modules || [];
 			compiler.options.resolve.modules.unshift(...opts.allModulePath);
 			compiler.options.resolveLoader         = compiler.options.resolveLoader || {};
@@ -193,12 +197,12 @@ module.exports = function ( cfg, opts ) {
 							//console.warn("glob", filePath)
 							let req = {
 								...data,
-								//relativePath: path.relative(opts.projectRoot, filePath),
-								//path        : filePath,
-								//resource    : filePath,
-								request: filePath,
+								relativePath: undefined,
+								path        : filePath,
+								resource    : filePath,
+								request     : filePath,
 							};
-							(proxy || cb)(e, req, content);
+							cb(e, req, content);
 						}
 					)
 				}
@@ -206,18 +210,6 @@ module.exports = function ( cfg, opts ) {
 				if ( !isRoot && !isSuper ) { // let wp deal with it
 					return cb()
 				}
-				
-				let apply = ( e, r, content ) => {
-					if ( e && !r ) return cb();
-					let req = {
-						...data,
-						//path        : r,
-						//relativePath: r,
-						request: r,
-						//resource    : r,
-					};
-					(proxy || cb)(null, req, content);
-				};
 				
 				
 				// $super resolving..
@@ -233,8 +225,16 @@ module.exports = function ( cfg, opts ) {
 								console.warn("Parent not found for " + requireOrigin);
 								return apply(e, "", "/* Parent not found for " + requireOrigin + '*/\n');
 							}
-							
-							apply(null, filePath);
+							if ( e && !r ) return cb(e, "", "/* Parent not found for " + requireOrigin + '*/\n');
+							cb(null, {
+								...data,
+								path        : filePath,
+								relativePath: undefined,
+								request     : filePath,
+								resource    : filePath,
+								module      : false,
+								file        : true
+							});
 						}
 					);
 				}
@@ -254,7 +254,14 @@ module.exports = function ( cfg, opts ) {
 								return cb()
 							}
 							//console.log("find %s\t\t\t=> %s", reqPath, filePath);
-							apply(null, filePath);
+							let req = {
+								...data,
+								path        : filePath,
+								relativePath: undefined,
+								//request     : filePath,
+								resource    : filePath
+							};
+							cb(null, req);
 						}
 					);
 				}
@@ -282,7 +289,7 @@ module.exports = function ( cfg, opts ) {
 						},
 						( e, found, contents ) => {
 							if ( found || contents ) {
-								cb && cb(contents && { contents } || { file: found.request });
+								cb && cb(contents && { contents } || { file: found.resource||found.path });
 							}
 							else {
 								next && next()
