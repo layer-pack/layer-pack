@@ -220,7 +220,14 @@ module.exports = function ( cfg, opts ) {
 						requireOrigin,
 						[''],
 						function ( e, filePath, file ) {
-							if ( e && !r ) return cb(e, "", "/* Parent not found for " + requireOrigin + '*/\n');
+							if ( e && !filePath ) {
+								console.error("Parent not found \n'%s'",
+								              requireOrigin);
+								return cb(null, {
+									...data,
+									path: false// ignored
+								});
+							}
 							cb(null, {
 								...data,
 								path        : filePath,
@@ -284,7 +291,7 @@ module.exports = function ( cfg, opts ) {
 						},
 						( e, found, contents ) => {
 							if ( found || contents ) {
-								cb && cb(contents && { contents } || { file: found.resource||found.path });
+								cb && cb(contents && { contents } || { file: found.resource || found.path });
 							}
 							else {
 								next && next()
