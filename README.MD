@@ -102,7 +102,6 @@ So you can share, version, extend & switch your webpack conf & boilerplate via n
 - Remember that devDependencies of dependencies are NOT installed so layers should only use (peer)Dependencies
 - inherit deal with the deps resolving order, even if layers are in the libPath folder. That's said, when compiling for node the relative paths to the externals libs directories are hard written
 - Context based webpack requires are not processed
-- Actually hot reload don't detect new files overriding an inherited layer file & files deleted from a glob include
 - This plugin probably need some optimisations
 
 ## Contributors ?
