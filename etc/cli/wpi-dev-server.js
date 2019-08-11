@@ -46,7 +46,7 @@ if ( profile && !confs[profile].allWebpackCfg.length )
 wpCli = resolve.sync('webpack-dev-server', { basedir: path.resolve(path.dirname(confs[profile].allWebpackCfg[0])) });
 wpCli = path.join(wpCli.substr(0, wpCli.lastIndexOf("node_modules")), 'node_modules/webpack-dev-server/bin/webpack-dev-server.js');
 
-console.info("Dev Server using profile id : ", profile, nodeArgz.length && nodeArgz);
+console.info("Dev Server using profile id : ", profile, nodeArgz.length && nodeArgz || "");
 
 cmd = spawn(
 	"node", [...nodeArgz, wpCli, '--config', __dirname + '/../wp/webpack.config.js', ...argz],

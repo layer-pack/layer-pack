@@ -62,7 +62,8 @@ module.exports = function ( cfg, opts ) {
 			    fileDependencies    = [],
 			    availableExts       = [],
 			    activeGlobs         = { scss: {}, jsx: {} },
-			    buildTarget         = compiler.options.target || "web";
+			    buildTarget         = compiler.options.target || "web",
+			    startBuildTm        = Date.now();
 			
 			// Add some wpi build vars...
 			compiler.options.plugins.push(
@@ -162,26 +163,15 @@ module.exports = function ( cfg, opts ) {
 				    tmpPath;
 				
 				// do not re resolve
-				
 				if ( data.wpiOriginRequest ) {
-					//console.log('reresolve ', reqPath)
 					return cb();
 				}
 				
 				data.wpiOriginRequest = reqPath;
 				
-				
-				//if ( data.relativePath && /^\./.test(reqPath) ) {
-				//	reqPath = path.join(opts.projectRoot, data.relativePath, reqPath)
-				//}
-				
 				if ( context && /^\./.test(reqPath) && (tmpPath = roots.find(r => path.resolve(context + '/' + reqPath).startsWith(r))) ) {
 					reqPath = (RootAlias + path.resolve(context + '/' + reqPath).substr(tmpPath.length)).replace(/\\/g, '/');
 				}
-				// is absolute path in root
-				//if ( /^([\w]+\:)?([\\\/][^\<\>\:\"\\\/\|\?\*]+)+[\\\/]?$/.test(data.request) && (tmpPath =
-				// roots.find(r => path.resolve(data.request).startsWith(r))) ) { reqPath = (RootAlias +
-				// path.resolve(data.request).substr(tmpPath.length)).replace(/\\/g, '/'); }
 				
 				let isSuper = /^\$super$/.test(reqPath),
 				    isGlob  = reqPath.indexOf('*') != -1,
@@ -212,7 +202,7 @@ module.exports = function ( cfg, opts ) {
 								resource    : filePath,
 								module      : false,
 								file        : true,
-								request     : filePath,
+								//request     : filePath,
 							};
 							cb(e, req, content);
 						}
@@ -245,10 +235,10 @@ module.exports = function ( cfg, opts ) {
 								...data,
 								path        : filePath,
 								relativePath: undefined,
-								request     : filePath,
+								//request     : filePath,
 								resource    : filePath,
-								//module      : false,
-								//file        : true
+								module      : false,
+								file        : true
 							});
 						}
 					);
@@ -274,7 +264,7 @@ module.exports = function ( cfg, opts ) {
 								...data,
 								path        : filePath,
 								relativePath: undefined,
-								request     : filePath,
+								//request     : filePath,
 								resource    : filePath
 							};
 							cb(null, req);
@@ -332,7 +322,7 @@ module.exports = function ( cfg, opts ) {
 								                author     : projectPkg.author,
 								                version    : projectPkg.version
 							                },
-							                buildDate  : Date.now(),
+							                buildDate  : startBuildTm,
 							                profile    : currentProfile,
 							                projectRoot: opts.projectRoot,
 							                vars       : opts.vars,
@@ -350,7 +340,7 @@ module.exports = function ( cfg, opts ) {
 						                    mkExt         = isBuiltinModule(data.request),
 						                    isInRoot;
 						
-						                if ( data.wpiOriginRequest === "$super" || data.contextInfo.issuer === '' )// entry points ?
+						                if ( data.request === "$super" || data.contextInfo.issuer === '' )// entry points ?
 							                return factory(data, callback);
 						
 						                if ( !mkExt ) {
@@ -394,8 +384,11 @@ module.exports = function ( cfg, opts ) {
 			                }
 			);
 			
+			// do update the globs v files
+			
 			compiler.plugin('watchRun', ( compilation ) => {
-				// do update the globs v files
+				//console.log(activeGlobs)
+				// todo : the glob indexes files are auto deleted
 				for ( let reqPath in activeGlobs.jsx )
 					if ( activeGlobs.jsx.hasOwnProperty(reqPath) ) {
 						utils.indexOf(
@@ -425,8 +418,6 @@ module.exports = function ( cfg, opts ) {
 							}
 						)
 					}
-				
-				//cb();
 			})
 			// should deal with hot reload watched files & dirs
 			compiler.plugin('after-emit', ( compilation, cb ) => {
