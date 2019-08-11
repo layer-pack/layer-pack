@@ -358,7 +358,7 @@ const utils = {
 		
 		input = input.replace(/[\(\)]/g, '');
 		
-		code += "let req, _exports = {}, fPath, i;";
+		code += "let req, _exports = {}, cExport, fPath, i;";
 		// generate require.context code so wp will detect changes
 		roots.forEach(
 			( _root, lvl ) => {
@@ -382,11 +382,13 @@ const utils = {
 const ${key} = require("${uPath}");`;
 							    if ( name && name[1] )
 								    code += `
+cExport=_exports;
 fPath="${name[1]}".split('/');
 i=0;while(i<fPath.length-1)
-   _exports=_exports[fPath[i]]=_exports[fPath[i]]||{}, i++;
-if (!_exports[fPath[i]]){
-    _exports[fPath[i]] = Object.keys(${key}).length === 1 && ${key}.default || ${key};
+   cExport=cExport[fPath[i]]=cExport[fPath[i]]||{}, i++;
+
+if (!cExport[fPath[i]]){
+    cExport[fPath[i]] = Object.keys(${key}).length === 1 && ${key}.default || ${key};
 }
 `;
 							
