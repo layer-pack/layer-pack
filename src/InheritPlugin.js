@@ -61,6 +61,7 @@ module.exports = function ( cfg, opts ) {
 			    contextDependencies = [],
 			    fileDependencies    = [],
 			    availableExts       = [],
+			    activeGlobs         = { scss: {}, jsx: {} },
 			    buildTarget         = compiler.options.target || "web";
 			
 			// Add some wpi build vars...
@@ -161,8 +162,11 @@ module.exports = function ( cfg, opts ) {
 				    tmpPath;
 				
 				// do not re resolve
-				if ( data.wpiOriginRequest )
+				
+				if ( data.wpiOriginRequest ) {
+					//console.log('reresolve ', reqPath)
 					return cb();
+				}
 				
 				data.wpiOriginRequest = reqPath;
 				
@@ -185,6 +189,12 @@ module.exports = function ( cfg, opts ) {
 				
 				// glob resolving...
 				if ( isGlob ) {
+					
+					if ( /\.s?css$/.test(requireOrigin) )
+						activeGlobs.scss[reqPath] = true;
+					else
+						activeGlobs.jsx[reqPath] = true;
+					
 					return (/\.s?css$/.test(requireOrigin) ? utils.indexOfScss : utils.indexOf)(
 						compiler.inputFileSystem,
 						roots,
@@ -200,6 +210,8 @@ module.exports = function ( cfg, opts ) {
 								relativePath: undefined,
 								path        : filePath,
 								resource    : filePath,
+								module      : false,
+								file        : true,
 								request     : filePath,
 							};
 							cb(e, req, content);
@@ -219,6 +231,7 @@ module.exports = function ( cfg, opts ) {
 						roots,
 						requireOrigin,
 						[''],
+						fileDependencies,
 						function ( e, filePath, file ) {
 							if ( e && !filePath ) {
 								console.error("Parent not found \n'%s'",
@@ -234,8 +247,8 @@ module.exports = function ( cfg, opts ) {
 								relativePath: undefined,
 								request     : filePath,
 								resource    : filePath,
-								module      : false,
-								file        : true
+								//module      : false,
+								//file        : true
 							});
 						}
 					);
@@ -249,6 +262,7 @@ module.exports = function ( cfg, opts ) {
 						reqPath.replace(RootAliasRe, ''),
 						0,
 						availableExts,
+						fileDependencies,
 						function ( e, filePath, file ) {
 							if ( e ) {
 								console.error("File not found \n'%s' (required in '%s')",
@@ -260,7 +274,7 @@ module.exports = function ( cfg, opts ) {
 								...data,
 								path        : filePath,
 								relativePath: undefined,
-								//request     : filePath,
+								request     : filePath,
 								resource    : filePath
 							};
 							cb(null, req);
@@ -332,17 +346,18 @@ module.exports = function ( cfg, opts ) {
 					                return function ( data, callback ) {
 						                let requireOrigin = data.contextInfo.issuer,
 						                    context       = data.context || path.dirname(requireOrigin),
-						                    request       = data.wpiOriginRequest || data.request,
+						                    request       = data.request,
 						                    mkExt         = isBuiltinModule(data.request),
 						                    isInRoot;
 						
-						                if ( data.request === "$super" || data.contextInfo.issuer === '' )// entry points ?
+						                if ( data.wpiOriginRequest === "$super" || data.contextInfo.issuer === '' )// entry points ?
 							                return factory(data, callback);
 						
 						                if ( !mkExt ) {
-							                //console.log(data.request, context, roots)
+							                //console.log(data.path, context, roots)
 							                // is it external ? @todo
 							                mkExt = !(
+								                RootAliasRe.test(data.request) ||
 								                context &&
 								                /^\./.test(data.request)
 								                ? (isInRoot = roots.find(r => path.resolve(context + '/' + data.request).startsWith(r)))
@@ -352,12 +367,12 @@ module.exports = function ( cfg, opts ) {
 						                if ( mkExt &&
 							                (
 								                !externalRE
-								                || externalRE.test(data.request)
+								                || externalRE.test(request)
 							                )
 							                &&
 							                !(!isInRoot && /^\./.test(data.request)) // so it's relative to an internal
 						                ) {
-							                //console.warn("ext!", request);
+							                //console.warn("ext!", mkExt, request);
 							                return callback(null, new ExternalModule(
 								                request,
 								                opts.vars.externalMode || "commonjs"
@@ -372,11 +387,47 @@ module.exports = function ( cfg, opts ) {
 						
 					                };
 				                });
-				
-				                //nmf.plugin("before-resolve", wpiResolve);
+				                //nmf.plugin("rebuildModule", ( req, cb ) => {
+				                //    console.log("rebuildModule", req.request);
+				                //    cb();
+				                //});
 			                }
 			);
 			
+			compiler.plugin('watchRun', ( compilation ) => {
+				// do update the globs v files
+				for ( let reqPath in activeGlobs.jsx )
+					if ( activeGlobs.jsx.hasOwnProperty(reqPath) ) {
+						utils.indexOf(
+							compiler.inputFileSystem,
+							roots,
+							reqPath,
+							contextDependencies,
+							fileDependencies,
+							RootAlias,
+							RootAliasRe,
+							function ( e, filePath, content ) {
+							}
+						)
+					}
+				
+				for ( let reqPath in activeGlobs.scss )
+					if ( activeGlobs.scss.hasOwnProperty(reqPath) ) {
+						utils.indexOfScss(
+							compiler.inputFileSystem,
+							roots,
+							reqPath,
+							contextDependencies,
+							fileDependencies,
+							RootAlias,
+							RootAliasRe,
+							function ( e, filePath, content ) {
+							}
+						)
+					}
+				
+				//cb();
+			})
 			// should deal with hot reload watched files & dirs
 			compiler.plugin('after-emit', ( compilation, cb ) => {
 				compilation.fileDependencies    = compilation.fileDependencies || [];
@@ -401,7 +452,6 @@ module.exports = function ( cfg, opts ) {
 					fileDependencies.forEach(( file ) => {
 						compilation.fileDependencies.add(file);
 					});
-					
 					// Add context dependencies if they're not already tracked
 					contextDependencies.forEach(( context ) => {
 						compilation.contextDependencies.add(context);

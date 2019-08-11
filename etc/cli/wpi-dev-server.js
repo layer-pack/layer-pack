@@ -22,9 +22,13 @@ const path    = require('path'),
 
 let cmd,
     wpCli,
-    argz    = process.argv.slice(2),
-    profile = 'default',
-    confs   = wpi.getAllConfigs();
+    argz     = process.argv.slice(2),
+    profile  = 'default',
+    nodeArgz = [],
+    confs    = wpi.getAllConfigs();
+
+while ( argz[0] && /^\-/.test(argz[0]) )
+	nodeArgz.push(argz.shift());
 
 if ( argz[0] && /^\:.*$/.test(argz[0]) )
 	profile = argz.shift().replace(/^\:(.*)$/, '$1');
@@ -42,10 +46,10 @@ if ( profile && !confs[profile].allWebpackCfg.length )
 wpCli = resolve.sync('webpack-dev-server', { basedir: path.resolve(path.dirname(confs[profile].allWebpackCfg[0])) });
 wpCli = path.join(wpCli.substr(0, wpCli.lastIndexOf("node_modules")), 'node_modules/webpack-dev-server/bin/webpack-dev-server.js');
 
-console.info("Compile using profile id : ", profile);
+console.info("Dev Server using profile id : ", profile, nodeArgz.length && nodeArgz);
 
 cmd = spawn(
-	"node", [wpCli, '--config', __dirname + '/../wp/webpack.config.js', ...argz],
+	"node", [...nodeArgz, wpCli, '--config', __dirname + '/../wp/webpack.config.js', ...argz],
 	{
 		stdio: 'inherit',
 		env  : { ...process.env, '__WPI_PROFILE__': profile }

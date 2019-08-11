@@ -293,7 +293,7 @@ const utils = {
 	},
 	
 	// find a $super file in the available roots
-	findParentPath( fs, roots, file, i, possible_ext, cb, _curExt = 0 ) {
+	findParentPath( fs, roots, file, i, possible_ext, fileDependencies, cb, _curExt = 0 ) {
 		let fn = path.normalize(roots[i] + file + possible_ext[_curExt]);
 		//console.warn("check !!! ", fn, possible_ext[_curExt]);
 		fs.stat(fn, ( err, stats ) => {
@@ -304,11 +304,12 @@ const utils = {
 			else {
 				//console.warn("Not found !!! ", fn);
 				// check by path first then by ext
+				fileDependencies.push(fn);
 				if ( i + 1 < roots.length ) {
-					this.findParentPath(fs, roots, file, i + 1, possible_ext, cb, _curExt);
+					this.findParentPath(fs, roots, file, i + 1, possible_ext, fileDependencies, cb, _curExt);
 				}
 				else if ( possible_ext.length >= _curExt ) {
-					this.findParentPath(fs, roots, file, 0, possible_ext, cb, _curExt + 1)
+					this.findParentPath(fs, roots, file, 0, possible_ext, fileDependencies, cb, _curExt + 1)
 				}
 				else {
 					cb && cb(true);
@@ -317,14 +318,14 @@ const utils = {
 			
 		})
 	},
-	findParent( fs, roots, file, possible_ext, cb ) {
+	findParent( fs, roots, file, possible_ext, fileDependencies, cb ) {
 		let i = -1, tmp;
 		file  = path.normalize(file);
 		//console.warn("Find parent !!! ", path.normalize(file), roots);
 		while ( ++i < roots.length ) {
 			tmp = file.substr(0, roots[i].length);
 			if ( roots[i] == tmp ) {// found
-				return (i != roots.length - 1) && this.findParentPath(fs, roots, file.substr(tmp.length), i + 1, possible_ext, cb, 0);
+				return (i != roots.length - 1) && this.findParentPath(fs, roots, file.substr(tmp.length), i + 1, possible_ext, fileDependencies, cb, 0);
 			}
 		}
 		cb && cb(true);
@@ -343,12 +344,12 @@ const utils = {
 			                                        .replace(/[^\w\.]/ig, '_') +
 				    '.gen.js')),
 		    subPath         = "",
-		    re              = "",
+		    globToRe        = "",
 		    exportedModules = {};
 		
-		input   = input.replace(/\/$/, '').replace(RootAliasRe, '').substr(1); // rm App/
-		subPath = path.dirname(input.substr(0, input.indexOf('*')) + "a");
-		re      =
+		input    = input.replace(/\/$/, '').replace(RootAliasRe, '').substr(1); // rm App/
+		subPath  = path.dirname(input.substr(0, input.indexOf('*')) + "a");
+		globToRe =
 			(subPath === '.' ? input : input.substr(subPath.length + 1))
 				.replace(/\//ig, '\\/')
 				.replace(/\./ig, '\\.')
@@ -357,36 +358,46 @@ const utils = {
 		
 		input = input.replace(/[\(\)]/g, '');
 		
-		code += "let req, _exports = {}, root;";
+		code += "let req, _exports = {}, fPath, i;";
 		// generate require.context code so wp will detect changes
 		roots.forEach(
 			( _root, lvl ) => {
-				if ( checkIfDir(fs, path.normalize(_root + "/" + subPath)) )
-					code += `
-						req = require.context(${JSON.stringify(path.normalize(_root + "/" + subPath))}, true, /^\\.\\/${re}$/);
-						
-						req.keys().forEach(function (key) {
-						    let mod,
-						        name=key.match( /^\\.\\/${re}$/),
-						        i=0,
-						        modExport=_exports;
-						    name = name&&name[1]||key.substr(2);
-						    name = name.split('/');
-						    
-						    while(i<name.length-1)
-						       modExport=modExport[name[i]]=modExport[name[i]]||{}, i++;
-							if (!modExport[name[i]]){
-								mod  = req(key);
-							    modExport[name[i]] = Object.keys(mod).length === 1 && mod.default || mod;
-						    }
-						});
-						`;
-				glob.sync([_root + '/' + path.normalize(input)])
+				if ( checkIfDir(fs, path.normalize(_root + "/" + subPath)) ) {
+					contextDependencies.push(path.normalize(_root + "/" + subPath))
+					
+					//code += `
+					//	req = require.context(${JSON.stringify(path.normalize(_root + "/" + subPath))}, true,
+					// /^\\.\\/${globToRe}$/);  req.keys().forEach(function (key) { let mod, name=key.match(
+					// /^\\.\\/${globToRe}$/), i=0, modExport=_exports; name = name&&name[1]||key.substr(2); name =
+					// name.split('/');  while(i<name.length-1) modExport=modExport[name[i]]=modExport[name[i]]||{},
+					// i++; if (!modExport[name[i]]){ mod  = req(key); modExport[name[i]] = Object.keys(mod).length ===
+					// 1 && mod.default || mod; } }); `;
+				}
+				glob.sync([_root + '/' + path.normalize(input)])// should use wp fs
 				    .forEach(
 					    file => {
-						    let name = file.substr(path.normalize(_root + "/" + subPath).length).match(new RegExp("^\\/" + re + "$"));
-						    !files[RootAlias + file.substr(_root.length)]
-						    && fileDependencies.push(path.normalize(file));
+						    let name  = file.substr(path.normalize(_root + "/" + subPath).length).match(new RegExp("^\\/" + globToRe + "$")),
+						        uPath = RootAlias + file.substr(_root.length),
+						        key   = "_" + uPath.replace(/[^\w]/ig, "_"),
+						        wPath = path.dirname(file);
+						
+						    if ( !contextDependencies.includes(wPath) )
+							    contextDependencies.push(wPath);
+						
+						    if ( !files[uPath] ) {
+							    fileDependencies.push(path.normalize(file));
+							    if ( name && name[1] )
+								    code += `
+								            const ${key} = require("${uPath}");
+								            fPath="${name[1]}".split('/');
+										    i=0;while(i<fPath.length-1)
+										       _exports=_exports[fPath[i]]=_exports[fPath[i]]||{}, i++;
+											if (!_exports[name[i]]){
+											    _exports[fPath[i]] = Object.keys(${key}).length === 1 && ${key}.default || ${key};
+										    }
+								    `;
+						    }
+						
 						
 						    files[RootAlias + file.substr(_root.length)] = name && name.length && name[1]; // exportable
 					    }
@@ -474,9 +485,26 @@ const utils = {
 	 * @param content
 	 */
 	addVirtualFile( vfs, fileName, content ) {
-		vfs.purge([fileName]);
-		VirtualModulePlugin.populateFilesystem(
-			{ fs: vfs, modulePath: fileName, contents: content, ctime: Date.now() });
+		let oldContent;
+		const mapIsAvailable       = typeof Map !== 'undefined';
+		const readFileStorageIsMap = mapIsAvailable && vfs._readFileStorage.data instanceof Map;
+		try {
+			if ( readFileStorageIsMap ) { // enhanced-resolve@3.4.0 or greater
+				if ( vfs._readFileStorage.data.has(fileName) ) {
+					oldContent = vfs._readFileStorage.data.get(fileName);
+				}
+			}
+			else if ( fs._readFileStorage.data[fileName] ) { // enhanced-resolve@3.3.0 or lower
+				oldContent = vfs._readFileStorage.data[fileName];
+			}
+			oldContent = oldContent && oldContent[1];
+		} catch ( e ) {
+		
+		}
+		vfs.purge(fileName);
+		if ( oldContent !== content )
+			VirtualModulePlugin.populateFilesystem(
+				{ fs: vfs, modulePath: fileName, contents: content, ctime: Date.now(), utime: Date.now() });
 	}
 };
 

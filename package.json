@@ -1,7 +1,7 @@
 {
   "name": "webpack-inherit",
-  "version": "1.7.7",
-  "description": "Webpack plugin for better code pipelines & architectures; Allows to easily namespace, compose, extend and build your Webpack projects with minimal and versioned configs",
+  "version": "1.7.8",
+  "description": "Webpack plugin allowing glob imports, easy multi packages app, shareable webpack configs & inheritable boilerplates",
   "license": "MIT",
   "main": "src/index.js",
   "engines": {
