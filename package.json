@@ -1,6 +1,6 @@
 {
   "name": "webpack-inherit",
-  "version": "1.7.11",
+  "version": "1.7.12",
   "description": "Webpack plugin allowing glob imports, easy multi packages app, shareable webpack configs & inheritable boilerplates",
   "license": "MIT",
   "main": "src/index.js",

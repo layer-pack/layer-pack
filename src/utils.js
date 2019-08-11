@@ -364,6 +364,27 @@ const utils = {
 			( _root, lvl ) => {
 				if ( checkIfDir(fs, path.normalize(_root + "/" + subPath)) ) {
 					contextDependencies.push(path.normalize(_root + "/" + subPath))
+					// This code should be useless; but required files are not hot updated if this is not included
+					// while using only this code to require make fatal error when deleting entries
+					code += `
+							req = require.context(${JSON.stringify(path.normalize(_root + "/" + subPath))}, true, /^\\.\\/${globToRe}$/);
+
+							req.keys().forEach(function (key) {
+							    let mod,
+							        name=key.match( /^\\.\\/${globToRe}$/),
+							        i=0,
+							        modExport=_exports;
+							    name = name&&name[1]||key.substr(2);
+							    name = name.split('/');
+
+							    while(i<name.length-1)
+							       modExport=modExport[name[i]]=modExport[name[i]]||{}, i++;
+								if (!modExport[name[i]]){
+									mod  = req(key);
+								    //modExport[name[i]] = Object.keys(mod).length === 1 && mod.default || mod;
+							    }
+							});
+							`;
 				}
 				glob.sync([_root + '/' + path.normalize(input)])// should use wp fs
 				    .forEach(
@@ -373,8 +394,8 @@ const utils = {
 						        key   = "_" + uPath.replace(/[^\w]/ig, "_"),
 						        wPath = path.dirname(file);
 						
-						    if ( !contextDependencies.includes(wPath) )
-							    contextDependencies.push(wPath);
+						    //if ( !contextDependencies.includes(wPath) )
+						    //    contextDependencies.push(wPath);
 						
 						    if ( !files[uPath] ) {
 							    fileDependencies.push(path.normalize(file));
