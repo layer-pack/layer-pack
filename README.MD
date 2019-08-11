@@ -104,6 +104,11 @@ So you can share, version, extend & switch your webpack conf & boilerplate via n
 - Context based webpack requires are not processed
 - This plugin probably need some optimisations
 
+## Improvements / todo
+
+- Allow compiling inheritable packages code separately (slice the build) 
+- Optims
+
 ## Contributors ?
 
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](#)
