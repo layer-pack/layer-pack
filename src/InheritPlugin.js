@@ -340,11 +340,11 @@ module.exports = function ( cfg, opts ) {
 						                    mkExt         = isBuiltinModule(data.request),
 						                    isInRoot;
 						
-						                if ( data.request === "$super" || data.contextInfo.issuer === '' )// entry points ?
+						                if ( data.request === "$super" || !data.contextInfo.issuer )// entry points ?
 							                return factory(data, callback);
 						
 						                if ( !mkExt ) {
-							                //console.log(data.path, context, roots)
+							                //console.log(data, context, roots)
 							                // is it external ? @todo
 							                mkExt = !(
 								                RootAliasRe.test(data.request) ||
