@@ -19,7 +19,6 @@ const path            = require('path'),
       utils           = require("./utils"),
       isBuiltinModule = require('is-builtin-module');
 
-let z          = 5;
 module.exports = function ( cfg, opts ) {
 	let plugin;
 	
@@ -87,7 +86,7 @@ module.exports = function ( cfg, opts ) {
 						resolver
 							.getHook(this.source)
 							.tapAsync("InheritPlugin_" + currentProfile, ( request, resolveContext, callback ) => {
-								//console.log("Resolve : ", request.request)
+								//console.log("Resolve : ", request)
 								wpiResolve(
 									request,
 									( err, req, data ) => {

@@ -58,6 +58,7 @@ Add a ".wi.json" file near the package.json of each projects :
    			"basedOn": "someSuperProfile_in_parents",
 
    			// optional vars
+   			// all theses values are available in the webpack config using wpiCfg.vars.*
    			"vars"  : {
    				// all @optional
 
@@ -69,8 +70,23 @@ Add a ".wi.json" file near the package.json of each projects :
    				// ( for nodes builds & components )
    				// * this could be a RegExp like "^(?!react|@babel)" but packed libs can require externalized
    				"externals"   : true,
+   				
+   				"production"   : true,
+   				
+   				"someValues"   :{
+   				    // Wpi apply simple tpl on the vars
+   				    // here the available values :
+   				    // packagePath   : the path of the package associated with this config file
+   				    // projectPath   : the path of the head project
+   				    // packageConfig : package.json of the head project
+   				    "withSomeTemplatedValues" : "<%packagePath%>/AppStatic/index.html.tpl"
 
-   				// all theses values are available in the webpack config using wpiCfg.vars.*
+   				},
+   				// webpack config patch (applied using webpack-merge)
+                "webpackPatch": {
+                
+                }
+   				
    			},
    			"extend": [
    				"parentProject"

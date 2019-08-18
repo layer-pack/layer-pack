@@ -15,6 +15,8 @@
 const path                = require("path"),
       fs                  = require('fs'),
       is                  = require('is'),
+      mustache            = require('mustache'),
+      objProto            = ({}).__proto__,
       stripJsonComments   = require('strip-json-comments'),
       VirtualModulePlugin = require('virtual-module-webpack-plugin'),
       glob                = require('fast-glob'),
@@ -30,18 +32,45 @@ function checkIfDir( fs, file ) {
 }
 
 function getWpiConfigFrom( dir ) {
-	let cfg;
+	let cfg, pkgCfg;
 	try {
-		cfg = fs.existsSync(path.normalize(dir + "/.wi.json"))
-			&& { wpInherit: JSON.parse(stripJsonComments(fs.readFileSync(path.normalize(dir + "/.wi.json")).toString())) }
-			||
+		try {
+			cfg = require(path.normalize(dir + "/.wi"));
+			cfg = { wpInherit: cfg };
+		} catch ( e ) {
+			cfg = fs.existsSync(path.normalize(dir + "/.wi.json"))
+				&& { wpInherit: JSON.parse(stripJsonComments(fs.readFileSync(path.normalize(dir + "/.wi.json")).toString())) };
+		}
+		
+		pkgCfg =
 			fs.existsSync(path.normalize(dir + "/package.json"))
 			&& JSON.parse(fs.readFileSync(path.normalize(dir + "/package.json")));
+		
+		if ( !pkgCfg )
+			pkgCfg = cfg;
+		else if ( cfg )
+			pkgCfg = { ...pkgCfg, ...cfg };
+		
 	} catch ( e ) {
 		console.warn("Fail parsing wpi config in " + dir, "\n" + e + "\n", e.stack);
 		process.exit(1000);
 	}
-	return cfg;
+	return pkgCfg;
+}
+
+function jsonTplApply( value, data ) {
+	if ( is.string(value) ) {
+		return mustache.render(value, data, undefined, ['<%', '%>'])
+	}
+	else if ( value && value.__proto__ === objProto ) {
+		let output = {};
+		for ( let key in value )
+			if ( value.hasOwnProperty(key) ) {
+				output[key] = jsonTplApply(value[key], data);
+			}
+		return output;
+	}
+	return value;
 }
 
 const utils = {
@@ -69,7 +98,7 @@ const utils = {
 				      while ( is.string(pkgConfig.wpInherit[pId]) ) {// profile alias
 					      pId = pkgConfig.wpInherit[pId];
 				      }
-				      allCfg[_pId] = this.getConfigByProfiles(projectRoot, pkgConfig.wpInherit[pId], _pId);
+				      allCfg[_pId] = this.getConfigByProfiles(projectRoot, pkgConfig.wpInherit[pId], _pId, pkgConfig);
 			      }
 		      )
 		return allCfg;
@@ -78,12 +107,12 @@ const utils = {
 	 * Recurse over the inherited package to map all the value for a specified profile id
 	 * todo: rewrite
 	 * @param projectRoot
-	 * @param pkgConfig
-	 * @param profile
+	 * @param profileConfig
+	 * @param profileId
 	 * @returns {{projectRoot: *, allModId: Array, allModulePath: Array, allRoots: *, localAlias, allWebpackCfg: Array,
 	 *     allExtPath: Array, allCfg: Array, vars, allModuleRoots: Array}}
 	 */
-	getConfigByProfiles( projectRoot, pkgConfig, profile ) {
+	getConfigByProfiles( projectRoot, profileConfig, profileId, packageConfig ) {
 		let localAlias     = {},
 		    allModulePath  = [],
 		    allModId       = [],
@@ -93,7 +122,7 @@ const utils = {
 		    allTemplates   = {},
 		    allScripts     = {},
 		    vars           = {},
-		    rootDir        = pkgConfig.rootFolder || './App',
+		    rootDir        = profileConfig.rootFolder || './App',
 		    /**
 		     * Find & return all  inherited pkg paths
 		     * @type {Array}
@@ -101,9 +130,9 @@ const utils = {
 		    allExtPath     = (() => {
 			    let layerPathList = [], dedupedLayerPathList = [], layerIdList = [], seen = {};
 			
-			    pkgConfig.extend && pkgConfig.extend.forEach(function walk( layerId, i, x, mRoot, cProfile, libsPath = pkgConfig.libsPath ) {
+			    profileConfig.extend && profileConfig.extend.forEach(function walk( layerId, i, x, mRoot, cProfile, libsPath = profileConfig.libsPath ) {
 				    mRoot    = mRoot || projectRoot;
-				    cProfile = cProfile || pkgConfig.basedOn || profile;
+				    cProfile = cProfile || profileConfig.basedOn || profileId;
 				
 				    // find the inheritable package path & cfg
 				    let where       = libsPath && fs.existsSync(path.normalize(projectRoot + "/" + libsPath + "/" + layerId))
@@ -144,13 +173,12 @@ const utils = {
 							    )
 				    }
 				    else {
-					    if ( !cfg ) {
-						    throw new Error("webpack-inherit : Can't inherit an not installed module :\nNot found :" + mRoot + where + layerId)
-					    }
+					    if ( !cfg )
+						    throw new Error("webpack-inherit : Can't inherit an not installed module :\nNot found :" + mRoot + where + layerId);
 					    if ( !cfg.wpInherit )
-						    throw new Error("webpack-inherit : Can't inherit a module with no wpInherit in the package.json/.wi.json :\nAt :" + mRoot + where + layerId)
+						    throw new Error("webpack-inherit : Can't inherit a module with no wpInherit in the package.json/.wi.json :\nAt :" + mRoot + where + layerId);
 					    if ( !cfg.wpInherit[realProfile] )
-						    throw new Error("webpack-inherit : Can't inherit a module without the requested profile\nAt :" + mRoot + where + layerId + "\nRequested profile :" + cProfile)
+						    throw new Error("webpack-inherit : Can't inherit a module without the requested profile\nAt :" + mRoot + where + layerId + "\nRequested profile :" + cProfile);
 				    }
 				
 			    })
@@ -171,33 +199,33 @@ const utils = {
 		    allRoots       = (function () {
 			    let roots = [projectRoot + '/' + rootDir], libPath = [];
 			
-			    pkgConfig.libsPath
-			    && fs.existsSync(path.normalize(projectRoot + "/" + pkgConfig.libsPath))
-			    && libPath.push(path.normalize(projectRoot + "/" + pkgConfig.libsPath));
+			    profileConfig.libsPath
+			    && fs.existsSync(path.normalize(projectRoot + "/" + profileConfig.libsPath))
+			    && libPath.push(path.normalize(projectRoot + "/" + profileConfig.libsPath));
 			
 			    allModulePath.push(path.normalize(projectRoot + '/node_modules'));
 			    allModuleRoots.push(projectRoot);
 			
-			    if ( pkgConfig.config )
-				    allWebpackCfg.push(path.resolve(path.normalize(projectRoot + '/' + pkgConfig.config)))
+			    if ( profileConfig.config )
+				    allWebpackCfg.push(path.resolve(path.normalize(projectRoot + '/' + profileConfig.config)))
 			
-			    if ( pkgConfig.templates )
-				    Object.keys(pkgConfig.templates)
+			    if ( profileConfig.templates )
+				    Object.keys(profileConfig.templates)
 				          .reduce(
-					          ( h, k ) => (h[k] = h[k] || path.resolve(path.normalize(projectRoot + '/' + pkgConfig.templates[k]))),
+					          ( h, k ) => (h[k] = h[k] || path.resolve(path.normalize(projectRoot + '/' + profileConfig.templates[k]))),
 					          allTemplates
 				          );
 			
-			    if ( pkgConfig.scripts )
-				    Object.keys(pkgConfig.scripts)
+			    if ( profileConfig.scripts )
+				    Object.keys(profileConfig.scripts)
 				          .reduce(
-					          ( h, k ) => (h[k] = h[k] || path.resolve(path.normalize(projectRoot + '/' + pkgConfig.scripts[k]))),
+					          ( h, k ) => (h[k] = h[k] || path.resolve(path.normalize(projectRoot + '/' + profileConfig.scripts[k]))),
 					          allScripts
 				          );
 			
 			    allExtPath.forEach(
 				    function ( where, i, arr, cProfile ) {
-					    cProfile        = cProfile || pkgConfig.basedOn || profile;
+					    cProfile        = cProfile || profileConfig.basedOn || profileId;
 					    let cfg         = getWpiConfigFrom(where),
 					        modPath     = path.normalize(where + "/node_modules"),
 					        realProfile = cProfile;
@@ -223,9 +251,15 @@ const utils = {
 									    )
 								    )
 						    };
+					
+					    // add the vars
 					    if ( cfg.vars )
 						    vars = {
-							    ...cfg.vars,
+							    ...jsonTplApply(cfg.vars, {
+								    packagePath: where,
+								    projectPath: projectRoot,
+								    packageConfig
+							    }),
 							    ...vars
 						    };
 					
@@ -257,10 +291,10 @@ const utils = {
 			    return roots.map(path.normalize.bind(path));
 		    })();
 		
-		if ( pkgConfig && pkgConfig.aliases )
+		if ( profileConfig && profileConfig.aliases )
 			localAlias = {
 				...localAlias,
-				...pkgConfig.aliases
+				...profileConfig.aliases
 			};
 		
 		vars = {
@@ -268,13 +302,17 @@ const utils = {
 			...vars
 		};
 		
-		if ( pkgConfig && pkgConfig.vars )
+		if ( profileConfig && profileConfig.vars )
 			vars = {
 				rootAlias: 'App',
 				...vars,
-				...pkgConfig.vars
+				...jsonTplApply(profileConfig.vars, {
+					packagePath: projectRoot,
+					projectPath: projectRoot,
+					packageConfig
+				}),
 			};
-		allCfg.unshift(pkgConfig);
+		allCfg.unshift(profileConfig);
 		
 		return {
 			allWebpackCfg,
