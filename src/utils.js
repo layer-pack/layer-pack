@@ -383,7 +383,8 @@ const utils = {
 				    '.gen.js')),
 		    subPath         = "",
 		    globToRe        = "",
-		    exportedModules = {};
+		    exportedModules = {},
+		    filesToAdd      = [];
 		
 		input    = input.replace(/\/$/, '').replace(RootAliasRe, '').substr(1); // rm App/
 		subPath  = path.dirname(input.substr(0, input.indexOf('*')) + "a");
@@ -405,24 +406,12 @@ const utils = {
 					// This code should be useless; but required files are not hot updated if this is not included
 					// while using only this code to require make fatal error when deleting entries
 					//code += `
-					//		req = require.context(${JSON.stringify(path.normalize(_root + "/" + subPath))}, true, /^\\.\\/${globToRe}$/);
-					//
-					//		req.keys().forEach(function (key) {
-					//		    let mod,
-					//		        name=key.match( /^\\.\\/${globToRe}$/),
-					//		        i=0,
-					//		        modExport=_exports;
-					//		    name = name&&name[1]||key.substr(2);
-					//		    name = name.split('/');
-					//
-					//		    while(i<name.length-1)
-					//		       modExport=modExport[name[i]]=modExport[name[i]]||{}, i++;
-					//			if (!modExport[name[i]]){
-					//				mod  = req(key);
-					//			    //modExport[name[i]] = Object.keys(mod).length === 1 && mod.default || mod;
-					//		    }
-					//		});
-					//		`;
+					//		req = require.context(${JSON.stringify(path.normalize(_root + "/" + subPath))}, true,
+					// /^\\.\\/${globToRe}$/);  req.keys().forEach(function (key) { let mod, name=key.match(
+					// /^\\.\\/${globToRe}$/), i=0, modExport=_exports; name = name&&name[1]||key.substr(2); name =
+					// name.split('/');  while(i<name.length-1) modExport=modExport[name[i]]=modExport[name[i]]||{},
+					// i++; if (!modExport[name[i]]){ mod  = req(key); //modExport[name[i]] = Object.keys(mod).length
+					// === 1 && mod.default || mod; } }); `;
 				}
 				glob.sync([_root + '/' + path.normalize(input)])// should use wp fs
 				    .forEach(
@@ -437,19 +426,7 @@ const utils = {
 						
 						    if ( !files[uPath] ) {
 							    fileDependencies.push(path.normalize(file));
-							    code += `
-const ${key} = require("${uPath}");`;
-							    if ( name && name[1] )
-								    code += `
-cExport=_exports;
-fPath="${name[1]}".split('/');
-i=0;while(i<fPath.length-1)
-   cExport=cExport[fPath[i]]=cExport[fPath[i]]||{}, i++;
-
-if (!cExport[fPath[i]]){
-    cExport[fPath[i]] = Object.keys(${key}).length === 1 && ${key}.default || ${key};
-}
-`;
+							    filesToAdd.push([uPath,name]);
 							
 						    }
 						
@@ -459,6 +436,26 @@ if (!cExport[fPath[i]]){
 				    )
 			}
 		);
+		filesToAdd=filesToAdd.sort(
+			(a,b)=>(a[0].length-b[0].length)
+		).forEach(
+			([uPath, name])=>{
+				let key = "_" + uPath.replace(/[^\w]/ig, "_");
+				code += `
+const ${key} = require("${uPath}");`;
+				if ( name && name[1] )
+					code += `
+cExport=_exports;
+fPath="${name[1]}".split('/');
+i=0;while(i<fPath.length-1) cExport=cExport[fPath[i]]=cExport[fPath[i]]||{}, i++;
+
+if (!cExport[fPath[i]]){
+    cExport[fPath[i]] = Object.keys(${key}).length === 1 && ${key}.default || ${key};
+}
+`;
+			}
+		);
+		//console.log(filesToAdd)
 		code +=
 			"\n" +
 			Object.keys(files).map(
