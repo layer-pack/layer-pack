@@ -404,25 +404,25 @@ const utils = {
 					contextDependencies.push(path.normalize(_root + "/" + subPath))
 					// This code should be useless; but required files are not hot updated if this is not included
 					// while using only this code to require make fatal error when deleting entries
-					code += `
-							req = require.context(${JSON.stringify(path.normalize(_root + "/" + subPath))}, true, /^\\.\\/${globToRe}$/);
-
-							req.keys().forEach(function (key) {
-							    let mod,
-							        name=key.match( /^\\.\\/${globToRe}$/),
-							        i=0,
-							        modExport=_exports;
-							    name = name&&name[1]||key.substr(2);
-							    name = name.split('/');
-
-							    while(i<name.length-1)
-							       modExport=modExport[name[i]]=modExport[name[i]]||{}, i++;
-								if (!modExport[name[i]]){
-									mod  = req(key);
-								    //modExport[name[i]] = Object.keys(mod).length === 1 && mod.default || mod;
-							    }
-							});
-							`;
+					//code += `
+					//		req = require.context(${JSON.stringify(path.normalize(_root + "/" + subPath))}, true, /^\\.\\/${globToRe}$/);
+					//
+					//		req.keys().forEach(function (key) {
+					//		    let mod,
+					//		        name=key.match( /^\\.\\/${globToRe}$/),
+					//		        i=0,
+					//		        modExport=_exports;
+					//		    name = name&&name[1]||key.substr(2);
+					//		    name = name.split('/');
+					//
+					//		    while(i<name.length-1)
+					//		       modExport=modExport[name[i]]=modExport[name[i]]||{}, i++;
+					//			if (!modExport[name[i]]){
+					//				mod  = req(key);
+					//			    //modExport[name[i]] = Object.keys(mod).length === 1 && mod.default || mod;
+					//		    }
+					//		});
+					//		`;
 				}
 				glob.sync([_root + '/' + path.normalize(input)])// should use wp fs
 				    .forEach(
@@ -476,6 +476,7 @@ if (!cExport[fPath[i]]){
 		code += "export default _exports;";
 		//console.log(code)
 		//fs.writeFileSync(virtualFile, code);
+		fileDependencies.push(path.normalize(virtualFile));
 		utils.addVirtualFile(vfs, virtualFile, code);
 		cb && cb(null, virtualFile, code);
 	},

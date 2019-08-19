@@ -201,7 +201,7 @@ module.exports = function ( cfg, opts ) {
 								resource    : filePath,
 								module      : false,
 								file        : true,
-								//request     : filePath,
+								request     : filePath,
 							};
 							cb(e, req, content);
 						}
@@ -402,7 +402,7 @@ module.exports = function ( cfg, opts ) {
 							}
 						)
 					}
-				
+
 				for ( let reqPath in activeGlobs.scss )
 					if ( activeGlobs.scss.hasOwnProperty(reqPath) ) {
 						utils.indexOfScss(
