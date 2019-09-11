@@ -122,7 +122,12 @@ module.exports = function ( cfg, opts ) {
 							                         "cDir:__dirname+'/" + buildToProjectPath + "'" +
 							                         "}," +
 							                         JSON.stringify(path.relative(opts.projectRoot, compiler.options.output.path)) +
-							                         ");/** /wi externals **/\n",
+							                         ");/** /wi externals **/\n" +
+							                         (
+								                         is.string(compiler.options.devtool)
+								                         && compiler.options.devtool.includes("source-map")
+								                         ? "require('source-map-support').install();\n"
+								                         : ""),
 						                         raw   : true
 					                         })
 				)
@@ -150,7 +155,6 @@ module.exports = function ( cfg, opts ) {
 			availableExts = availableExts.filter(ext => ((ext != '.')));
 			availableExts.push(...availableExts.filter(ext => ext).map(ext => ('/index' + ext)));
 			availableExts.unshift('');
-			
 			
 			/**
 			 * The main resolver / glob mngr
@@ -402,7 +406,7 @@ module.exports = function ( cfg, opts ) {
 							}
 						)
 					}
-
+				
 				for ( let reqPath in activeGlobs.scss )
 					if ( activeGlobs.scss.hasOwnProperty(reqPath) ) {
 						utils.indexOfScss(

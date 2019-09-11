@@ -343,6 +343,10 @@ const utils = {
 				//console.warn("Not found !!! ", fn);
 				// check by path first then by ext
 				fileDependencies.push(fn);
+				
+				// must check parents dir first or we cant override correctly
+				// ex : App/file.scss could be called requiring App/file but wanting App/file.js from parents
+				// Mean we can't override a js file with ts file or a scss with a css
 				if ( i + 1 < roots.length ) {
 					this.findParentPath(fs, roots, file, i + 1, possible_ext, fileDependencies, cb, _curExt);
 				}
