@@ -401,7 +401,7 @@ const utils = {
 		
 		input = input.replace(/[\(\)]/g, '');
 		
-		code += "let req, _exports = {}, cExport, fPath, i;";
+		code += "let req, _exports = {}, walknSetExport=require('webpack-inherit/etc/utils/indexUtils.js').walknSetExport;";
 		// generate require.context code so wp will detect changes
 		roots.forEach(
 			( _root, lvl ) => {
@@ -430,7 +430,7 @@ const utils = {
 						
 						    if ( !files[uPath] ) {
 							    fileDependencies.push(path.normalize(file));
-							    filesToAdd.push([uPath,name]);
+							    filesToAdd.push([uPath, name]);
 							
 						    }
 						
@@ -440,23 +440,14 @@ const utils = {
 				    )
 			}
 		);
-		filesToAdd=filesToAdd.sort(
-			(a,b)=>(a[0].length-b[0].length)
+		filesToAdd = filesToAdd.sort(
+			( a, b ) => (a[0].length - b[0].length)
 		).forEach(
-			([uPath, name])=>{
+			( [uPath, name] ) => {
 				let key = "_" + uPath.replace(/[^\w]/ig, "_");
-				code += `
-const ${key} = require("${uPath}");`;
+				code += `\nconst ${key} = require("${uPath}");`;
 				if ( name && name[1] )
-					code += `
-cExport=_exports;
-fPath="${name[1]}".split('/');
-i=0;while(i<fPath.length-1) cExport=cExport[fPath[i]]=cExport[fPath[i]]||{}, i++;
-
-if (!cExport[fPath[i]]){
-    cExport[fPath[i]] = Object.keys(${key}).length === 1 && ${key}.default || ${key};
-}
-`;
+					code += `\nwalknSetExport(_exports, "${name[1]}", ${key});`;
 			}
 		);
 		//console.log(filesToAdd)
@@ -468,7 +459,7 @@ if (!cExport[fPath[i]]){
 					
 					if ( exportName && jsVarTest.test(exportName[0]) && !exportedModules[exportName[0]] ) {
 						exportedModules[exportName[0]] = true;
-						return 'export const ' + exportName[0] + ' = _exports.' + exportName[0] + ';\n';
+						return '\nexport const ' + exportName[0] + ' = _exports.' + exportName[0] + ';';
 					}
 					//return '/* export const ' + exportName[0] + ' = _exports.' + files[file] + '; */\n';
 				}
