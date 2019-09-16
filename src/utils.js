@@ -408,7 +408,7 @@ const utils = {
 				if ( checkIfDir(fs, path.normalize(_root + "/" + subPath)) ) {
 					contextDependencies.push(path.normalize(_root + "/" + subPath))
 				}
-				glob.sync([_root + '/' + path.normalize(input)])// should use wp fs
+				glob.sync([_root + '/' + path.normalize(input)], { fs: vfs })// should use wp fs
 				    .forEach(
 					    file => {
 						    let name  = file.substr(path.normalize(_root + "/" + subPath).length).match(new RegExp("^\\/" + globToRe + "$")),
@@ -437,7 +437,8 @@ const utils = {
 				if ( name && name[1] ) {
 					code += `\nwalknSetExport(_exports, "${name[1]}", ${key});`;
 					//if ( useHMR )
-						//code += `\nmodule.hot && module.hot.accept("${uPath}", ()=>walknSetExport(_exports, "${name[1]}", require("${uPath}")));`;
+					//code += `\nmodule.hot && module.hot.accept("${uPath}", ()=>walknSetExport(_exports, "${name[1]}",
+					// require("${uPath}")));`;
 				}
 			}
 		);
@@ -493,7 +494,7 @@ const utils = {
 						)
 					)
 				);
-				glob.sync([_root + '/' + path.normalize(input)])
+				glob.sync([_root + '/' + path.normalize(input)], { fs: vfs })
 				    .forEach(
 					    file => {
 						    !files[RootAlias + file.substr(_root.length)]
