@@ -62,6 +62,7 @@ module.exports = function ( cfg, opts ) {
 			    availableExts       = [],
 			    activeGlobs         = { scss: {}, jsx: {} },
 			    buildTarget         = compiler.options.target || "web",
+			    useHotReload        = !!compiler.options.devServer,
 			    startBuildTm        = Date.now();
 			
 			// Add some wpi build vars...
@@ -196,6 +197,7 @@ module.exports = function ( cfg, opts ) {
 						fileDependencies,
 						RootAlias,
 						RootAliasRe,
+						useHotReload,
 						function ( e, filePath, content ) {
 							//console.warn("glob", filePath)
 							let req = {
