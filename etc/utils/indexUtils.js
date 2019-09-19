@@ -23,17 +23,28 @@
  *   @author : Nathanael Braun
  *   @contact : n8tz.js@gmail.com
  */
-
 module.exports = {
+	/**
+	 * Walk & set executables from globs requires
+	 * @param _target
+	 * @param path
+	 * @param value
+	 */
 	walknSetExport( _target, path, value ) {
 		let fPath  = path.split('/'),
-		    target = _target, i;
+		    target = _target, i, module;
 		
 		i = 0;
 		while ( i < fPath.length - 1 ) target = target[fPath[i]] = target[fPath[i]] || {}, i++;
 		
+		module = Object.keys(value).length === 1 && value.default || value;
+		
 		if ( !target[fPath[i]] ) {
-			target[fPath[i]] = Object.keys(value).length === 1 && value.default || value;
+			target[fPath[i]] = module;
+		}
+		else if ( !target[fPath[i]].__esModule ) {// if this is simple path obj write over
+			Object.assign(module, target[fPath[i]]);
+			target[fPath[i]] = module;
 		}
 	}
 };
