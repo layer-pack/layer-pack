@@ -211,16 +211,14 @@ const utils = {
 			
 			    if ( profileConfig.templates )
 				    Object.keys(profileConfig.templates)
-				          .reduce(
-					          ( h, k ) => (h[k] = h[k] || path.resolve(path.normalize(projectRoot + '/' + profileConfig.templates[k]))),
-					          allTemplates
+				          .forEach(
+					          ( k ) => (allTemplates[k] = allTemplates[k] || path.resolve(path.normalize(projectRoot + '/' + profileConfig.templates[k])))
 				          );
 			
 			    if ( profileConfig.scripts )
 				    Object.keys(profileConfig.scripts)
-				          .reduce(
-					          ( h, k ) => (h[k] = h[k] || path.resolve(path.normalize(projectRoot + '/' + profileConfig.scripts[k]))),
-					          allScripts
+				          .forEach(
+					          ( k ) => (allScripts[k] = allScripts[k] || path.resolve(path.normalize(projectRoot + '/' + profileConfig.scripts[k])))
 				          );
 			
 			    allExtPath.forEach(
@@ -247,8 +245,8 @@ const utils = {
 							    ...Object
 								    .keys(cfg.localAlias)
 								    .reduce(
-									    ( aliases, alias ) => (aliases[alias] = path.join(where, cfg.aliases[alias])
-									    )
+									    ( aliases, alias ) => (aliases[alias] = path.join(where, cfg.aliases[alias]), aliases),
+									    {}
 								    )
 						    };
 					
@@ -273,7 +271,7 @@ const utils = {
 					    if ( cfg.scripts )
 						    Object.keys(cfg.scripts)
 						          .reduce(
-							          ( h, k ) => (h[k] = h[k] || path.resolve(path.normalize(where + '/' + cfg.scripts[k]))),
+							          ( h, k ) => (h[k] = h[k] || path.resolve(path.normalize(where + '/' + cfg.scripts[k])), h),
 							          allScripts
 						          );
 					    //
@@ -313,7 +311,6 @@ const utils = {
 				}),
 			};
 		allCfg.unshift(profileConfig);
-		
 		return {
 			allWebpackCfg,
 			allModulePath,

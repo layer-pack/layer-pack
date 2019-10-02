@@ -24,19 +24,22 @@ var path             = require('path'),
     tmp,
     argz             = process.argv.slice(2),
     projectName      = 'newProject',
+    projectId        = 'new-project',
     originTemplateId = 'default',
     glob             = require('fast-glob'),
     originPackage    = '.',
-    iniRe            = /^([^\:]*)(?:\:\:([^\:]*)(?:\:([^\:]*))?)?$/,
+    iniRe            = /^([^\:]+)(?:\:\:([^\:]*))?(?:\:([^\:]*))?$/,
     vars             = {},
     configs          = {},
     originProfile    = 'default',
     stdIoOpts,
     wpi              = require('../../src');
 
-
-if ( argz[0] && /^[\w\-_]+$/.test(argz[0]) ) {
+if ( !argz.length )
+	vars.h = true;
+if ( argz[0] && /^[\w\-_\.]+$/.test(argz[0]) ) {
 	projectName = argz[0];
+	projectId   = projectName.replace(/[^\w]/ig, '-')
 	argz.shift();
 }
 if ( argz[0] && iniRe.test(argz[0]) ) {
@@ -48,6 +51,7 @@ if ( argz[0] && iniRe.test(argz[0]) ) {
 }
 vars = {
 	...vars, ...require('minimist')(process.argv.slice(2)),
+	projectId,
 	projectName,
 	originTemplateId,
 	originProfile,
@@ -68,7 +72,7 @@ console.info("Init using : ", originPackage, originProfile, originTemplateId, va
 console.info("Init in : ", projectDir);
 
 fs.mkdirSync(projectDir);
-execSync('npm init ' + projectName + ' -y', stdIoOpts);
+execSync('npm init -y', stdIoOpts);
 execSync('npm i ' + originPackage + ' -s', stdIoOpts);
 //execSync('npm link ' + originPackage, stdIoOpts);
 
@@ -79,7 +83,9 @@ if ( !configs[originProfile] )
 	throw new Error("Can't find originProfile '" + originProfile + "' in " + originPackage);
 
 if ( !configs[originProfile].allTemplates[originTemplateId] )
+{
 	throw new Error("Can't find originTemplateId '" + originTemplateId + "' in " + originPackage);
+}
 
 vars.originPackage = JSON.parse(fs.readFileSync(path.join(projectDir, 'node_modules', originPackage, "package.json")).toString());
 
