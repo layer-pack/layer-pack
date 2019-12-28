@@ -1,6 +1,6 @@
 {
   "name": "webpack-inherit",
-  "version": "1.8.8",
+  "version": "1.8.92",
   "description": "Webpack plugin allowing glob imports, easy multi packages app, shareable webpack configs & inheritable boilerplates",
   "license": "MIT",
   "main": "src/index.js",
@@ -35,6 +35,7 @@
   "scripts": {},
   "devDependencies": {},
   "peerDependencies": {
+    "webpack-cli": "^3.0.0",
     "webpack": "^4.0.0"
   },
   "dependencies": {
