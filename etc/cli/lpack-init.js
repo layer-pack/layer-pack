@@ -33,7 +33,7 @@ var path             = require('path'),
     configs          = {},
     originProfile    = 'default',
     stdIoOpts,
-    wpi              = require('../../src');
+    lpack              = require('../../src');
 
 if ( !argz.length )
 	vars.h = true;
@@ -58,15 +58,15 @@ vars = {
 	originPackage
 };
 if ( vars.h || vars.help ) {
-	console.info("Create a new project using wpi :");
-	console.info("Syntax : wpi-init project_name inheritedPackage::profileId:templateId");
-	console.info(" ( Or ): wpi-init project_name inheritedPackage (using default profile & default template");
+	console.info("Create a new project using lpack :");
+	console.info("Syntax : lpack-init project_name inheritedPackage::profileId:templateId");
+	console.info(" ( Or ): lpack-init project_name inheritedPackage (using default profile & default template");
 	return;
 }
 
 
 projectDir = path.join(cDir, vars.projectName);
-stdIoOpts  = { stdio: 'inherit', env: { '__WPI_PROFILE__': originProfile }, cwd: projectDir };
+stdIoOpts  = { stdio: 'inherit', env: { '__LPACK_PROFILE__': originProfile }, cwd: projectDir };
 
 console.info("Init using : ", originPackage, originProfile, originTemplateId, vars);
 console.info("Init in : ", projectDir);
@@ -77,7 +77,7 @@ execSync('npm i ' + originPackage + ' -s', stdIoOpts);
 //execSync('npm link ' + originPackage, stdIoOpts);
 
 process.chdir(projectDir);
-configs = wpi.getAllConfigs(path.join(projectDir, 'node_modules', originPackage));
+configs = lpack.getAllConfigs(path.join(projectDir, 'node_modules', originPackage));
 
 if ( !configs[originProfile] )
 	throw new Error("Can't find originProfile '" + originProfile + "' in " + originPackage);

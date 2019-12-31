@@ -1,27 +1,27 @@
-<h1 align="center">webpack-inherit</h1>
+<h1 align="center">layer-pack</h1>
 <h1></h1>
 <p align="center">
-<a href="https://www.npmjs.com/package/webpack-inherit">
-<img src="https://img.shields.io/npm/v/webpack-inherit.svg" alt="NPM" /></a>
-<a href="https://travis-ci.org/n8tz/webpack-inherit-samples">
-<img src="https://travis-ci.org/n8tz/webpack-inherit-samples.svg?branch=master" alt="Build Status" /></a>
+<a href="https://www.npmjs.com/package/layer-pack">
+<img src="https://img.shields.io/npm/v/layer-pack.svg" alt="NPM" /></a>
+<a href="https://travis-ci.org/n8tz/layer-pack-samples">
+<img src="https://travis-ci.org/n8tz/layer-pack-samples.svg?branch=master" alt="Build Status" /></a>
 <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat" />
 </p>
 
 
 # How to use
 
-Samples [here](https://github.com/n8tz/webpack-inherit-sample)
+Samples [here](https://github.com/n8tz/layer-pack-sample)
 
 ## Create & inherit packages
 
-Add webpack-inherit to packages deps
+Add layer-pack to packages deps
 
 ```bash
-npm i -s webpack-inherit // on all inheritable projects with wp conf & on the head project
+npm i -s layer-pack // on all inheritable projects with wp conf & on the head project
 ```
 
-Add a ".wi.json" file near the package.json of each projects :
+Add a ".layers.json" file near the package.json of each projects :
 
 ```jsx
 {
@@ -31,7 +31,7 @@ Add a ".wi.json" file near the package.json of each projects :
    			"rootFolder": "App",
 
    			"extend"    : [
-   				"parentProject" // parentProject must have wpInherit.default with his own extend value & be in node_modules or in "libsPath" value
+   				"parentProject" // parentProject must have layerPack.default with his own extend value & be in node_modules or in "libsPath" value
    			]
    		},
    		// optionally we can define multiple profile
@@ -58,7 +58,7 @@ Add a ".wi.json" file near the package.json of each projects :
    			"basedOn": "someSuperProfile_in_parents",
 
    			// optional vars
-   			// all theses values are available in the webpack config using wpiCfg.vars.*
+   			// all theses values are available in the webpack config using lPackCfg.vars.*
    			"vars"  : {
    				// all @optional
 
@@ -74,7 +74,7 @@ Add a ".wi.json" file near the package.json of each projects :
    				"production"   : true,
    				
    				"someValues"   :{
-   				    // Wpi apply simple tpl on the vars
+   				    // lPack apply simple tpl on the vars
    				    // here the available values :
    				    // packagePath   : the path of the package associated with this config file
    				    // projectPath   : the path of the head project
@@ -95,31 +95,31 @@ Add a ".wi.json" file near the package.json of each projects :
 }
 ```
 
-## Using webpack-inherit in the webpack configs
+## Using layer-pack in the webpack configs
 
 Add the following webpack config :
 
 ```es6
-const wpInherit  = require('webpack-inherit'),
-      wpiPlugin  = wpInherit.plugin(/* json in .wi.conf can be directly used here */),
-      wpiCfg     = wpInherit.getConfig(),
-      isExcluded = wpInherit.isFileExcluded();
+const layerPack  = require('layer-pack'),
+      lPackPlugin  = layerPack.plugin(/* json in .layers.conf can be directly used here */),
+      lPackCfg     = layerPack.getConfig(),
+      isExcluded = layerPack.isFileExcluded();
       
 module.exports = [
 	{
 		entry: {
-		    // App entry point default wpiCfg.vars.rootAlias is 'App' wich will be resolved as App/index.js
+		    // App entry point default lPackCfg.vars.rootAlias is 'App' wich will be resolved as App/index.js
 		    // * we can also use glob ( eg: App/ep/*.js )
-			App: wpiCfg.vars.rootAlias
+			App: lPackCfg.vars.rootAlias
 		},
 
 		output: {
 		    // As the config can be in an external npm package the plugin give the project path  
-			path      : wpInherit.getHeadRoot() + "/dist/",
+			path      : layerPack.getHeadRoot() + "/dist/",
 		},
 
 		plugins: [
-			wpiPlugin
+			lPackPlugin
 			//... 
 		],
 
@@ -128,7 +128,7 @@ module.exports = [
 				{
 					test   : /\.jsx?$/,
 					// required while inheriting code from npm packages
-					exclude: wpInherit.isFileExcluded()
+					exclude: layerPack.isFileExcluded()
 					//...
 				}
 				//...
@@ -140,7 +140,7 @@ module.exports = [
 						{
 							loader : "sass-loader",
 							options: {
-								importer  : wpiPlugin.sassImporter(/* add others importers here */),
+								importer  : lPackPlugin.sassImporter(/* add others importers here */),
 							}
 						}
 					]
@@ -158,10 +158,10 @@ Also, Webpack config from a parent package profile can be overrided  :
 
 webpack.config.js
 ```jsx
-var wpInherit = require('webpack-inherit');
+var layerPack = require('layer-pack');
 
 
-let wpCfg = wpInherit.getSuperWebpackCfg(/* "profileId" */);
+let wpCfg = layerPack.getSuperWebpackCfg(/* "profileId" */);
 
 /* extend the conf from parent */
 
@@ -171,7 +171,7 @@ module.exports = wpCfg;
 
 ## CLI
 
-The webpack-inherit CLI just call the webpack CLI basing the specified profile id.<br>
+The layer-pack CLI just call the webpack CLI basing the specified profile id.<br>
 If the webpack conf reside in an inherited package, the webpack of the same inherited package will be executed.<br>
 Default profile id is "default"
 
@@ -179,13 +179,13 @@ Default profile id is "default"
 # from the head project
 wi # use webpack params here
 # or
-wi-dev-server
+lPack-dev-server
 
 # or using profiles
 
 wi :api # use webpack params here
 # or
-wi-dev-server :anotherProfile
+lPack-dev-server :anotherProfile
 
 
 wi :? # get available profiles
@@ -216,10 +216,10 @@ import {myFolder} from "App/ui/components/(**/*).jsx"; // ( walk & set myFolder/
 
 ## More about building with inherit
 
-### .wpiConfig.json
+### .buildInfos.json
 
-webpack-inherit add a virtual file with some build info in the root folder.
-It's called ".wpiConfig.json" & contain the following infos :
+layer-pack add a virtual file with some build info in the root folder.
+It's called ".buildInfos.json" & contain the following infos :
 
 ```
 {
@@ -248,3 +248,5 @@ It's called ".wpiConfig.json" & contain the following infos :
 Glob imports generate virtual files "just in time".
 
 These files do named exports & use an unique file name, so same glob import use the same files.
+
+[![*](https://www.google-analytics.com/collect?v=1&tid=UA-82058889-1&cid=555&t=event&ec=project&ea=view&dp=%2Fproject%2Flayer-pack&dt=doc)](#)

@@ -31,15 +31,15 @@ function checkIfDir( fs, file ) {
 	}
 }
 
-function getWpiConfigFrom( dir ) {
+function getlPackConfigFrom( dir ) {
 	let cfg, pkgCfg;
 	try {
 		try {
-			cfg = require(path.normalize(dir + "/.wi"));
-			cfg = { wpInherit: cfg };
+			cfg = require(path.normalize(dir + "/.layers"));
+			cfg = { layerPack: cfg };
 		} catch ( e ) {
-			cfg = fs.existsSync(path.normalize(dir + "/.wi.json"))
-				&& { wpInherit: JSON.parse(stripJsonComments(fs.readFileSync(path.normalize(dir + "/.wi.json")).toString())) };
+			cfg = fs.existsSync(path.normalize(dir + "/.layers.json"))
+				&& { layerPack: JSON.parse(stripJsonComments(fs.readFileSync(path.normalize(dir + "/.layers.json")).toString())) };
 		}
 		
 		pkgCfg =
@@ -52,7 +52,7 @@ function getWpiConfigFrom( dir ) {
 			pkgCfg = { ...pkgCfg, ...cfg };
 		
 	} catch ( e ) {
-		console.warn("Fail parsing wpi config in " + dir, "\n" + e + "\n", e.stack);
+		console.warn("Fail parsing lPack config in " + dir, "\n" + e + "\n", e.stack);
 		process.exit(1000);
 	}
 	return pkgCfg;
@@ -77,28 +77,28 @@ const utils = {
 	/**
 	 * Return all configs for the available profiles
 	 *
-	 * @param projectRoot {string} @optional directory where to start searching wpi cfg
-	 * @param customConfig {object} @optional wpi config in json
+	 * @param projectRoot {string} @optional directory where to start searching lPack cfg
+	 * @param customConfig {object} @optional lPack config in json
 	 */
 	getAllConfigs( projectRoot = process.cwd(), customConfig ) {
 		let pkgConfig =
-			    customConfig && { wpInherit: customConfig }
+			    customConfig && { layerPack: customConfig }
 			    ||
-			    getWpiConfigFrom(projectRoot),
+			    getlPackConfigFrom(projectRoot),
 		    allCfg    = {};
 		
-		if ( !pkgConfig || !pkgConfig.wpInherit )
-			throw new Error("Can't find any wpi config ! ( searched in " + projectRoot + "/.wi.json" + " )")
+		if ( !pkgConfig || !pkgConfig.layerPack )
+			throw new Error("Can't find any lPack config ! ( searched in " + projectRoot + "/.layers.json" + " )")
 		
-		Object.keys(pkgConfig.wpInherit)
+		Object.keys(pkgConfig.layerPack)
 		      .forEach(
 			      _pId => {
 				      let pId      = _pId;
 				      allCfg[_pId] = true;
-				      while ( is.string(pkgConfig.wpInherit[pId]) ) {// profile alias
-					      pId = pkgConfig.wpInherit[pId];
+				      while ( is.string(pkgConfig.layerPack[pId]) ) {// profile alias
+					      pId = pkgConfig.layerPack[pId];
 				      }
-				      allCfg[_pId] = this.getConfigByProfiles(projectRoot, pkgConfig.wpInherit[pId], _pId, pkgConfig);
+				      allCfg[_pId] = this.getConfigByProfiles(projectRoot, pkgConfig.layerPack[pId], _pId, pkgConfig);
 			      }
 		      )
 		return allCfg;
@@ -138,47 +138,47 @@ const utils = {
 				    let where       = libsPath && fs.existsSync(path.normalize(projectRoot + "/" + libsPath + "/" + layerId))
 				                      ? "/" + libsPath + "/" :
 				                      "/node_modules/",
-				        cfg         = getWpiConfigFrom(mRoot + where + layerId),
+				        cfg         = getlPackConfigFrom(mRoot + where + layerId),
 				        realProfile = cProfile;
 				
 				    // if the package is not here it may sibling this one...
-				    if ( !cfg || !cfg.wpInherit ) {
+				    if ( !cfg || !cfg.layerPack ) {
 					    where = "/../";
-					    cfg   = getWpiConfigFrom(mRoot + where + layerId);
+					    cfg   = getlPackConfigFrom(mRoot + where + layerId);
 					
 				    }
 				
 				    layerPathList.push(path.resolve(path.normalize(mRoot + where + layerId)));
 				    layerIdList.push(layerId);
 				
-				    while ( cfg && cfg.wpInherit && is.string(cfg.wpInherit[realProfile]) ) {// profile alias
-					    realProfile = cfg.wpInherit[realProfile];
+				    while ( cfg && cfg.layerPack && is.string(cfg.layerPack[realProfile]) ) {// profile alias
+					    realProfile = cfg.layerPack[realProfile];
 				    }
-				    if ( cfg && cfg.wpInherit && !cfg.wpInherit[realProfile] ) {
+				    if ( cfg && cfg.layerPack && !cfg.layerPack[realProfile] ) {
 					    realProfile = "default";
 				    }
 				
-				    if ( cfg && cfg.wpInherit && cfg.wpInherit[realProfile] ) {
+				    if ( cfg && cfg.layerPack && cfg.layerPack[realProfile] ) {
 					
-					    if ( cfg.wpInherit[realProfile].extend )
-						    cfg.wpInherit[realProfile]
+					    if ( cfg.layerPack[realProfile].extend )
+						    cfg.layerPack[realProfile]
 							    .extend
 							    .forEach(
 								    ( mid, y ) => walk(
 									    mid, y, null,
 									    mRoot + where + layerId,
-									    cfg.wpInherit[realProfile].basedOn || realProfile,
-									    cfg.wpInherit[realProfile].libsPath
+									    cfg.layerPack[realProfile].basedOn || realProfile,
+									    cfg.layerPack[realProfile].libsPath
 								    )
 							    )
 				    }
 				    else {
 					    if ( !cfg )
-						    throw new Error("webpack-inherit : Can't inherit an not installed module :\nNot found :" + mRoot + where + layerId);
-					    if ( !cfg.wpInherit )
-						    throw new Error("webpack-inherit : Can't inherit a module with no wpInherit in the package.json/.wi.json :\nAt :" + mRoot + where + layerId);
-					    if ( !cfg.wpInherit[realProfile] )
-						    throw new Error("webpack-inherit : Can't inherit a module without the requested profile\nAt :" + mRoot + where + layerId + "\nRequested profile :" + cProfile);
+						    throw new Error("layer-pack : Can't inherit an not installed module :\nNot found :" + mRoot + where + layerId);
+					    if ( !cfg.layerPack )
+						    throw new Error("layer-pack : Can't inherit a module with no layerPack in the package.json/.layers.json :\nAt :" + mRoot + where + layerId);
+					    if ( !cfg.layerPack[realProfile] )
+						    throw new Error("layer-pack : Can't inherit a module without the requested profile\nAt :" + mRoot + where + layerId + "\nRequested profile :" + cProfile);
 				    }
 				
 			    })
@@ -224,20 +224,20 @@ const utils = {
 			    allExtPath.forEach(
 				    function ( where, i, arr, cProfile ) {
 					    cProfile        = cProfile || profileConfig.basedOn || profileId;
-					    let cfg         = getWpiConfigFrom(where),
+					    let cfg         = getlPackConfigFrom(where),
 					        modPath     = path.normalize(where + "/node_modules"),
 					        realProfile = cProfile;
 					
 					    allModuleRoots.push(where);
 					
-					    while ( cfg && cfg.wpInherit && is.string(cfg.wpInherit[realProfile]) ) {// profile alias
-						    realProfile = cfg.wpInherit[realProfile];
+					    while ( cfg && cfg.layerPack && is.string(cfg.layerPack[realProfile]) ) {// profile alias
+						    realProfile = cfg.layerPack[realProfile];
 					    }
-					    if ( cfg && cfg.wpInherit && !cfg.wpInherit[realProfile] ) {
+					    if ( cfg && cfg.layerPack && !cfg.layerPack[realProfile] ) {
 						    realProfile = "default";
 					    }
 					
-					    cfg = cfg.wpInherit[realProfile];
+					    cfg = cfg.layerPack[realProfile];
 					
 					    if ( cfg.localAlias )
 						    localAlias = {
@@ -376,7 +376,7 @@ const utils = {
 	         RootAlias,
 	         RootAliasRe, useHMR, cb ) {
 		let files           = {},
-		    code            = "/* This is a virtual file generated by webpack-inherit */\n",
+		    code            = "/* This is a virtual file generated by layer-pack */\n",
 		    virtualFile     = path.normalize(
 			    path.join(roots[0], 'MapOf.' + input.replace(/[^\w]/ig, '_')
 			                                        .replace(/\*/ig, '.W')
@@ -398,7 +398,7 @@ const utils = {
 		
 		input = input.replace(/[\(\)]/g, '');
 		
-		code += "let req, _exports = {}, walknSetExport=require('webpack-inherit/etc/utils/indexUtils.js').walknSetExport;";
+		code += "let req, _exports = {}, walknSetExport=require('layer-pack/etc/utils/indexUtils.js').walknSetExport;";
 		// generate require.context code so wp will detect changes
 		roots.forEach(
 			( _root, lvl ) => {
@@ -470,7 +470,7 @@ const utils = {
 	             RootAlias,
 	             RootAliasRe, useHMR, cb ) {
 		let files           = {},
-		    code            = "/* This is a virtual file generated by webpack-inherit */",
+		    code            = "/* This is a virtual file generated by layer-pack */",
 		    virtualFile     = path.normalize(
 			    path.join(roots[0], 'MapOf.' + input.replace(/[^\w]/ig, '_')
 			                                        .replace(/\*/ig, '.W')

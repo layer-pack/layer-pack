@@ -19,14 +19,14 @@ const path    = require('path'),
       utils   = require('./utils'),
       resolve = require('resolve'),
       spawn   = require('child_process').spawn,
-      wpi     = require('../../src');
+      lpack     = require('../../src');
 
 let cmd,
     wpCli,
     argz     = process.argv.slice(2),
     profile  = 'default',
     nodeArgz = [],
-    confs    = wpi.getAllConfigs();
+    confs    = lpack.getAllConfigs();
 
 while ( argz[0] && /^\-/.test(argz[0]) )
 	nodeArgz.push(argz.shift());
@@ -53,7 +53,7 @@ cmd = spawn(
 	"node", [...nodeArgz, wpCli, '--config', __dirname + '/../wp/webpack.config.js', ...argz],
 	{
 		stdio: 'inherit',
-		env  : { ...process.env, '__WPI_PROFILE__': profile }
+		env  : { ...process.env, '__LPACK_PROFILE__': profile }
 	}
 );
 process.on('SIGINT', e => cmd.kill()); // catch ctrl-c

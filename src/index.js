@@ -16,7 +16,7 @@ const utils         = require("./utils"),
       Module        = require('module').Module,
       path          = require('path'),
       dMerge        = require('deep-extend'),
-      InheritPlugin = require("./InheritPlugin"),
+      lPackPlugin   = require("./layerPackPlugin"),
       ModPathLoader = require("../etc/node/loadModulePaths"),
       merge         = require('webpack-merge');
 
@@ -35,11 +35,11 @@ module.exports = {
 	 * @param profile {string} optional profile id
 	 * @returns {*}
 	 */
-	getConfig( profile = process.env.__WPI_PROFILE__ || 'default' ) {
+	getConfig( profile = process.env.__LPACK_PROFILE__ || 'default' ) {
 		let cfg = this.getAllConfigs()[profile];
 		
-		if ( process.env.__WPI_VARS_OVERRIDE__ ) {// not good
-			let overrides = JSON.parse(process.env.__WPI_VARS_OVERRIDE__),
+		if ( process.env.__LPACK_VARS_OVERRIDE__ ) {// not good
+			let overrides = JSON.parse(process.env.__LPACK_VARS_OVERRIDE__),
 			    vars      = {};
 			dMerge(vars, cfg.vars || {}, overrides);
 			cfg = { ...cfg, vars };
@@ -48,7 +48,7 @@ module.exports = {
 	},
 	/**
 	 * Load a specific config
-	 * @param config {object} wpi config json
+	 * @param config {object} lPack config json
 	 * @param basePath {string} project root absolute path (default to cwd)
 	 * @returns {*}
 	 */
@@ -62,7 +62,7 @@ module.exports = {
 	 * @param head {boolean} use the current package config
 	 * @returns {*}
 	 */
-	getSuperWebpackCfg( profile = process.env.__WPI_PROFILE__ || "default", head ) {
+	getSuperWebpackCfg( profile = process.env.__LPACK_PROFILE__ || "default", head ) {
 		let cfg = this.getConfig(profile),
 		    wpCfg;
 		
@@ -94,8 +94,8 @@ module.exports = {
 	 * @param profile {string} optional profile id
 	 * @returns {*}
 	 */
-	plugin( cfg, profile = process.env.__WPI_PROFILE__ || 'default' ) {
-		return allPluginInstances[profile] = allPluginInstances[profile] || InheritPlugin(cfg, this.getConfig(profile))
+	plugin( cfg, profile = process.env.__LPACK_PROFILE__ || 'default' ) {
+		return allPluginInstances[profile] = allPluginInstances[profile] || lPackPlugin(cfg, this.getConfig(profile))
 	},
 	/**
 	 * Return a tester fn for the given or current profile id
@@ -104,7 +104,7 @@ module.exports = {
 	 * @param profile {string} optional profile id
 	 * @returns {{test: (function(*): boolean)}}
 	 */
-	isFileExcluded( profile = process.env.__WPI_PROFILE__ || 'default' ) {
+	isFileExcluded( profile = process.env.__LPACK_PROFILE__ || 'default' ) {
 		let allRoots = this.getConfig(profile).allRoots;
 		return { test: ( path ) => !allRoots.find(r => path.startsWith(r)) }
 	},
@@ -114,7 +114,7 @@ module.exports = {
 	 * @param profile {string} optional profile id
 	 * @returns {*}
 	 */
-	getHeadRoot( profile = process.env.__WPI_PROFILE__ || 'default' ) {
+	getHeadRoot( profile = process.env.__LPACK_PROFILE__ || 'default' ) {
 		let allModuleRoots = this.getConfig(profile).allModuleRoots;
 		return allModuleRoots[0]
 	}

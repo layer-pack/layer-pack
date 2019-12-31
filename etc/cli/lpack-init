@@ -16,4 +16,4 @@
 
 'use strict';
 
-require('./wpi-init.js');
+require('./lpack-init.js');

@@ -26,7 +26,6 @@ Desktop.ini
 $RECYCLE.BIN/
 
 # App specific
-package-lock.json
 .tmp
 node_modules
 .idea

@@ -32,13 +32,13 @@ module.exports = function ( cfg, opts ) {
 	
 	    excludeExternals = opts.vars.externals,
 	    constDef         = opts.vars.DefinePluginCfg || {},
-	    currentProfile   = process.env.__WPI_PROFILE__ || 'default',
+	    currentProfile   = process.env.__LPACK_PROFILE__ || 'default',
 	    externalRE       = is.string(opts.vars.externals) && new RegExp(opts.vars.externals);
 	
 	return plugin = {
 		/**
 		 * Return a sass resolver fn
-		 * @param next {function} resolver that will be called if wpi fail resolving the query
+		 * @param next {function} resolver that will be called if lPack fail resolving the query
 		 * @returns {function(*=, *=, *=): *}
 		 */
 		sassImporter: function ( next ) {
@@ -65,11 +65,11 @@ module.exports = function ( cfg, opts ) {
 			    useHotReload        = !!compiler.options.devServer,
 			    startBuildTm        = Date.now();
 			
-			// Add some wpi build vars...
+			// Add some lPack build vars...
 			compiler.options.plugins.push(
 				new webpack.DefinePlugin(
 					{
-						'__WPI_PROFILE__'    : currentProfile,
+						'__LPACK_PROFILE__'    : currentProfile,
 						'__WP_BUILD_TARGET__': buildTarget,
 						...constDef
 					}));
@@ -86,9 +86,9 @@ module.exports = function ( cfg, opts ) {
 						
 						resolver
 							.getHook(this.source)
-							.tapAsync("InheritPlugin_" + currentProfile, ( request, resolveContext, callback ) => {
+							.tapAsync("lPackPlugin_" + currentProfile, ( request, resolveContext, callback ) => {
 								//console.log("Resolve : ", request)
-								wpiResolve(
+								lPackResolve(
 									request,
 									( err, req, data ) => {
 										callback(err, req)
@@ -97,7 +97,7 @@ module.exports = function ( cfg, opts ) {
 										resolver.doResolve(
 											target,
 											req || request,
-											"resolved wpi files using " + currentProfile, resolveContext,
+											"resolved lPack files using " + currentProfile, resolveContext,
 											( err, result ) => {
 												//console.log("Proxy resolved : ", err, result)
 												if ( err ) return callback(err);
@@ -117,7 +117,7 @@ module.exports = function ( cfg, opts ) {
 				compiler.options.plugins.push(
 					new webpack.BannerPlugin({
 						                         banner: "/** wi externals **/\n" +
-							                         "require('webpack-inherit/etc/node/loadModulePaths.js').loadPaths(" +
+							                         "require('layer-pack/etc/node/loadModulePaths.js').loadPaths(" +
 							                         "{" +
 							                         "allModulePath:" + JSON.stringify(opts.allModulePath.map(p => path.relative(opts.projectRoot, p))) + "," +
 							                         "cDir:__dirname+'/" + buildToProjectPath + "'" +
@@ -160,18 +160,18 @@ module.exports = function ( cfg, opts ) {
 			/**
 			 * The main resolver / glob mngr
 			 */
-			function wpiResolve( data, cb, proxy ) {
+			function lPackResolve( data, cb, proxy ) {
 				let requireOrigin = data.context && data.context.issuer,
 				    context       = requireOrigin && path.dirname(requireOrigin),
 				    reqPath       = data.request || data.path,
 				    tmpPath;
 				
 				// do not re resolve
-				if ( data.wpiOriginRequest ) {
+				if ( data.lPackOriginRequest ) {
 					return cb();
 				}
 				
-				data.wpiOriginRequest = reqPath;
+				data.lPackOriginRequest = reqPath;
 				
 				if ( context && /^\./.test(reqPath) && (tmpPath = roots.find(r => path.resolve(context + '/' + reqPath).startsWith(r))) ) {
 					reqPath = (RootAlias + path.resolve(context + '/' + reqPath).substr(tmpPath.length)).replace(/\\/g, '/');
@@ -291,7 +291,7 @@ module.exports = function ( cfg, opts ) {
 				}
 				
 				if ( RootAliasRe.test(url) || url[0] === '$' || url[0] === '.' ) {
-					wpiResolve(
+					lPackResolve(
 						{
 							context: {
 								issuer: requireOrigin
@@ -318,7 +318,7 @@ module.exports = function ( cfg, opts ) {
 				
 				                utils.addVirtualFile(
 					                compiler.inputFileSystem,
-					                path.normalize(roots[0] + '/.wpiConfig.json'),
+					                path.normalize(roots[0] + '/.buildInfos.json'),
 					                JSON.stringify(
 						                {
 							                project    : {

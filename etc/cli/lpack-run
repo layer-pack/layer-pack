@@ -15,4 +15,4 @@
 
 'use strict';
 
-require('./wpi-dev-server.js');
+require('./lpack-run.js');

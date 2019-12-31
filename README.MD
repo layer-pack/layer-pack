@@ -1,5 +1,5 @@
 
-<h1 align="center">webpack-inherit</h1>
+<h1 align="center">layer-pack</h1>
 <br/>
 <p align="center">
 Webpack plugin for better code pipelines & architectures.<br/>
@@ -7,10 +7,10 @@ Allows to easily namespace, compose, extend and build your Webpack projects usin
 </p>
 <h1></h1>
 <p align="center">
-<a href="https://www.npmjs.com/package/webpack-inherit">
-<img src="https://img.shields.io/npm/v/webpack-inherit.svg" alt="NPM" /></a>
-<a href="https://travis-ci.org/n8tz/webpack-inherit-samples">
-<img src="https://travis-ci.org/n8tz/webpack-inherit-samples.svg?branch=master" alt="Build Status" /></a>
+<a href="https://www.npmjs.com/package/layer-pack">
+<img src="https://img.shields.io/npm/v/layer-pack.svg" alt="NPM" /></a>
+<a href="https://travis-ci.org/n8tz/layer-pack-samples">
+<img src="https://travis-ci.org/n8tz/layer-pack-samples.svg?branch=master" alt="Build Status" /></a>
 <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat" />
 </p>
 
@@ -93,7 +93,7 @@ So you can share, version, extend & switch your webpack conf & boilerplate via n
 - Easily override node_modules ( drop a module in a "lib directory" & dev/test you're patchs )
 - Etc...
 
-## Check the samples [here](https://github.com/n8tz/webpack-inherit-sample)
+## Check the samples [here](https://github.com/n8tz/layer-pack-sample)
 
 ## Draft doc [here](DOC.MD)
 
@@ -123,4 +123,4 @@ So you can share, version, extend & switch your webpack conf & boilerplate via n
 Become a sponsor!
 
 <span class="badge-paypal"><a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=YNJZ6NQYVPTPE" title="Donate to this project using Paypal"><img src="https://img.shields.io/badge/paypal-donate-yellow.svg" alt="PayPal donate button" /></a></span>
-
+[![*](https://www.google-analytics.com/collect?v=1&tid=UA-82058889-1&cid=555&t=event&ec=project&ea=view&dp=%2Fproject%2Flayer-pack&dt=readme)](#)

@@ -12,9 +12,9 @@
  *  @contact : n8tz.js@gmail.com
  */
 
-let wpInherit = require('../..'),
+let layerPack = require('../..'),
     is        = require('is'),
-    cfg       = wpInherit.getSuperWebpackCfg(process.env.__WPI_PROFILE__, true);
+    cfg       = layerPack.getSuperWebpackCfg(process.env.__LPACK_PROFILE__, true);
 
 if ( !is.array(cfg) )
 	cfg = [cfg];
@@ -23,7 +23,7 @@ cfg = cfg.map(
 	cfg => (
 		{
 			...cfg,
-			context: wpInherit.getHeadRoot(process.env.__WPI_PROFILE__)
+			context: layerPack.getHeadRoot(process.env.__LPACK_PROFILE__)
 		}
 	)
 )

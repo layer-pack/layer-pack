@@ -1,7 +1,7 @@
 {
-  "name": "webpack-inherit",
-  "version": "1.8.92",
-  "description": "Webpack plugin allowing glob imports, easy multi packages app, shareable webpack configs & inheritable boilerplates",
+  "name": "layer-pack",
+  "version": "1.0.0",
+  "description": "Webpack plugin to make inheritable code layers, glob imports, easy multi packages app & shared webpack configs",
   "license": "MIT",
   "main": "src/index.js",
   "engines": {
@@ -9,14 +9,10 @@
     "npm": ">= 5.6.0"
   },
   "bin": {
-    "wi": "etc/cli/wpi",
-    "wi-dev-server": "etc/cli/wpi-dev-server",
-    "wi-init": "etc/cli/wpi-init",
-    "wi-run": "etc/cli/wpi-run",
-    "wpi": "etc/cli/wpi",
-    "wpi-dev-server": "etc/cli/wpi-dev-server",
-    "wpi-init": "etc/cli/wpi-init",
-    "wpi-run": "etc/cli/wpi-run"
+    "lpack": "etc/cli/lpack",
+    "lpack-dev-server": "etc/cli/lpack-dev-server",
+    "lpack-init": "etc/cli/lpack-init",
+    "lpack-run": "etc/cli/lpack-run"
   },
   "author": "N8tz <n8tz.js@gmail.com>",
   "maintainers": [
@@ -30,7 +26,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/n8tz/webpack-inherit"
+    "url": "https://github.com/n8tz/layer-pack"
   },
   "scripts": {},
   "devDependencies": {},
