@@ -93,7 +93,7 @@ So you can share, version, extend & switch your webpack conf & boilerplate via n
 - Easily override node_modules ( drop a module in a "lib directory" & dev/test you're patchs )
 - Etc...
 
-## Check the samples [here](https://github.com/n8tz/layer-pack-sample)
+## Check the samples [here](https://github.com/n8tz/layer-pack-samples)
 
 ## Draft doc [here](DOC.MD)
 

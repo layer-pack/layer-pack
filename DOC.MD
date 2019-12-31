@@ -11,7 +11,7 @@
 
 # How to use
 
-Samples [here](https://github.com/n8tz/layer-pack-sample)
+Samples [here](https://github.com/n8tz/layer-pack-samples)
 
 ## Create & inherit packages
 
