@@ -2,8 +2,7 @@
 <h1 align="center">layer-pack</h1>
 <br/>
 <p align="center">
-Webpack plugin for better code pipelines & architectures.<br/>
-Allows to easily namespace, compose, extend and build your Webpack projects using shared and versioned configs
+Easily split webpack projects into multiple npm packages
 </p>
 <h1></h1>
 <p align="center">
@@ -19,20 +18,19 @@ This is solid beta; Feel free to test / feedback / make contribs<br/>
 </p>
 
 
-## What you can do with it :
+## Check the samples [here](https://github.com/n8tz/layer-pack-samples)
+
+## Main features :
 
 ### Split you're projects into multiple inheritable npm packages
 
-So you can easily :
 - inherit & share most of the code between projects
 - Include or not layers like dev tools, admin, etc
 - Switch between monorepo and npm dependencies structure
 - Test layers independently
 - Compile in 1 step, with the source map
 
-### Do glob require on inherited directories ( from local or node_modules packages )
-
-So you can easily create/inherit modules & extensions and require them using :
+### Make glob require on inherited directories ( from local or node_modules packages )
 
 ```jsx
 import allModules from "App/modules/*.module.js";
@@ -86,12 +84,6 @@ export default class MyOverrided extend $super{
 
 So you can share, version, extend & switch your webpack conf & boilerplate via npm
 
-
-### Even more :
-
-- Combine projects with different namespaces in 1 head package
-- Easily override node_modules ( drop a module in a "lib directory" & dev/test you're patchs )
-- Etc...
 
 ## Check the samples [here](https://github.com/n8tz/layer-pack-samples)
 
