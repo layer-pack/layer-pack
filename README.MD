@@ -1,5 +1,5 @@
 
-<h1 align="center">layer-pack</h1>
+<p align="center"><img  width="192" src ="https://github.com/layer-pack/layer-pack/raw/master/doc/assets/logo.svg?sanitize=true" /></p>
 <br/>
 <p align="center">
 Easily split webpack projects into multiple npm packages
@@ -87,7 +87,7 @@ So you can share, version, extend & switch your webpack conf & boilerplate via n
 
 ## Check the samples [here](https://github.com/n8tz/layer-pack-samples)
 
-## Draft doc [here](DOC.MD)
+## Draft doc [here](doc/DOC.MD)
 
 ## Caveats / bugs ?
 
