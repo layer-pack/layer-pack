@@ -61,10 +61,10 @@
     <path
        style="fill:#f0f2f7;fill-opacity:1;stroke-width:0.01609073"
        inkscape:connector-curvature="0"
-       d="m 8.4666665,280.59929 6.2271135,3.52226 v 7.04613 l -6.2271135,3.52227 -6.2271141,-3.52227 v -7.04613 z"
+       d="m 8.4666665,280.31581 6.2271135,3.52226 v 7.04613 l -6.2271135,3.52227 -6.2271141,-3.52227 v -7.04613 z"
        id="path2582" />
     <g
-       transform="matrix(0.22509334,0,0,0.22509334,-82.334096,256.42771)"
+       transform="matrix(0.22509334,0,0,0.22509334,-82.334096,256.14423)"
        id="g2631">
       <path
          id="path2584"
@@ -100,12 +100,12 @@
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:1.96949935px;line-height:1.25;font-family:sans-serif;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.11362495"
        x="8.3559351"
-       y="296.16043"
+       y="296.37305"
        id="text2622"><tspan
          sodipodi:role="line"
          id="tspan2620"
          x="8.3559351"
-         y="296.16043"
+         y="296.37305"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans Bold';stroke-width:0.11362495">layer-pack</tspan></text>
   </g>
 </svg>
