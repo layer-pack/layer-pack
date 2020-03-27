@@ -1,6 +1,6 @@
 {
   "name": "layer-pack",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Webpack plugin to make inheritable code layers, glob imports, easy multi packages app & shared webpack configs",
   "license": "MIT",
   "main": "src/index.js",
@@ -40,7 +40,7 @@
     "fs-extra": "^7.0.1",
     "is": "^3.3.0",
     "is-builtin-module": "^3.0.0",
-    "minimist": "^1.2.0",
+    "minimist": "^1.2.5",
     "mustache": "^3.0.1",
     "resolve": "^1.9.0",
     "shortid": "^2.2.14",
@@ -48,6 +48,6 @@
     "strip-json-comments": "^3.0.1",
     "virtual-module-webpack-plugin": "^0.3.0",
     "walk": "^2.3.9",
-    "webpack-merge": "^4.2.1"
+    "webpack-merge": "^4.2.2"
   }
 }
