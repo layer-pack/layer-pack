@@ -30,7 +30,7 @@ This is solid beta; Feel free to test / feedback / make contribs<br/>
 - Test layers independently
 - Compile in 1 step, with the source map
 
-### Make glob require on inherited directories ( from local or node_modules packages )
+### Make glob imports on inherited directories ( from local or inherited packages )
 
 ```jsx
 import allModules from "App/modules/*.module.js";
