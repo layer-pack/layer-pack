@@ -28,7 +28,7 @@ const path                = require("path"),
       fs                  = require('fs'),
       is                  = require('is'),
       mustache            = require('mustache'),
-      objProto            = ({}).__proto__,
+      objProto            = ( {} ).__proto__,
       stripJsonComments   = require('strip-json-comments'),
       VirtualModulePlugin = require('virtual-module-webpack-plugin'),
       glob                = require('fast-glob'),
@@ -36,531 +36,545 @@ const path                = require("path"),
 
 
 function checkIfDir( fs, file ) {
-	try {
-		return fs.statSync(file).isDirectory()
-	} catch ( err ) {
-		return false
-	}
+    try {
+        return fs.statSync(file).isDirectory()
+    } catch ( err ) {
+        return false
+    }
 }
 
 function getlPackConfigFrom( dir ) {
-	let cfg, pkgCfg;
-	try {
-		try {
-			cfg = require(path.normalize(dir + "/.layers"));
-			cfg = { layerPack: cfg };
-		} catch ( e ) {
-			cfg = fs.existsSync(path.normalize(dir + "/.layers.json"))
-				&& { layerPack: JSON.parse(stripJsonComments(fs.readFileSync(path.normalize(dir + "/.layers.json")).toString())) };
-		}
-		
-		pkgCfg =
-			fs.existsSync(path.normalize(dir + "/package.json"))
-			&& JSON.parse(fs.readFileSync(path.normalize(dir + "/package.json")));
-		
-		if ( !pkgCfg )
-			pkgCfg = cfg;
-		else if ( cfg )
-			pkgCfg = { ...pkgCfg, ...cfg };
-		
-	} catch ( e ) {
-		console.warn("Fail parsing lPack config in " + dir, "\n" + e + "\n", e.stack);
-		process.exit(1000);
-	}
-	return pkgCfg;
+    let cfg, pkgCfg;
+    try {
+        try {
+            cfg = require(path.normalize(dir + "/.layers"));
+            cfg = { layerPack: cfg };
+        } catch ( e ) {
+            cfg = fs.existsSync(path.normalize(dir + "/.layers.json"))
+                  && { layerPack: JSON.parse(stripJsonComments(fs.readFileSync(path.normalize(dir + "/.layers.json")).toString())) };
+        }
+        
+        pkgCfg =
+            fs.existsSync(path.normalize(dir + "/package.json"))
+            && JSON.parse(fs.readFileSync(path.normalize(dir + "/package.json")));
+        
+        if ( !pkgCfg )
+            pkgCfg = cfg;
+        else if ( cfg )
+            pkgCfg = { ...pkgCfg, ...cfg };
+        
+    } catch ( e ) {
+        console.warn("Fail parsing lPack config in " + dir, "\n" + e + "\n", e.stack);
+        process.exit(1000);
+    }
+    return pkgCfg;
 }
 
 function jsonTplApply( value, data ) {
-	if ( is.string(value) ) {
-		return mustache.render(value, data, undefined, ['<%', '%>'])
-	}
-	else if ( value && value.__proto__ === objProto ) {
-		let output = {};
-		for ( let key in value )
-			if ( value.hasOwnProperty(key) ) {
-				output[key] = jsonTplApply(value[key], data);
-			}
-		return output;
-	}
-	return value;
+    if ( is.string(value) ) {
+        return mustache.render(value, data, undefined, ['<%', '%>'])
+    }
+    else if ( value && value.__proto__ === objProto ) {
+        let output = {};
+        for ( let key in value )
+            if ( value.hasOwnProperty(key) ) {
+                output[ key ] = jsonTplApply(value[ key ], data);
+            }
+        return output;
+    }
+    return value;
 }
 
 const utils = {
-	/**
-	 * Return all configs for the available profiles
-	 *
-	 * @param projectRoot {string} @optional directory where to start searching lPack cfg
-	 * @param customConfig {object} @optional lPack config in json
-	 */
-	getAllConfigs( projectRoot = process.cwd(), customConfig ) {
-		let pkgConfig =
-			    customConfig && { layerPack: customConfig }
-			    ||
-			    getlPackConfigFrom(projectRoot),
-		    allCfg    = {};
-		
-		if ( !pkgConfig || !pkgConfig.layerPack )
-			throw new Error("Can't find any lPack config ! ( searched in " + projectRoot + "/.layers.json" + " )")
-		
-		Object.keys(pkgConfig.layerPack)
-		      .forEach(
-			      _pId => {
-				      let pId      = _pId;
-				      allCfg[_pId] = true;
-				      while ( is.string(pkgConfig.layerPack[pId]) ) {// profile alias
-					      pId = pkgConfig.layerPack[pId];
-				      }
-				      allCfg[_pId] = this.getConfigByProfiles(projectRoot, pkgConfig.layerPack[pId], _pId, pkgConfig);
-			      }
-		      )
-		return allCfg;
-	},
-	/**
-	 * Recurse over the inherited package to map all the value for a specified profile id
-	 * todo: rewrite
-	 * @param projectRoot
-	 * @param profileConfig
-	 * @param profileId
-	 * @returns {{projectRoot: *, allModId: Array, allModulePath: Array, allRoots: *, localAlias, allWebpackCfg: Array,
-	 *     allExtPath: Array, allCfg: Array, vars, allModuleRoots: Array}}
-	 */
-	getConfigByProfiles( projectRoot, profileConfig, profileId, packageConfig ) {
-		let localAlias     = {},
-		    allModulePath  = [],
-		    allModId       = [],
-		    allWebpackCfg  = [],
-		    allModuleRoots = [],
-		    allCfg         = [],
-		    allTemplates   = {},
-		    allScripts     = {},
-		    vars           = {},
-		    rootDir        = profileConfig.rootFolder || './App',
-		    /**
-		     * Find & return all  inherited pkg paths
-		     * @type {Array}
-		     */
-		    allExtPath     = (() => {
-			    let layerPathList = [], dedupedLayerPathList = [], layerIdList = [], seen = {};
-			
-			    profileConfig.extend && profileConfig.extend.forEach(function walk( layerId, i, x, mRoot, cProfile, libsPath = profileConfig.libsPath ) {
-				    mRoot    = mRoot || projectRoot;
-				    cProfile = cProfile || profileConfig.basedOn || profileId;
-				
-				    // find the inheritable package path & cfg
-				    let where       = libsPath && fs.existsSync(path.normalize(projectRoot + "/" + libsPath + "/" + layerId))
-				                      ? "/" + libsPath + "/" :
-				                      "/node_modules/",
-				        cfg         = getlPackConfigFrom(mRoot + where + layerId),
-				        realProfile = cProfile;
-				
-				    // if the package is not here it may sibling this one...
-				    if ( !cfg || !cfg.layerPack ) {
-					    where = "/../";
-					    cfg   = getlPackConfigFrom(mRoot + where + layerId);
-					
-				    }
-				
-				    layerPathList.push(path.resolve(path.normalize(mRoot + where + layerId)));
-				    layerIdList.push(layerId);
-				
-				    while ( cfg && cfg.layerPack && is.string(cfg.layerPack[realProfile]) ) {// profile alias
-					    realProfile = cfg.layerPack[realProfile];
-				    }
-				    if ( cfg && cfg.layerPack && !cfg.layerPack[realProfile] ) {
-					    realProfile = "default";
-				    }
-				
-				    if ( cfg && cfg.layerPack && cfg.layerPack[realProfile] ) {
-					
-					    if ( cfg.layerPack[realProfile].extend )
-						    cfg.layerPack[realProfile]
-							    .extend
-							    .forEach(
-								    ( mid, y ) => walk(
-									    mid, y, null,
-									    mRoot + where + layerId,
-									    cfg.layerPack[realProfile].basedOn || realProfile,
-									    cfg.layerPack[realProfile].libsPath
-								    )
-							    )
-				    }
-				    else {
-					    if ( !cfg )
-						    throw new Error("layer-pack : Can't inherit an not installed module :\nNot found :" + mRoot + where + layerId);
-					    if ( !cfg.layerPack )
-						    throw new Error("layer-pack : Can't inherit a module with no layerPack in the package.json/.layers.json :\nAt :" + mRoot + where + layerId);
-					    if ( !cfg.layerPack[realProfile] )
-						    throw new Error("layer-pack : Can't inherit a module without the requested profile\nAt :" + mRoot + where + layerId + "\nRequested profile :" + cProfile);
-				    }
-				
-			    })
-			
-			    /**
-			     * dedupe inherited ( last is first )
-			     */
-			    for ( let i = 0; i < layerIdList.length; i++ ) {
-				    if ( layerIdList.lastIndexOf(layerIdList[i]) == i ) {
-					    allModId.push(layerIdList[i]);
-					    dedupedLayerPathList.push(layerPathList[i]);
-				    }
-			    }
-			
-			    return dedupedLayerPathList;
-		    })(),
-		    // deduce all the roots & others values
-		    allRoots       = (function () {
-			    let roots = [projectRoot + '/' + rootDir], libPath = [];
-			
-			    profileConfig.libsPath
-			    && fs.existsSync(path.normalize(projectRoot + "/" + profileConfig.libsPath))
-			    && libPath.push(path.normalize(projectRoot + "/" + profileConfig.libsPath));
-			
-			    allModulePath.push(path.normalize(projectRoot + '/node_modules'));
-			    allModuleRoots.push(projectRoot);
-			
-			    if ( profileConfig.config )
-				    allWebpackCfg.push(path.resolve(path.normalize(projectRoot + '/' + profileConfig.config)))
-			
-			    if ( profileConfig.templates )
-				    Object.keys(profileConfig.templates)
-				          .forEach(
-					          ( k ) => (allTemplates[k] = allTemplates[k] || path.resolve(path.normalize(projectRoot + '/' + profileConfig.templates[k])))
-				          );
-			
-			    if ( profileConfig.scripts )
-				    Object.keys(profileConfig.scripts)
-				          .forEach(
-					          ( k ) => (allScripts[k] = allScripts[k] || path.resolve(path.normalize(projectRoot + '/' + profileConfig.scripts[k])))
-				          );
-			
-			    allExtPath.forEach(
-				    function ( where, i, arr, cProfile ) {
-					    cProfile        = cProfile || profileConfig.basedOn || profileId;
-					    let cfg         = getlPackConfigFrom(where),
-					        modPath     = path.normalize(where + "/node_modules"),
-					        realProfile = cProfile;
-					
-					    allModuleRoots.push(where);
-					
-					    while ( cfg && cfg.layerPack && is.string(cfg.layerPack[realProfile]) ) {// profile alias
-						    realProfile = cfg.layerPack[realProfile];
-					    }
-					    if ( cfg && cfg.layerPack && !cfg.layerPack[realProfile] ) {
-						    realProfile = "default";
-					    }
-					
-					    cfg = cfg.layerPack[realProfile];
-					
-					    if ( cfg.localAlias )
-						    localAlias = {
-							    ...localAlias,
-							    ...Object
-								    .keys(cfg.localAlias)
-								    .reduce(
-									    ( aliases, alias ) => (aliases[alias] = path.join(where, cfg.aliases[alias]), aliases),
-									    {}
-								    )
-						    };
-					
-					    // add the vars
-					    if ( cfg.vars )
-						    vars = {
-							    ...jsonTplApply(cfg.vars, {
-								    packagePath: where,
-								    projectPath: projectRoot,
-								    packageConfig
-							    }),
-							    ...vars
-						    };
-					
-					    allCfg.push(cfg);
-					
-					    if ( cfg.config )
-						    allWebpackCfg.push(path.resolve(path.normalize(where + '/' + cfg.config)));
-					
-					    roots.push(fs.realpathSync(path.normalize(where + "/" + (cfg.rootFolder || 'App'))));
-					
-					    if ( cfg.scripts )
-						    Object.keys(cfg.scripts)
-						          .reduce(
-							          ( h, k ) => (h[k] = h[k] || path.resolve(path.normalize(where + '/' + cfg.scripts[k])), h),
-							          allScripts
-						          );
-					    //
-					    cfg.libsPath &&
-					    fs.existsSync(path.normalize(where + "/" + cfg.libsPath))
-					    && libPath.push(
-						    fs.realpathSync(path.normalize(where + "/" + cfg.libsPath)));
-					
-					    checkIfDir(fs, modPath)
-					    && allModulePath.push(fs.realpathSync(modPath));
-				    }
-			    );
-			    //allModulePath.push("node_modules");
-			    allModulePath.unshift(...libPath);
-			    return roots.map(path.normalize.bind(path));
-		    })();
-		
-		if ( profileConfig && profileConfig.aliases )
-			localAlias = {
-				...localAlias,
-				...profileConfig.aliases
-			};
-		
-		vars = {
-			rootAlias: 'App',
-			...vars
-		};
-		
-		if ( profileConfig && profileConfig.vars )
-			vars = {
-				rootAlias: 'App',
-				...vars,
-				...jsonTplApply(profileConfig.vars, {
-					packagePath: projectRoot,
-					projectPath: projectRoot,
-					packageConfig
-				}),
-			};
-		allCfg.unshift(profileConfig);
-		return {
-			allWebpackCfg,
-			allModulePath,
-			allRoots,
-			allTemplates,
-			allScripts,
-			allExtPath,
-			localAlias,
-			allModuleRoots,
-			allCfg,
-			allModId,
-			vars,
-			projectRoot
-		};
-	},
-	
-	// find a $super file in the available roots
-	findParentPath( fs, roots, file, i, possible_ext, fileDependencies, cb, _curExt = 0 ) {
-		let fn = path.normalize(roots[i] + file + possible_ext[_curExt]);
-		//console.warn("check !!! ", fn, possible_ext[_curExt]);
-		fs.stat(fn, ( err, stats ) => {
-			if ( stats && stats.isFile() ) {
-				//console.warn("Find parent !!! ", fn);
-				cb && cb(null, fn, fn.substr(roots[i].length + 1));
-			}
-			else {
-				//console.warn("Not found !!! ", fn);
-				// check by path first then by ext
-				fileDependencies.push(fn);
-				
-				// must check parents dir first or we cant override correctly
-				// ex : App/file.scss could be called requiring App/file but wanting App/file.js from parents
-				// Mean we can't override a js file with ts file or a scss with a css
-				if ( i + 1 < roots.length ) {
-					this.findParentPath(fs, roots, file, i + 1, possible_ext, fileDependencies, cb, _curExt);
-				}
-				else if ( possible_ext.length >= _curExt ) {
-					this.findParentPath(fs, roots, file, 0, possible_ext, fileDependencies, cb, _curExt + 1)
-				}
-				else {
-					cb && cb(true);
-				}
-			}
-			
-		})
-	},
-	findParent( fs, roots, file, possible_ext, fileDependencies, cb ) {
-		let i = -1, tmp;
-		file  = path.normalize(file);
-		//console.warn("Find parent !!! ", path.normalize(file), roots);
-		while ( ++i < roots.length ) {
-			tmp = file.substr(0, roots[i].length);
-			if ( roots[i] == tmp ) {// found
-				return (i != roots.length - 1) && this.findParentPath(fs, roots, file.substr(tmp.length), i + 1, possible_ext, fileDependencies, cb, 0);
-			}
-		}
-		cb && cb(true);
-	},
-	/**
-	 * Create a virtual file accessible by webpack that map a given glob query like "App/somewhere/**.js"
-	 */
-	indexOf( vfs, roots, input, contextDependencies, fileDependencies,
-	         RootAlias,
-	         RootAliasRe, useHMR, cb ) {
-		let files           = {},
-		    code            = "/* This is a virtual file generated by layer-pack */\n",
-		    virtualFile     = path.normalize(
-			    path.join(roots[0], 'MapOf.' + input.replace(/[^\w]/ig, '_')
-			                                        .replace(/\*/ig, '.W')
-			                                        .replace(/[^\w\.]/ig, '_') +
-				    '.gen.js')),
-		    subPath         = "",
-		    globToRe        = "",
-		    exportedModules = {},
-		    filesToAdd      = [];
-		
-		input    = input.replace(/\/$/, '').replace(RootAliasRe, '').substr(1); // rm App/
-		subPath  = path.dirname(input.substr(0, input.indexOf('*')) + "a");
-		globToRe =
-			(subPath === '.' ? input : input.substr(subPath.length + 1))
-				.replace(/\//ig, '\\/')
-				.replace(/\./ig, '\\.')
-				.replace(/\*\*\\\//ig, '(?:(?:*\\/)+)?')
-				.replace(/\*/ig, '[^\\\\\\/]+');
-		
-		input = input.replace(/[\(\)]/g, '');
-		
-		code += "let req, _exports = {}, walknSetExport=___layerPackExport;";
-		// generate require.context code so wp will detect changes
-		roots.forEach(
-			( _root, lvl ) => {
-				if ( checkIfDir(fs, path.normalize(_root + "/" + subPath)) ) {
-					contextDependencies.push(path.normalize(_root + "/" + subPath))
-				}
-				glob.sync([_root + '/' + path.normalize(input)], { fs: vfs })// should use wp fs
-				    .forEach(
-					    file => {
-						    let name  = file.substr(path.normalize(_root + "/" + subPath).length).match(new RegExp("^\\/" + globToRe + "$")),
-						        uPath = RootAlias + file.substr(_root.length),
-						        key   = "_" + uPath.replace(/[^\w]/ig, "_"),
-						        wPath = path.dirname(file);
-						
-						    if ( !files[uPath] ) {
-							    fileDependencies.push(path.normalize(file));
-							    filesToAdd.push([uPath, name]);
-							
-						    }
-						
-						
-						    files[RootAlias + file.substr(_root.length)] = name && name.length && name[1]; // exportable
-					    }
-				    )
-			}
-		);
-		filesToAdd = filesToAdd.sort(
-			( a, b ) => (a[0].length - b[0].length)
-		).forEach(
-			( [uPath, name] ) => {
-				let key = "_" + uPath.replace(/[^\w]/ig, "_");
-				code += `\nconst ${key} = require("${uPath}");`;
-				if ( name && name[1] ) {
-					code += `\nwalknSetExport(_exports, "${name[1]}", ${key});`;
-					if ( useHMR )
-						code += `\nmodule.hot && module.hot.accept("${uPath}", (...argz)=>{
+    /**
+     * Return all configs for the available profiles
+     *
+     * @param projectRoot {string} @optional directory where to start searching lPack cfg
+     * @param customConfig {object} @optional lPack config in json
+     */
+    getAllConfigs( projectRoot = process.cwd(), customConfig ) {
+        let pkgConfig =
+                customConfig && { layerPack: customConfig }
+                ||
+                getlPackConfigFrom(projectRoot),
+            allCfg    = {};
+        
+        if ( !pkgConfig || !pkgConfig.layerPack )
+            throw new Error("Can't find any lPack config ! ( searched in " + projectRoot + "/.layers.json" + " )")
+        
+        Object.keys(pkgConfig.layerPack)
+              .forEach(
+                  _pId => {
+                      let pId        = _pId;
+                      allCfg[ _pId ] = true;
+                      while ( is.string(pkgConfig.layerPack[ pId ]) ) {// profile alias
+                          pId = pkgConfig.layerPack[ pId ];
+                      }
+                      allCfg[ _pId ] = this.getConfigByProfiles(projectRoot, pkgConfig.layerPack[ pId ], _pId, pkgConfig);
+                  }
+              )
+        return allCfg;
+    },
+    /**
+     * Recurse over the inherited package to map all the value for a specified profile id
+     * todo: rewrite
+     * @param projectRoot
+     * @param profileConfig
+     * @param profileId
+     * @returns {{projectRoot: *, allModId: Array, allModulePath: Array, allRoots: *,
+     *     localAlias, allWebpackCfg: Array, allExtPath: Array, allCfg: Array, vars,
+     *     allModuleRoots: Array}}
+     */
+    getConfigByProfiles( projectRoot, profileConfig, profileId, packageConfig ) {
+        let localAlias     = {},
+            allModulePath  = [],
+            allModId       = [],
+            allWebpackCfg  = [],
+            allModuleRoots = [],
+            allCfg         = [],
+            allTemplates   = {},
+            allScripts     = {},
+            vars           = {},
+            rootDir        = profileConfig.rootFolder || './App',
+            /**
+             * Find & return all  inherited pkg paths
+             * @type {Array}
+             */
+            allExtPath     = ( () => {
+                let layerPathList        = [],
+                    dedupedLayerPathList = [],
+                    layerIdList          = [],
+                    seen                 = {};
+            
+                profileConfig.extend && profileConfig.extend.forEach(function walk( layerId, i, x, mRoot, cProfile, libsPath = profileConfig.libsPath ) {
+                    mRoot    = mRoot || projectRoot;
+                    cProfile = cProfile || profileConfig.basedOn || profileId;
+                
+                    // find the inheritable package path & cfg
+                    let where       = libsPath && fs.existsSync(path.normalize(projectRoot + "/" + libsPath + "/" + layerId))
+                                      ? "/" + libsPath + "/" :
+                                      "/node_modules/",
+                        cfg         = getlPackConfigFrom(mRoot + where + layerId),
+                        realProfile = cProfile;
+                
+                    // if the package is not here it may sibling this one...
+                    if ( !cfg || !cfg.layerPack ) {
+                        where = "/../";
+                        cfg   = getlPackConfigFrom(mRoot + where + layerId);
+                    
+                    }
+                
+                    layerPathList.push(path.resolve(path.normalize(mRoot + where + layerId)));
+                    layerIdList.push(layerId);
+                
+                    while ( cfg && cfg.layerPack && is.string(cfg.layerPack[ realProfile ]) ) {// profile alias
+                        realProfile = cfg.layerPack[ realProfile ];
+                    }
+                    if ( cfg && cfg.layerPack && !cfg.layerPack[ realProfile ] ) {
+                        realProfile = "default";
+                    }
+                
+                    if ( cfg && cfg.layerPack && cfg.layerPack[ realProfile ] ) {
+                    
+                        if ( cfg.layerPack[ realProfile ].extend )
+                            cfg.layerPack[ realProfile ]
+                                .extend
+                                .forEach(
+                                    ( mid, y ) => walk(
+                                        mid, y, null,
+                                        mRoot + where + layerId,
+                                        cfg.layerPack[ realProfile ].basedOn || realProfile,
+                                        cfg.layerPack[ realProfile ].libsPath
+                                    )
+                                )
+                    }
+                    else {
+                        if ( !cfg )
+                            throw new Error("layer-pack : Can't inherit an not installed module :\nNot found :" + mRoot + where + layerId);
+                        if ( !cfg.layerPack )
+                            throw new Error("layer-pack : Can't inherit a module with no layerPack in the package.json/.layers.json :\nAt :" + mRoot + where + layerId);
+                        if ( !cfg.layerPack[ realProfile ] )
+                            throw new Error("layer-pack : Can't inherit a module without the requested profile\nAt :" + mRoot + where + layerId + "\nRequested profile :" + cProfile);
+                    }
+                
+                })
+            
+                /**
+                 * dedupe inherited ( last is first )
+                 */
+                for ( let i = 0; i < layerIdList.length; i++ ) {
+                    if ( layerIdList.lastIndexOf(layerIdList[ i ]) == i ) {
+                        allModId.push(layerIdList[ i ]);
+                        dedupedLayerPathList.push(layerPathList[ i ]);
+                    }
+                }
+            
+                return dedupedLayerPathList;
+            } )(),
+            // deduce all the roots & others values
+            allRoots       = ( function () {
+                let roots = [projectRoot + '/' + rootDir], libPath = [];
+            
+                profileConfig.libsPath
+                && fs.existsSync(path.normalize(projectRoot + "/" + profileConfig.libsPath))
+                && libPath.push(path.normalize(projectRoot + "/" + profileConfig.libsPath));
+            
+                allModulePath.push(path.normalize(projectRoot + '/node_modules'));
+                allModuleRoots.push(projectRoot);
+            
+                if ( profileConfig.config )
+                    allWebpackCfg.push(path.resolve(path.normalize(projectRoot + '/' + profileConfig.config)))
+            
+                if ( profileConfig.templates )
+                    Object.keys(profileConfig.templates)
+                          .forEach(
+                              ( k ) => ( allTemplates[ k ] = allTemplates[ k ] || path.resolve(path.normalize(projectRoot + '/' + profileConfig.templates[ k ])) )
+                          );
+            
+                if ( profileConfig.scripts )
+                    Object.keys(profileConfig.scripts)
+                          .forEach(
+                              ( k ) => ( allScripts[ k ] = allScripts[ k ] || path.resolve(path.normalize(projectRoot + '/' + profileConfig.scripts[ k ])) )
+                          );
+            
+                allExtPath.forEach(
+                    function ( where, i, arr, cProfile ) {
+                        cProfile        = cProfile || profileConfig.basedOn || profileId;
+                        let cfg         = getlPackConfigFrom(where),
+                            modPath     = path.normalize(where + "/node_modules"),
+                            realProfile = cProfile;
+                    
+                        allModuleRoots.push(where);
+                    
+                        while ( cfg && cfg.layerPack && is.string(cfg.layerPack[ realProfile ]) ) {// profile alias
+                            realProfile = cfg.layerPack[ realProfile ];
+                        }
+                        if ( cfg && cfg.layerPack && !cfg.layerPack[ realProfile ] ) {
+                            realProfile = "default";
+                        }
+                    
+                        cfg = cfg.layerPack[ realProfile ];
+                    
+                        if ( cfg.localAlias )
+                            localAlias = {
+                                ...localAlias,
+                                ...Object
+                                    .keys(cfg.localAlias)
+                                    .reduce(
+                                        ( aliases, alias ) => ( aliases[ alias ] = path.join(where, cfg.aliases[ alias ]), aliases ),
+                                        {}
+                                    )
+                            };
+                    
+                        // add the vars
+                        if ( cfg.vars )
+                            vars = {
+                                ...jsonTplApply(cfg.vars, {
+                                    packagePath: where,
+                                    projectPath: projectRoot,
+                                    packageConfig
+                                }),
+                                ...vars
+                            };
+                    
+                        allCfg.push(cfg);
+                    
+                        if ( cfg.config )
+                            allWebpackCfg.push(path.resolve(path.normalize(where + '/' + cfg.config)));
+                    
+                        roots.push(fs.realpathSync(path.normalize(where + "/" + ( cfg.rootFolder || 'App' ))));
+                    
+                        if ( cfg.scripts )
+                            Object.keys(cfg.scripts)
+                                  .reduce(
+                                      ( h, k ) => ( h[ k ] = h[ k ] || path.resolve(path.normalize(where + '/' + cfg.scripts[ k ])), h ),
+                                      allScripts
+                                  );
+                        //
+                        cfg.libsPath &&
+                        fs.existsSync(path.normalize(where + "/" + cfg.libsPath))
+                        && libPath.push(
+                            fs.realpathSync(path.normalize(where + "/" + cfg.libsPath)));
+                    
+                        checkIfDir(fs, modPath)
+                        && allModulePath.push(fs.realpathSync(modPath));
+                    }
+                );
+                //allModulePath.push("node_modules");
+                allModulePath.unshift(...libPath);
+                return roots.map(path.normalize.bind(path));
+            } )();
+        
+        if ( profileConfig && profileConfig.aliases )
+            localAlias = {
+                ...localAlias,
+                ...profileConfig.aliases
+            };
+        
+        vars = {
+            rootAlias: 'App',
+            ...vars
+        };
+        
+        if ( profileConfig && profileConfig.vars )
+            vars = {
+                rootAlias: 'App',
+                ...vars,
+                ...jsonTplApply(profileConfig.vars, {
+                    packagePath: projectRoot,
+                    projectPath: projectRoot,
+                    packageConfig
+                }),
+            };
+        allCfg.unshift(profileConfig);
+        return {
+            allWebpackCfg,
+            allModulePath,
+            allRoots,
+            allTemplates,
+            allScripts,
+            allExtPath,
+            localAlias,
+            allModuleRoots,
+            allCfg,
+            allModId,
+            vars,
+            projectRoot
+        };
+    },
+    
+    // find a $super file in the available roots
+    findParentPath( fs, roots, file, i, possible_ext, fileDependencies, cb, _curExt = 0 ) {
+        let fn = path.normalize(roots[ i ] + file + possible_ext[ _curExt ]);
+        //console.warn("check !!! ", fn, possible_ext[_curExt]);
+        fs.stat(fn, ( err, stats ) => {
+            if ( stats && stats.isFile() ) {
+                //console.warn("Find parent !!! ", fn);
+                cb && cb(null, fn, fn.substr(roots[ i ].length + 1));
+            }
+            else {
+                //console.warn("Not found !!! ", fn);
+                // check by path first then by ext
+                fileDependencies.push(fn);
+                
+                // must check parents dir first or we cant override correctly
+                // ex : App/file.scss could be called requiring App/file but wanting
+                // App/file.js from parents Mean we can't override a js file with ts file
+                // or a scss with a css
+                if ( i + 1 < roots.length ) {
+                    this.findParentPath(fs, roots, file, i + 1, possible_ext, fileDependencies, cb, _curExt);
+                }
+                else if ( possible_ext.length >= _curExt ) {
+                    this.findParentPath(fs, roots, file, 0, possible_ext, fileDependencies, cb, _curExt + 1)
+                }
+                else {
+                    cb && cb(true);
+                }
+            }
+            
+        })
+    },
+    findParent( fs, roots, file, possible_ext, fileDependencies, cb ) {
+        let i = -1, tmp;
+        file  = path.normalize(file);
+        //console.warn("Find parent !!! ", path.normalize(file), roots);
+        while ( ++i < roots.length ) {
+            tmp = file.substr(0, roots[ i ].length);
+            if ( roots[ i ] == tmp ) {// found
+                return ( i != roots.length - 1 ) && this.findParentPath(fs, roots, file.substr(tmp.length), i + 1, possible_ext, fileDependencies, cb, 0);
+            }
+        }
+        cb && cb(true);
+    },
+    /**
+     * Create a virtual file accessible by webpack that map a given glob query like
+     * "App/somewhere/**.js"
+     */
+    indexOf( vfs, roots, input, contextDependencies, fileDependencies,
+             RootAlias,
+             RootAliasRe, useHMR, cb ) {
+        let files           = {},
+            code            = "/* This is a virtual file generated by layer-pack */\n",
+            virtualFile     = path.normalize(
+                path.join(roots[ 0 ], 'MapOf.' + input.replace(/[^\w]/ig, '_')
+                                                      .replace(/\*/ig, '.W')
+                                                      .replace(/[^\w\.]/ig, '_') +
+                                      '.gen.js')),
+            subPath         = "",
+            globToRe        = "",
+            exportedModules = {},
+            filesToAdd      = [];
+        
+        input    = input.replace(/\/$/, '').replace(RootAliasRe, '').substr(1); // rm App/
+        subPath  = path.dirname(input.substr(0, input.indexOf('*')) + "a");
+        globToRe =
+            ( subPath === '.' ? input : input.substr(subPath.length + 1) )
+                .replace(/\//ig, '\\/')
+                .replace(/\./ig, '\\.')
+                .replace(/\*\*\\\//ig, '(?:(?:*\\/)+)?')
+                .replace(/\*/ig, '[^\\\\\\/]+');
+        
+        input = input.replace(/[\(\)]/g, '');
+        
+        code += "let req, _exports = {}, walknSetExport=require('" + RootAlias + "/.___layerPackIndexUtils').walknSetExport;";
+        // generate require.context code so wp will detect changes
+        roots.forEach(
+            ( _root, lvl ) => {
+                if ( checkIfDir(fs, path.normalize(_root + "/" + subPath)) ) {
+                    contextDependencies.push(path.normalize(_root + "/" + subPath))
+                }
+                glob.sync([_root + '/' + path.normalize(input)], { fs: vfs })// should use wp fs
+                    .forEach(
+                        file => {
+                            let name  = file.substr(path.normalize(_root + "/" + subPath).length).match(new RegExp("^\\/" + globToRe + "$")),
+                                uPath = RootAlias + file.substr(_root.length),
+                                key   = "_" + uPath.replace(/[^\w]/ig, "_"),
+                                wPath = path.dirname(file);
+                        
+                            if ( !files[ uPath ] ) {
+                                fileDependencies.push(path.normalize(file));
+                                filesToAdd.push([uPath, name]);
+                            
+                            }
+                        
+                        
+                            files[ RootAlias + file.substr(_root.length) ] = name && name.length && name[ 1 ]; // exportable
+                        }
+                    )
+            }
+        );
+        filesToAdd = filesToAdd.sort(
+            ( a, b ) => ( a[ 0 ].length - b[ 0 ].length )
+        ).forEach(
+            ( [uPath, name] ) => {
+                let key = "_" + uPath.replace(/[^\w]/ig, "_");
+                code += `\nconst ${ key } = require("${ uPath }");`;
+                if ( name && name[ 1 ] ) {
+                    code += `\nwalknSetExport(_exports, "${ name[ 1 ] }", ${ key });`;
+                    if ( useHMR )
+                        code += `\nmodule.hot && module.hot.accept("${ uPath }", (...argz)=>{
 							let lastExport = module.__proto__.exports;
-							walknSetExport(lastExport.default, "${name[1]}", require("${uPath}"))
-							return walknSetExport(lastExport, "${name[1]}", require("${uPath}"))
+							walknSetExport(lastExport.default, "${ name[ 1 ] }", require("${ uPath }"))
+							return walknSetExport(lastExport, "${ name[ 1 ] }", require("${ uPath }"))
 						}
 						);`;
-				}
-			}
-		);
-		//console.log(filesToAdd)
-		code +=
-			"\n" +
-			Object.keys(files).map(
-				( file, i ) => {
-					let exportName = files[file] && files[file].split('/');
-					
-					if ( exportName && jsVarTest.test(exportName[0]) && !exportedModules[exportName[0]] ) {
-						exportedModules[exportName[0]] = true;
-						return '\nexport const ' + exportName[0] + ' = _exports.' + exportName[0] + ';';
-					}
-					//return '/* export const ' + exportName[0] + ' = _exports.' + files[file] + '; */\n';
-				}
-			).join('\n')
-			+ '\n';
-		code += "export default _exports;";
-		//console.log(code)
-		//fs.writeFileSync(virtualFile, code);
-		fileDependencies.push(path.normalize(virtualFile));
-		utils.addVirtualFile(vfs, virtualFile, code);
-		cb && cb(null, virtualFile, code);
-	},
-	
-	
-	/**
-	 * Create a virtual file accessible by webpack that map a given glob query like "App/somewhere/**.scss"
-	 */
-	indexOfScss( vfs, roots, input, contextDependencies, fileDependencies,
-	             RootAlias,
-	             RootAliasRe, useHMR, cb ) {
-		let files           = {},
-		    code            = "/* This is a virtual file generated by layer-pack */",
-		    virtualFile     = path.normalize(
-			    path.join(roots[0], 'MapOf.' + input.replace(/[^\w]/ig, '_')
-			                                        .replace(/\*/ig, '.W')
-			                                        .replace(/[^\w\.]/ig, '_') +
-				    '.gen.scss')),
-		    subPath         = "",
-		    exportedModules = {};
-		
-		input   = input.replace(/\/$/, '').replace(RootAliasRe, '').substr(1); // rm App/
-		subPath = path.dirname(input.substr(0, input.indexOf('*')) + "a");
-		
-		roots.forEach(
-			( _root, lvl ) => {
-				contextDependencies.push(
-					path.dirname(
-						path.normalize(
-							_root + '/' + path.normalize(input).replace(/^([^\*]+)\/.*$/, '$1')
-						)
-					)
-				);
-				glob.sync([_root + '/' + path.normalize(input)], { fs: vfs })
-				    .forEach(
-					    file => {
-						    !files[RootAlias + file.substr(_root.length)]
-						    && fileDependencies.push(path.normalize(file));
-						
-						    files[RootAlias + file.substr(_root.length)] = true
-					    }
-				    )
-			}
-		)
-		code =
-			"\n" +
-			Object.keys(files).map(
-				( file, i ) => {
-					return '@import "' + file + '";';
-				}
-			).join('\n')
-			+ '\n';
-		//console.log(code)
-		//fs.writeFileSync(virtualFile, code);
-		utils.addVirtualFile(vfs, virtualFile, code);
-		cb && cb(null, virtualFile, code);
-	},
-	/**
-	 * Create a compilable virtual file
-	 * @param vfs
-	 * @param fileName
-	 * @param content
-	 */
-	addVirtualFile( vfs, fileName, content ) {
-		let oldContent;
-		const mapIsAvailable       = typeof Map !== 'undefined';
-		const readFileStorageIsMap = mapIsAvailable && vfs._readFileStorage.data instanceof Map;
-		try {
-			if ( readFileStorageIsMap ) { // enhanced-resolve@3.4.0 or greater
-				if ( vfs._readFileStorage.data.has(fileName) ) {
-					oldContent = vfs._readFileStorage.data.get(fileName);
-				}
-			}
-			else if ( fs._readFileStorage.data[fileName] ) { // enhanced-resolve@3.3.0 or lower
-				oldContent = vfs._readFileStorage.data[fileName];
-			}
-			oldContent = oldContent && oldContent[1];
-		} catch ( e ) {
-		
-		}
-		
-		if ( oldContent !== content ) {
-			vfs.purge(fileName);
-			VirtualModulePlugin.populateFilesystem(
-				{ fs: vfs, modulePath: fileName, contents: content, ctime: Date.now(), utime: Date.now() });
-		}
-	}
+                }
+            }
+        );
+        //console.log(filesToAdd)
+        code +=
+            "\n" +
+            Object.keys(files).map(
+                ( file, i ) => {
+                    let exportName = files[ file ] && files[ file ].split('/');
+                    
+                    if ( exportName && jsVarTest.test(exportName[ 0 ]) && !exportedModules[ exportName[ 0 ] ] ) {
+                        exportedModules[ exportName[ 0 ] ] = true;
+                        return '\nexport const ' + exportName[ 0 ] + ' = _exports.' + exportName[ 0 ] + ';';
+                    }
+                    //return '/* export const ' + exportName[0] + ' = _exports.' +
+                    // files[file] + '; */\n';
+                }
+            ).join('\n')
+            + '\n';
+        code += "export default _exports;";
+        //console.log(code)
+        //fs.writeFileSync(virtualFile, code);
+        fileDependencies.push(path.normalize(virtualFile));
+        utils.addVirtualFile(vfs, virtualFile, code);
+        cb && cb(null, virtualFile, code);
+    },
+    
+    
+    /**
+     * Create a virtual file accessible by webpack that map a given glob query like
+     * "App/somewhere/**.scss"
+     */
+    indexOfScss( vfs, roots, input, contextDependencies, fileDependencies,
+                 RootAlias,
+                 RootAliasRe, useHMR, cb ) {
+        let files           = {},
+            code            = "/* This is a virtual file generated by layer-pack */",
+            virtualFile     = path.normalize(
+                path.join(roots[ 0 ], 'MapOf.' + input.replace(/[^\w]/ig, '_')
+                                                      .replace(/\*/ig, '.W')
+                                                      .replace(/[^\w\.]/ig, '_') +
+                                      '.gen.scss')),
+            subPath         = "",
+            exportedModules = {};
+        
+        input   = input.replace(/\/$/, '').replace(RootAliasRe, '').substr(1); // rm App/
+        subPath = path.dirname(input.substr(0, input.indexOf('*')) + "a");
+        
+        roots.forEach(
+            ( _root, lvl ) => {
+                contextDependencies.push(
+                    path.dirname(
+                        path.normalize(
+                            _root + '/' + path.normalize(input).replace(/^([^\*]+)\/.*$/, '$1')
+                        )
+                    )
+                );
+                glob.sync([_root + '/' + path.normalize(input)], { fs: vfs })
+                    .forEach(
+                        file => {
+                            !files[ RootAlias + file.substr(_root.length) ]
+                            && fileDependencies.push(path.normalize(file));
+                        
+                            files[ RootAlias + file.substr(_root.length) ] = true
+                        }
+                    )
+            }
+        )
+        code =
+            "\n" +
+            Object.keys(files).map(
+                ( file, i ) => {
+                    return '@import "' + file + '";';
+                }
+            ).join('\n')
+            + '\n';
+        //console.log(code)
+        //fs.writeFileSync(virtualFile, code);
+        utils.addVirtualFile(vfs, virtualFile, code);
+        cb && cb(null, virtualFile, code);
+    },
+    /**
+     * Create a compilable virtual file
+     * @param vfs
+     * @param fileName
+     * @param content
+     */
+    addVirtualFile( vfs, fileName, content ) {
+        let oldContent;
+        const mapIsAvailable       = typeof Map !== 'undefined';
+        const readFileStorageIsMap = mapIsAvailable && vfs._readFileStorage.data instanceof Map;
+        try {
+            if ( readFileStorageIsMap ) { // enhanced-resolve@3.4.0 or greater
+                if ( vfs._readFileStorage.data.has(fileName) ) {
+                    oldContent = vfs._readFileStorage.data.get(fileName);
+                }
+            }
+            else if ( fs._readFileStorage.data[ fileName ] ) { // enhanced-resolve@3.3.0 or lower
+                oldContent = vfs._readFileStorage.data[ fileName ];
+            }
+            oldContent = oldContent && oldContent[ 1 ];
+        } catch ( e ) {
+        
+        }
+        
+        if ( oldContent !== content ) {
+            vfs.purge(fileName);
+            VirtualModulePlugin.populateFilesystem(
+                {
+                    fs        : vfs,
+                    modulePath: fileName,
+                    contents  : content,
+                    ctime     : Date.now(),
+                    utime     : Date.now()
+                });
+        }
+    }
 };
 
 module.exports = utils;

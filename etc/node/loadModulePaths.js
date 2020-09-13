@@ -16,42 +16,43 @@ let Module         = require('module').Module,
     modPath        = [],
     allRoots       = [],
     baseDir        = false,
-    __initialPaths = [].concat(module.parent.paths),
+    rootModule     = module.parent,
+    __initialPaths = [].concat(rootModule.paths),
     __oldNMP       = Module._nodeModulePaths;
 
 
 Module._nodeModulePaths = function ( from ) {
-	let paths;
-	if (
-		from === baseDir
-		||
-		allRoots.find(path => (from.substr(0, path.length) === path))
-	) {
-		paths = [].concat(modPath).concat(__oldNMP(from)).filter(function ( el, i, arr ) {
-			return arr.indexOf(el) === i;
-		});
-		return paths;
-	}
-	else {
-		if ( !baseDir )
-			return [...__oldNMP(from), ...modPath];
-		return [path.join(from, 'node_modules'), path.resolve(from, '..'), ...modPath, ...__oldNMP(from)];
-	}
+    let paths;
+    if (
+        from === baseDir
+        ||
+        allRoots.find(path => ( from.substr(0, path.length) === path ))
+    ) {
+        paths = [].concat(modPath).concat(__oldNMP(from)).filter(function ( el, i, arr ) {
+            return arr.indexOf(el) === i;
+        });
+        return paths;
+    }
+    else {
+        if ( !baseDir )
+            return [...__oldNMP(from), ...modPath];
+        return [path.join(from, 'node_modules'), path.resolve(from, '..'), ...modPath, ...__oldNMP(from)];
+    }
 };
-module.exports          = {
-	loadPaths  : function ( { allModulePath, cDir }, dist ) {
-		
-		modPath = allModulePath.map(p => path.join(cDir, p));
-		baseDir = path.join(cDir, dist);
-		
-		//console.info("Using external modules from :", modPath, __initialPaths);
-		module.parent.paths.length = 0;
-		module.parent.paths.push(...modPath, ...__initialPaths);
-	},
-	loadWpPaths: function ( allModulePath ) {
-		modPath                    = allModulePath;
-		baseDir                    = false;
-		module.parent.paths.length = 0;
-		module.parent.paths.push(...modPath, ...__initialPaths);
-	}
+
+module.exports = {
+    loadPaths  : function ( { allModulePath, cDir }, dist ) {
+        
+        modPath = allModulePath.map(p => path.join(cDir, p));
+        baseDir = path.join(cDir, dist);
+        
+        module.parent.paths.length = 0;
+        module.parent.paths.push(...modPath, ...__initialPaths);
+    },
+    loadWpPaths: function ( allModulePath ) {
+        modPath                    = allModulePath;
+        baseDir                    = false;
+        module.parent.paths.length = 0;
+        module.parent.paths.push(...modPath, ...__initialPaths);
+    }
 };

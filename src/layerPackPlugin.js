@@ -17,6 +17,7 @@ const path            = require('path'),
       fs              = require('fs'),
       resolve         = require('resolve'),
       utils           = require("./utils"),
+      InjectPlugin    = require("webpack-inject-plugin").default,
       isBuiltinModule = require('is-builtin-module');
 
 module.exports = function ( cfg, opts ) {
@@ -112,99 +113,34 @@ module.exports = function ( cfg, opts ) {
                     }
                 }
             )
-    
-            // add es6 exporter fn
-            compiler.options.plugins.push(
-                new webpack.BannerPlugin({
-                                             banner: `
-											 /** layer-pack exporter fn **/
-function ___layerPackExport( _target, path, value ) {
-\t\tlet fPath  = path.split('/'),
-\t\t    target = _target, i, module;
-\t\t
-\t\ti = 0;
-\t\twhile ( i < fPath.length - 1 ) target = target[fPath[i]] = target[fPath[i]] || {}, i++;
-\t\t
-\t\tmodule = Object.keys(value).length === 1 && value.default || value;
-\t\t
-\t\tif ( !target[fPath[i]] ) {
-\t\t\ttarget[fPath[i]] = module;
-\t\t}
-\t\telse if ( !target[fPath[i]].__esModule ) {// if this is simple path obj write over
-\t\t\tObject.assign(module, target[fPath[i]]);
-\t\t\ttarget[fPath[i]] = module;
-\t\t}
-\t}
-											 `,
-                                             raw   : true
-                                         })
-            );
             
             // include node modules path allowing node executables to require external
             // modules
             if ( /^(async-)?node$/.test(buildTarget) && excludeExternals ) {
-                let buildToProjectPath = path.relative(compiler.options.output.path, opts.projectRoot);
                 compiler.options.plugins.push(
-                    new webpack.BannerPlugin({
-                                                 banner:
-                                                     `
-/** layer pack modules loader **/
-(function(){
-
-let Module         = require('module').Module,
-    path           = require('path'),
-    modPath        = [],
-    allRoots       = [],
-    baseDir        = false,
-    __initialPaths = [].concat(module.parent.paths),
-    __oldNMP       = Module._nodeModulePaths;
-
-
-Module._nodeModulePaths = function ( from ) {
-\tlet paths;
-\tif (
-\t\tfrom === baseDir
-\t\t||
-\t\tallRoots.find(path => (from.substr(0, path.length) === path))
-\t) {
-\t\tpaths = [].concat(modPath).concat(__oldNMP(from)).filter(function ( el, i, arr ) {
-\t\t\treturn arr.indexOf(el) === i;
-\t\t});
-\t\treturn paths;
-\t}
-\telse {
-\t\tif ( !baseDir )
-\t\t\treturn [...__oldNMP(from), ...modPath];
-\t\treturn [path.join(from, 'node_modules'), path.resolve(from, '..'), ...modPath, ...__oldNMP(from)];
-\t}
-};
-module.exports          = {
-\tloadPaths  : function ( { allModulePath, cDir }, dist ) {
-\t\t
-\t\tmodPath = allModulePath.map(p => path.join(cDir, p));
-\t\tbaseDir = path.join(cDir, dist);
-\t\t
-\t\tmodule.parent.paths.length = 0;
-\t\tmodule.parent.paths.push(...modPath, ...__initialPaths);
-\t}
-};
-})().loadPaths(
+                    new InjectPlugin(function () {
+                        return "" +
+                               (
+                                   is.string(compiler.options.devtool)
+                                   && compiler.options.devtool.includes("source-map")
+                                   ?
+                               "/** layer pack externals sourcemaps**/\n" +
+                               "require('source-map-support').install();\n"
+                                   : ""
+                               ) +
+                               "/** layer pack externals modules loader **/\n" +
+                               fs.readFileSync(path.join(__dirname, '../etc/node/loadModulePaths_inject.js')) +
+`(
     {
         allModulePath:${ JSON.stringify(opts.allModulePath.map(p => path.relative(opts.projectRoot, p))) },
-        cDir:__dirname + '/${ buildToProjectPath }'
+        cDir:"${ __dirname + '/' + path.relative(compiler.options.output.path, opts.projectRoot) }"
     },
     ${ JSON.stringify(path.relative(opts.projectRoot, compiler.options.output.path)) }
-);
-/** /wi externals **/
-` +                                                     (
-                                                         is.string(compiler.options.devtool)
-                                                         && compiler.options.devtool.includes("source-map")
-                                                         ? "require('source-map-support').install();\n"
-                                                         : "" ),
-                                                 raw   : true
-                                             })
+);`
+                    })
                 )
-            };
+            }
+            ;
             
             
             // add resolve paths
@@ -408,6 +344,12 @@ module.exports          = {
                                             allModId   : opts.allModId,
                                         }
                                     )
+                                );
+                
+                                utils.addVirtualFile(
+                                    compiler.inputFileSystem,
+                                    path.normalize(roots[ 0 ] + '/.___layerPackIndexUtils.js'),
+                                    fs.readFileSync(path.join(__dirname, '../etc/utils/indexUtils.js'))
                                 );
                 
                                 excludeExternals && nmf.plugin('factory', function ( factory ) {
