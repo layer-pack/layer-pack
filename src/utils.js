@@ -410,7 +410,7 @@ const utils = {
 		
 		input = input.replace(/[\(\)]/g, '');
 		
-		code += "let req, _exports = {}, walknSetExport=require('layer-pack/etc/utils/indexUtils.js').walknSetExport;";
+		code += "let req, _exports = {}, walknSetExport=___layerPackExport;";
 		// generate require.context code so wp will detect changes
 		roots.forEach(
 			( _root, lvl ) => {
