@@ -104,7 +104,7 @@ So you can share, version, extend & switch your webpack conf & boilerplate via n
 
 ## Alternative to
 
- - Lerna, bit, pnmp
+ - Lerna, pnmp, ...
 
 ## Contributors ?
 
