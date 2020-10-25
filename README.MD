@@ -101,6 +101,10 @@ So you can share, version, extend & switch your webpack conf & boilerplate via n
 - Allow compiling inheritable packages code separately (slice the build) 
 - Optims
 
+## Alternative to
+
+ - Lerna, bit, pnmp
+
 ## Contributors ?
 
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](#)
