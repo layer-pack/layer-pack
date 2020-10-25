@@ -99,6 +99,7 @@ So you can share, version, extend & switch your webpack conf & boilerplate via n
 ## Improvements / todo
 
 - Allow compiling inheritable packages code separately (slice the build) 
+- Babel plugin avoiding compilation / webpack
 - Optims
 
 ## Alternative to
