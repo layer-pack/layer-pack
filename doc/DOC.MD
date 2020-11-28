@@ -177,18 +177,18 @@ Default profile id is "default"
 
 ```bash
 # from the head project
-wi # use webpack params here
+lpack # use webpack params here
 # or
 lPack-dev-server
 
 # or using profiles
 
-wi :api # use webpack params here
+lpack :api # use webpack params here
 # or
 lPack-dev-server :anotherProfile
 
 
-wi :? # get available profiles
+lpack :? # get available profiles
 ```
 
 ## Requiring glob & file tree
