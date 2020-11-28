@@ -179,13 +179,13 @@ Default profile id is "default"
 # from the head project
 lpack # use webpack params here
 # or
-lPack-dev-server
+lpack-dev-server
 
 # or using profiles
 
 lpack :api # use webpack params here
 # or
-lPack-dev-server :anotherProfile
+lpack-dev-server :anotherProfile
 
 
 lpack :? # get available profiles
