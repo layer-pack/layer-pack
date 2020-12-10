@@ -29,6 +29,7 @@ This is solid beta; Feel free to test / feedback / make contribs<br/>
 - Switch between monorepo and npm dependencies structure
 - Test layers independently
 - Compile in 1 step, with the source map
+- Use multiple dev servers sharing the same code layers
 
 ### Make glob imports on inherited directories ( from local or inherited packages )
 
@@ -89,10 +90,10 @@ So you can share, version, extend & switch your webpack conf & boilerplate via n
 
 ## Draft doc [here](doc/DOC.MD)
 
-## Caveats / bugs ?
+## Caveats ?
 
 - Remember that devDependencies of dependencies are NOT installed so layers should only use (peer)Dependencies
-- Node builds hardwrite the node_modules directories locations in the build, that's said for node production builds it's simplier to pack most of the npm modules
+- Node builds hardwrite the (node_)modules directories locations in the build, that's said for node production builds it's simplier to pack most of the npm modules
 - Context based webpack requires are not processed by layer-pack, they have the normal webpack behavior
 
 ## Improvements / todo
