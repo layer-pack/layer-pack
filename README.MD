@@ -92,14 +92,14 @@ So you can share, version, extend & switch your webpack conf & boilerplate via n
 ## Caveats / bugs ?
 
 - Remember that devDependencies of dependencies are NOT installed so layers should only use (peer)Dependencies
-- inherit deal with the deps resolving order, even if layers are in the libPath folder. That's said, when compiling for node the relative paths to the externals libs directories are hard written
+- When compiling for node, the plugin keep the modules directories locations in the build, but for node production builds it's simplier to pack most of the npm modules
 - Context based webpack requires are not processed
-- This plugin probably need some optimisations
+- This plugin probably may need some optimisations
 
 ## Improvements / todo
 
 - Allow compiling inheritable packages code separately (slice the build) 
-- Babel plugin avoiding compilation / webpack
+- Pure Babel plugin to avoid compilation / webpack
 - Optims
 
 ## Alternative to
