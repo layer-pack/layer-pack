@@ -92,9 +92,8 @@ So you can share, version, extend & switch your webpack conf & boilerplate via n
 ## Caveats / bugs ?
 
 - Remember that devDependencies of dependencies are NOT installed so layers should only use (peer)Dependencies
-- When compiling for node, the plugin keep the modules directories locations in the build, but for node production builds it's simplier to pack most of the npm modules
-- Context based webpack requires are not processed
-- This plugin probably may need some optimisations
+- Node builds hardwrite the node_modules directories locations in the build, that's said for node production builds it's simplier to pack most of the npm modules
+- Context based webpack requires are not processed by layer-pack, they have the normal webpack behavior
 
 ## Improvements / todo
 
