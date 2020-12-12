@@ -35,9 +35,9 @@ const Module = require('module').Module,
 			return paths;
 		}
 		else {
-			if ( !baseDir )
+			//if ( !baseDir )
 				return [...__oldNMP(from), ...modPath];
-			return [path.join(from, 'node_modules'), path.resolve(from, '..'), ...modPath, ...__oldNMP(from)];
+			//return [path.join(from, 'node_modules'), path.resolve(from, '..'), ...modPath, ...__oldNMP(from)];
 		}
 	};
 	
