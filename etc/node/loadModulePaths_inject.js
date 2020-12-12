@@ -11,41 +11,41 @@
  *  @author : Nathanael Braun
  *  @contact : n8tz.js@gmail.com
  */
-( function () {
-    let Module         = require('module').Module,
-        path           = require('path'),
-        modPath        = [],
-        allRoots       = [],
-        baseDir        = false,
-        rootModule     = module,
-        __initialPaths = [].concat(rootModule.paths),
-        __oldNMP       = Module._nodeModulePaths;
-    
-    
-    Module._nodeModulePaths = function ( from ) {
-        let paths;
-        if (
-            from === baseDir
-            ||
-            allRoots.find(path => ( from.substr(0, path.length) === path ))
-        ) {
-            paths = [].concat(modPath).concat(__oldNMP(from)).filter(function ( el, i, arr ) {
-                return arr.indexOf(el) === i;
-            });
-            return paths;
-        }
-        else {
-            if ( !baseDir )
-                return [...__oldNMP(from), ...modPath];
-            return [path.join(from, 'node_modules'), path.resolve(from, '..'), ...modPath, ...__oldNMP(from)];
-        }
-    };
-    
-    return function loadPaths( { allModulePath, cDir }, dist ) {
-        modPath = allModulePath.map(p => path.join(cDir, p));
-        baseDir = path.join(cDir, dist);
-        
-        rootModule.paths.length = 0;
-        rootModule.paths.push(...modPath, ...__initialPaths);
-    }
-} )
+const Module = require('module').Module,
+      path   = require('path');
+(function () {
+	let modPath        = [],
+	    allRoots       = [],
+	    baseDir        = false,
+	    rootModule     = __non_webpack_require__.main,
+	    __initialPaths = [].concat(rootModule.paths),
+	    __oldNMP       = Module._nodeModulePaths;
+	
+	
+	Module._nodeModulePaths = function ( from ) {
+		let paths;
+		if (
+			from === baseDir
+			||
+			allRoots.find(path => (from.substr(0, path.length) === path))
+		) {
+			paths = [].concat(modPath).concat(__oldNMP(from)).filter(function ( el, i, arr ) {
+				return arr.indexOf(el) === i;
+			});
+			return paths;
+		}
+		else {
+			if ( !baseDir )
+				return [...__oldNMP(from), ...modPath];
+			return [path.join(from, 'node_modules'), path.resolve(from, '..'), ...modPath, ...__oldNMP(from)];
+		}
+	};
+	
+	return function loadPaths( { allModulePath, cDir }, dist ) {
+		modPath = allModulePath.map(p => path.join(cDir, p));
+		baseDir = path.join(cDir, dist);
+		
+		rootModule.paths.length = 0;
+		rootModule.paths.push(...modPath, ...__initialPaths);
+	}
+})
