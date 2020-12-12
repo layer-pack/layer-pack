@@ -132,10 +132,10 @@ module.exports = function ( cfg, opts ) {
 							fs.readFileSync(path.join(__dirname, '../etc/node/loadModulePaths_inject.js')) +
 							`()(
     {
-        allModulePath:${JSON.stringify(opts.allModulePath.map(p => path.normalize(path.relative(opts.projectRoot, p))))},
-        cDir:path.join(__non_webpack_require__.main.path,${JSON.stringify(path.normalize(path.relative(compiler.options.output.path, opts.projectRoot)))})
+        allModulePath:${JSON.stringify(opts.allModulePath.map(p => path.normalize(path.relative(opts.projectRoot, p)).replace(/\\/g, '/')))},
+        cDir:path.join(__non_webpack_require__.main.path,${JSON.stringify(path.normalize(path.relative(compiler.options.output.path, opts.projectRoot)).replace(/\\/g, '/'))})
     },
-    ${JSON.stringify(path.relative(opts.projectRoot, compiler.options.output.path))}
+    ${JSON.stringify(path.relative(opts.projectRoot, compiler.options.output.path).replace(/\\/g, '/'))}
 );`
 					})
 				)
@@ -327,23 +327,24 @@ module.exports = function ( cfg, opts ) {
 				
 				                utils.addVirtualFile(
 					                compiler.inputFileSystem,
-					                path.normalize(roots[0] + '/.buildInfos.json'),
-					                JSON.stringify(
-						                {
-							                project    : {
-								                name       : projectPkg.name,
-								                description: projectPkg.description,
-								                author     : projectPkg.author,
-								                version    : projectPkg.version
-							                },
-							                buildDate  : startBuildTm,
-							                profile    : currentProfile,
-							                projectRoot: opts.projectRoot,
-							                vars       : opts.vars,
-							                allCfg     : opts.allCfg,
-							                allModId   : opts.allModId,
-						                }
-					                )
+					                path.normalize(roots[0] + '/.buildInfos.json.js'),
+					                `
+module.exports=
+            {
+                project    : {
+	                name       : ${JSON.stringify(projectPkg.name)},
+	                description: ${JSON.stringify(projectPkg.description)},
+	                author     : ${JSON.stringify(projectPkg.author)},
+	                version    : ${JSON.stringify(projectPkg.version)}
+                },
+                buildDate  : ${startBuildTm},
+                profile    : ${JSON.stringify(currentProfile)},
+                projectRoot: require("path").join(__non_webpack_require__.main.path,${JSON.stringify(path.normalize(path.relative(compiler.options.output.path, opts.projectRoot)).replace(/\\/g, '/'))}),
+                vars       : ${JSON.stringify(opts.vars)},
+                allCfg     : ${JSON.stringify(opts.allCfg)},
+                allModId   : ${JSON.stringify(opts.allModId)}
+            };
+						                `
 				                );
 				
 				                utils.addVirtualFile(
