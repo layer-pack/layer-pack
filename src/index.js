@@ -105,8 +105,10 @@ module.exports = {
 	 * @returns {{test: (function(*): boolean)}}
 	 */
 	isFileExcluded( profile = process.env.__LPACK_PROFILE__ || 'default' ) {
-		let allRoots = this.getConfig(profile).allRoots;
-		return { test: ( path ) => !allRoots.find(r => path.startsWith(r)) }
+		let allRoots    = this.getConfig(profile).allRoots,
+		    isExcluded  = ( path ) => !allRoots.find(r => path.startsWith(r));
+		isExcluded.test = isExcluded;
+		return isExcluded;
 	},
 	/**
 	 * Return the root directory of the head package

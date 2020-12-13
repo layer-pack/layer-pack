@@ -12,14 +12,15 @@
  *  @contact : n8tz.js@gmail.com
  */
 
-const path            = require('path'),
-      is              = require('is'),
-      fs              = require('fs'),
-      resolve         = require('resolve'),
-      utils           = require("./utils"),
-      InjectPlugin    = require("webpack-inject-plugin").default,
-      ENTRY_ORDER     = require("webpack-inject-plugin").ENTRY_ORDER,
-      isBuiltinModule = require('is-builtin-module');
+const path                 = require('path'),
+      is                   = require('is'),
+      fs                   = require('fs'),
+      resolve              = require('resolve'),
+      utils                = require("./utils"),
+      InjectPlugin         = require("webpack-inject-plugin").default,
+      ENTRY_ORDER          = require("webpack-inject-plugin").ENTRY_ORDER,
+      isBuiltinModule      = require('is-builtin-module'),
+      VirtualModulesPlugin = require('webpack-virtual-modules');
 
 module.exports = function ( cfg, opts ) {
 	let plugin;
@@ -35,7 +36,8 @@ module.exports = function ( cfg, opts ) {
 	    excludeExternals = opts.vars.externals,
 	    constDef         = opts.vars.DefinePluginCfg || {},
 	    currentProfile   = process.env.__LPACK_PROFILE__ || 'default',
-	    externalRE       = is.string(opts.vars.externals) && new RegExp(opts.vars.externals);
+	    externalRE       = is.string(opts.vars.externals) && new RegExp(opts.vars.externals),
+	    vMod             = new VirtualModulesPlugin();
 	
 	return plugin = {
 		/**
@@ -69,6 +71,7 @@ module.exports = function ( cfg, opts ) {
 			    startBuildTm        = Date.now();
 			
 			// Add some lPack build vars...
+			compiler.options.plugins.push(vMod);
 			compiler.options.plugins.push(
 				new webpack.DefinePlugin(
 					{
@@ -120,25 +123,25 @@ module.exports = function ( cfg, opts ) {
 			if ( /^(async-)?node$/.test(buildTarget) && excludeExternals ) {
 				compiler.options.plugins.push(
 					new InjectPlugin(function () {
-						return "" +
-							(
-								is.string(compiler.options.devtool)
-								&& compiler.options.devtool.includes("source-map")
-								?
-								"/** layer pack externals sourcemaps**/\n" +
-									"require('source-map-support').install();\n"
-								: ""
-							) +
-							"/** layer pack externals modules loader **/\n" +
-							fs.readFileSync(path.join(__dirname, '../etc/node/loadModulePaths_inject.js')) +
-							`()(
+						                 return "" +
+							                 (
+								                 is.string(compiler.options.devtool)
+								                 && compiler.options.devtool.includes("source-map")
+								                 ?
+								                 "/** layer pack externals sourcemaps**/\n" +
+									                 "require('source-map-support').install();\n"
+								                 : ""
+							                 ) +
+							                 "/** layer pack externals modules loader **/\n" +
+							                 fs.readFileSync(path.join(__dirname, '../etc/node/loadModulePaths_inject.js')) +
+							                 `()(
     {
         allModulePath:${JSON.stringify(opts.allModulePath.map(p => path.normalize(path.relative(opts.projectRoot, p)).replace(/\\/g, '/')))},
         cDir:path.join(__non_webpack_require__.main.path,${JSON.stringify(path.normalize(path.relative(compiler.options.output.path, opts.projectRoot)).replace(/\\/g, '/'))})
     },
     ${JSON.stringify(path.relative(opts.projectRoot, compiler.options.output.path).replace(/\\/g, '/'))}
 );`
-					},
+					                 },
 					                 ENTRY_ORDER.First)
 				)
 			}
@@ -201,6 +204,7 @@ module.exports = function ( cfg, opts ) {
 					return (/\.s?css$/.test(requireOrigin)
 					        ? utils.indexOfScss
 					        : utils.indexOf)(
+						vMod,
 						compiler.inputFileSystem,
 						roots,
 						reqPath,
@@ -324,13 +328,13 @@ module.exports = function ( cfg, opts ) {
 			};
 			
 			// wp hook
-			compiler.plugin("normal-module-factory",
-			                function ( nmf ) {
+			compiler.hooks.normalModuleFactory.tap("layer-pack",
+			                                       function ( nmf ) {
 				
-				                utils.addVirtualFile(
-					                compiler.inputFileSystem,
-					                path.normalize(roots[0] + '/.buildInfos.json.js'),
-					                `
+				                                       utils.addVirtualFile(
+					                                       vMod,
+					                                       path.normalize(roots[0] + '/.buildInfos.json.js'),
+					                                       `
 module.exports=
             {
                 project    : {
@@ -349,80 +353,127 @@ module.exports=
                 allModId   : ${JSON.stringify(opts.allModId)}
             };
 						                `
-				                );
+				                                       );
 				
-				                utils.addVirtualFile(
-					                compiler.inputFileSystem,
-					                path.normalize(roots[0] + '/.___layerPackIndexUtils.js'),
-					                fs.readFileSync(path.join(__dirname, '../etc/utils/indexUtils.js'))
-				                );
+				                                       utils.addVirtualFile(
+					                                       vMod,
+					                                       path.normalize(roots[0] + '/.___layerPackIndexUtils.js'),
+					                                       fs.readFileSync(path.join(__dirname, '../etc/utils/indexUtils.js'))
+				                                       );
 				
-				                excludeExternals && nmf.plugin('factory', function ( factory ) {
-					                return function ( data, callback ) {
-						                let requireOrigin = data.contextInfo.issuer,
-						                    context       = data.context || path.dirname(requireOrigin),
-						                    request       = data.request,
-						                    mkExt         = isBuiltinModule(data.request),
-						                    isInRoot;
-						
-						                if ( data.request === "$super" || !data.contextInfo.issuer )// entry points ?
-							                return factory(data, callback);
-						
-						                if ( !mkExt ) {
-							                //console.log(data, context, roots)
-							                // is it external ? @todo
-							                mkExt = !(
-								                RootAliasRe.test(data.request) ||
-								                context &&
-								                /^\./.test(data.request)
-								                ? (isInRoot = roots.find(r => path.resolve(context + '/' + data.request).startsWith(r)))
-								                : (isInRoot = roots.find(r =>
-									                                         path.resolve(data.request).startsWith(r))));
-						                }
-						                if ( mkExt &&
-							                (
-								                !externalRE
-								                || externalRE.test(request)
-							                )
-							                &&
-							                !(!isInRoot && /^\./.test(data.request)) // so
-						                                                             // it's
-						                                                             // relative
-						                                                             // to
-						                                                             // an
-						                                                             // internal
-						                ) {
-							                //console.warn("ext!", mkExt, request);
-							                return callback(null, new ExternalModule(
-								                request,
-								                opts.vars.externalMode || "commonjs"
-							                ));
+				                                       if ( excludeExternals )
+					                                       if ( nmf.hooks.resolve )// wp5
+					                                       {
+						                                       nmf.hooks.resolve.tap('layer-pack', function ( data, callback ) {
+							                                       let requireOrigin = data.contextInfo.issuer,
+							                                           context       = data.context || path.dirname(requireOrigin),
+							                                           request       = data.request,
+							                                           mkExt         = isBuiltinModule(data.request),
+							                                           isInRoot;
 							
-						                }
-						                else {
-							                //if ( mkExt && !(!isInRoot &&
-							                // /^\./.test(data.request)) )
-							                // console.warn(data.request)
-							                return factory(data, callback);
-						                }
-						
-					                };
-				                });
-				                //nmf.plugin("rebuildModule", ( req, cb ) => {
-				                //    console.log("rebuildModule", req.request);
-				                //    cb();
-				                //});
-			                }
+							                                       if ( data.request === "$super" || !data.contextInfo.issuer )// entry points ?
+								                                       return;
+							
+							                                       if ( !mkExt ) {
+								                                       // is it external ? @todo
+								                                       mkExt = !(
+									                                       RootAliasRe.test(data.request) ||
+									                                       context &&
+									                                       /^\./.test(data.request)
+									                                       ? (isInRoot = roots.find(r => path.resolve(context + '/' + data.request).startsWith(r)))
+									                                       : (isInRoot = roots.find(r =>
+										                                                                path.resolve(data.request).startsWith(r))));
+							                                       }
+							                                       if ( mkExt &&
+								                                       (
+									                                       !externalRE
+									                                       || externalRE.test(request)
+								                                       )
+								                                       &&
+								                                       !(!isInRoot && /^\./.test(data.request)) // so
+							                                                                                    // it's
+							                                                                                    // relative
+							                                                                                    // to
+							                                                                                    // an
+							                                                                                    // internal
+							                                       ) {
+								                                       return new ExternalModule(
+									                                       request,
+									                                       opts.vars.externalMode || "commonjs"
+								                                       );
+								
+							                                       }
+							                                       else {
+								                                       return;
+							                                       }
+							
+						                                       });
+					                                       }
+					                                       else {
+						                                       nmf.plugin('factory', function ( factory ) {
+							                                       return function ( data, callback ) {
+								                                       let requireOrigin = data.contextInfo.issuer,
+								                                           context       = data.context || path.dirname(requireOrigin),
+								                                           request       = data.request,
+								                                           mkExt         = isBuiltinModule(data.request),
+								                                           isInRoot;
+								
+								                                       if ( data.request === "$super" || !data.contextInfo.issuer )// entry points ?
+									                                       return factory(data, callback);
+								
+								                                       if ( !mkExt ) {
+									                                       //console.log(data, context, roots)
+									                                       // is it external ? @todo
+									                                       mkExt = !(
+										                                       RootAliasRe.test(data.request) ||
+										                                       context &&
+										                                       /^\./.test(data.request)
+										                                       ? (isInRoot = roots.find(r => path.resolve(context + '/' + data.request).startsWith(r)))
+										                                       : (isInRoot = roots.find(r =>
+											                                                                path.resolve(data.request).startsWith(r))));
+								                                       }
+								                                       if ( mkExt &&
+									                                       (
+										                                       !externalRE
+										                                       || externalRE.test(request)
+									                                       )
+									                                       &&
+									                                       !(!isInRoot && /^\./.test(data.request)) // so
+								                                                                                    // it's
+								                                                                                    // relative
+								                                                                                    // to
+								                                                                                    // an
+								                                                                                    // internal
+								                                       ) {
+									                                       return callback(null, new ExternalModule(
+										                                       request,
+										                                       opts.vars.externalMode || "commonjs"
+									                                       ));
+									
+								                                       }
+								                                       else {
+									                                       return factory(data, callback);
+								                                       }
+								
+							                                       };
+						                                       });
+					                                       }
+				                                       //nmf.plugin("rebuildModule", ( req, cb ) => {
+				                                       //    console.log("rebuildModule", req.request);
+				                                       //    cb();
+				                                       //});
+			                                       }
 			);
 			
 			// do update the globs v files
 			
-			compiler.plugin('watchRun', ( compilation ) => {
+			compiler.hooks.watchRun.tap('layer-pack', ( compilation ) => {
 				//console.log(activeGlobs)
 				// todo : the glob indexes files are auto deleted
 				for ( let reqPath in activeGlobs.jsx )
 					if ( activeGlobs.jsx.hasOwnProperty(reqPath) ) {
 						utils.indexOf(
+							vMod,
 							compiler.inputFileSystem,
 							roots,
 							reqPath,
@@ -438,6 +489,7 @@ module.exports=
 				for ( let reqPath in activeGlobs.scss )
 					if ( activeGlobs.scss.hasOwnProperty(reqPath) ) {
 						utils.indexOfScss(
+							vMod,
 							compiler.inputFileSystem,
 							roots,
 							reqPath,
@@ -451,7 +503,7 @@ module.exports=
 					}
 			})
 			// should deal with hot reload watched files & dirs
-			compiler.plugin('after-emit', ( compilation, cb ) => {
+			compiler.hooks.afterEmit.tapAsync('layer-pack', ( compilation, cb ) => {
 				compilation.fileDependencies    = compilation.fileDependencies || [];
 				compilation.contextDependencies = compilation.contextDependencies || [];
 				if ( compilation.fileDependencies.concat ) {
