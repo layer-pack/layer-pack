@@ -23,21 +23,20 @@ const Module = require('module').Module,
 	
 	
 	Module._nodeModulePaths = function ( from ) {
-		let paths;
-		if (
+		let paths, rootMod;
+		if (// if require is emited from the build ( doesn't seems to happen anymore ? )
 			from === baseDir
-			||
-			allRoots.find(path => (from.substr(0, path.length) === path))
 		) {
-			paths = [].concat(modPath).concat(__oldNMP(from)).filter(function ( el, i, arr ) {
-				return arr.indexOf(el) === i;
-			});
+			paths = [].concat(modPath).concat(__oldNMP(from));
 			return paths;
 		}
 		else {
-			//if ( !baseDir )
-				return [...__oldNMP(from), ...modPath];
-			//return [path.join(from, 'node_modules'), path.resolve(from, '..'), ...modPath, ...__oldNMP(from)];
+			paths   = __oldNMP(from).filter(
+				dir => modPath.find(path => (dir.startsWith(path)))
+			);
+			rootMod = paths.pop();// keep inherited order if not sub node_modules
+			paths.push(...modPath, ...__oldNMP(path.resolve(path.join(rootMod, '..'))));// add normal parents node_modules from head
+			return paths;
 		}
 	};
 	

@@ -18,6 +18,7 @@ const path            = require('path'),
       resolve         = require('resolve'),
       utils           = require("./utils"),
       InjectPlugin    = require("webpack-inject-plugin").default,
+      ENTRY_ORDER     = require("webpack-inject-plugin").ENTRY_ORDER,
       isBuiltinModule = require('is-builtin-module');
 
 module.exports = function ( cfg, opts ) {
@@ -137,7 +138,8 @@ module.exports = function ( cfg, opts ) {
     },
     ${JSON.stringify(path.relative(opts.projectRoot, compiler.options.output.path).replace(/\\/g, '/'))}
 );`
-					})
+					},
+					                 ENTRY_ORDER.First)
 				)
 			}
 			;
@@ -339,7 +341,9 @@ module.exports=
                 },
                 buildDate  : ${startBuildTm},
                 profile    : ${JSON.stringify(currentProfile)},
+                ${/^(async-)?node$/.test(buildTarget) ? `
                 projectRoot: require("path").join(__non_webpack_require__.main.path,${JSON.stringify(path.normalize(path.relative(compiler.options.output.path, opts.projectRoot)).replace(/\\/g, '/'))}),
+                ` : ""}
                 vars       : ${JSON.stringify(opts.vars)},
                 allCfg     : ${JSON.stringify(opts.allCfg)},
                 allModId   : ${JSON.stringify(opts.allModId)}
@@ -481,4 +485,4 @@ module.exports=
 		}
 	}
 }
-
+		
