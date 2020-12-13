@@ -332,7 +332,7 @@ module.exports = function ( cfg, opts ) {
 			                                       function ( nmf ) {
 				
 				                                       utils.addVirtualFile(
-					                                       vMod,
+					                                       vMod, compiler.inputFileSystem,
 					                                       path.normalize(roots[0] + '/.buildInfos.json.js'),
 					                                       `
 module.exports=
@@ -356,7 +356,7 @@ module.exports=
 				                                       );
 				
 				                                       utils.addVirtualFile(
-					                                       vMod,
+					                                       vMod, compiler.inputFileSystem,
 					                                       path.normalize(roots[0] + '/.___layerPackIndexUtils.js'),
 					                                       fs.readFileSync(path.join(__dirname, '../etc/utils/indexUtils.js'))
 				                                       );

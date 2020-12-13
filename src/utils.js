@@ -84,6 +84,18 @@ function jsonTplApply( value, data ) {
 	return value;
 }
 
+function getReadDirBackend( fileSystem ) {
+	if ( fileSystem._readdirBackend ) {
+		return fileSystem._readdirBackend;
+	}
+	else if ( fileSystem._readdirStorage ) {
+		return fileSystem._readdirStorage;
+	}
+	else {
+		throw new Error("Couldn't find a readDirStorage from Webpack Internals");
+	}
+}
+
 const utils = {
 	/**
 	 * Return all configs for the available profiles
@@ -480,7 +492,7 @@ const utils = {
 		//console.log(code)
 		//fs.writeFileSync(virtualFile, code);
 		fileDependencies.push(path.normalize(virtualFile));
-		utils.addVirtualFile(vMod, virtualFile, code);
+		utils.addVirtualFile(vMod, vfs, virtualFile, code);
 		cb && cb(null, virtualFile, code);
 	},
 	
@@ -535,7 +547,7 @@ const utils = {
 			+ '\n';
 		//console.log(code)
 		//fs.writeFileSync(virtualFile, code);
-		utils.addVirtualFile(vMod, virtualFile, code);
+		utils.addVirtualFile(vMod, vfs, virtualFile, code);
 		cb && cb(null, virtualFile, code);
 	},
 	/**
@@ -544,37 +556,15 @@ const utils = {
 	 * @param fileName
 	 * @param content
 	 */
-	addVirtualFile( vMod, fileName, content ) {
+	addVirtualFile( vMod, vfs, fileName, content ) {
 		let oldContent;
-		vMod.writeModule(fileName, content)
-		//const mapIsAvailable = typeof Map !== 'undefined';
-		//console.log('utils::addVirtualFile:551: ', vfs);
-		//const readFileStorageIsMap = mapIsAvailable && vfs._readFileStorage.data instanceof Map;
-		//try {
-		//	if ( readFileStorageIsMap ) { // enhanced-resolve@3.4.0 or greater
-		//		if ( vfs._readFileStorage.data.has(fileName) ) {
-		//			oldContent = vfs._readFileStorage.data.get(fileName);
-		//		}
-		//	}
-		//	else if ( fs._readFileStorage.data[fileName] ) { // enhanced-resolve@3.3.0 or lower
-		//		oldContent = vfs._readFileStorage.data[fileName];
-		//	}
-		//	oldContent = oldContent && oldContent[1];
-		//} catch ( e ) {
-		//
-		//}
-		//
-		//if ( oldContent !== content ) {
-		//	vfs.purge(fileName);
-		//	VirtualModulePlugin.populateFilesystem(
-		//		{
-		//			fs        : vfs,
-		//			modulePath: fileName,
-		//			contents  : content,
-		//			ctime     : Date.now(),
-		//			utime     : Date.now()
-		//		});
-		//}
+		
+		oldContent = vfs._virtualFiles && vfs._virtualFiles[fileName] && (vfs._virtualFiles[fileName].contents + '');
+		
+		if ( oldContent !== content + '' ) {
+			vfs.purge(fileName);
+			vMod.writeModule(fileName, content)
+		}
 	}
 };
 
