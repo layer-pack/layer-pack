@@ -351,18 +351,18 @@ module.exports = function ( cfg, opts ) {
 						RootAliasRe,
 						useHotReload,
 						function ( e, filePath, content ) {
-							console.warn("glob", filePath, data)
+							//console.warn("glob", filePath, data)
 							let req = {
 								...data,
-								fullySpecified               : true,
-								_ResolverCachePluginCacheMiss: false,
-								cacheable                    : false,
-								relativePath                 : undefined,
-								path                         : filePath,
-								resource                     : filePath,
-								module                       : false,
-								file                         : true,
-								request                      : filePath,
+								//fullySpecified               : true,
+								//_ResolverCachePluginCacheMiss: false,
+								//cacheable                    : false,
+								//relativePath                 : undefined,
+								path    : filePath,
+								resource: filePath,
+								//module                       : false,
+								//file                         : true,
+								//request                      : filePath,
 							};
 							cb(e, req, content);
 						}
@@ -634,13 +634,27 @@ module.exports=
 				                                       //});
 			                                       }
 			);
-			
-			// do update the globs v files
-			
-			compiler.hooks.watchRun.tapAsync('layer-pack', ( compiler, callback ) => {
-				console.log("modifiedFiles", compiler.modifiedFiles, activeGlobs)
-				//debugger
-				// todo : the glob indexes files are auto deleted in wp4
+			// do update the globs indexes files
+			compiler.hooks.compilation.tap('layer-pack', ( compilation, params ) => {
+				let toBeRebuilt = [];
+				
+				// force rebuild in wp5
+				compilation.buildQueue &&
+				compilation.buildQueue.hooks &&
+				compilation.buildQueue.hooks.beforeAdd
+				           .tapAsync('layer-pack',
+				                     ( module, cb ) => {
+					                     if ( toBeRebuilt.includes(module.resource) ) {
+						                     //console.info("Index was Updated ", module.resource, module._forceBuild)
+						                     toBeRebuilt.splice(toBeRebuilt.indexOf(module.resource), 1);
+						                     module._forceBuild = true;
+					                     }
+					                     cb()
+				                     }
+				           );
+				
+				// the glob indexes files are auto deleted in wp4 & not rebuilt in wp5
+				// if they were changed they will be rebuilt
 				for ( let reqPath in activeGlobs.jsx )
 					if ( activeGlobs.jsx.hasOwnProperty(reqPath) ) {
 						utils.indexOf(
@@ -654,11 +668,9 @@ module.exports=
 							RootAliasRe,
 							useHotReload,
 							function ( e, filePath, content, changed ) {
-								//console.warn(':::653: ', reqPath, changed);
-								changed && compiler.hooks.compile.call(filePath, Date.now())
-								changed && compiler.watchFileSystem.watcher.fileWatchers.get(filePath)._events.change(Date.now());
-								//if ( changed )
-								//	debugger
+								if ( changed ) {
+									toBeRebuilt.push(filePath)
+								}
 							}
 						)
 					}
@@ -675,19 +687,13 @@ module.exports=
 							RootAlias,
 							RootAliasRe,
 							useHotReload,
-							function ( e, filePath, content ) {
+							function ( e, filePath, content, changed ) {
+								if ( changed ) {
+									toBeRebuilt.push(filePath)
+								}
 							}
 						)
 					}
-				//this._watcher = watcher.compiler || watcher;
-				//const virtualFiles = compiler.inputFileSystem._virtualFiles;
-				//const fts = compiler.fileTimestamps;
-				//if (virtualFiles && fts && typeof fts.set === 'function') {
-				//	Object.keys(virtualFiles).forEach((file) => {
-				//		fts.set(file, +virtualFiles[file].stats.mtime);
-				//	});
-				//}
-				callback();
 			})
 			// should deal with hot reload watched files & dirs
 			compiler.hooks.afterEmit.tapAsync('layer-pack', ( compilation, cb ) => {
