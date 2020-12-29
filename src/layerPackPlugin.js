@@ -1,15 +1,8 @@
 /*
- * The MIT License (MIT)
- * Copyright (c) 2019. Wise Wild Web
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+ * Copyright (c) 2020.  Ernst & Young
+ * @author : Nathanael.Braun@fr.ey.com
  *
- * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- *
- *  @author : Nathanael Braun
- *  @contact : n8tz.js@gmail.com
  */
 
 const path                 = require('path'),
@@ -27,8 +20,11 @@ module.exports = function ( cfg, opts ) {
 	
 	// find da good webpack ( the one where the wp cfg is set )
 	let wp               = resolve.sync('webpack', { basedir: path.dirname(opts.allWebpackCfg[0] || ".") }),
+	    wpEr             = resolve.sync('enhanced-resolve', { basedir: path.dirname(opts.allWebpackCfg[0] || ".") }),
 	    webpack          = require(wp),
 	    ExternalModule   = require(path.join(path.dirname(wp), 'ExternalModule')),
+	    getPaths         = require(path.join(path.dirname(wpEr), 'getPaths')),
+	    forEachBail      = require(path.join(path.dirname(wpEr), 'forEachBail')),
 	
 	    projectPkg       = fs.existsSync(path.normalize(opts.allModuleRoots[0] + "/package.json")) &&
 		    JSON.parse(fs.readFileSync(path.normalize(opts.allModuleRoots[0] + "/package.json"))),
@@ -61,6 +57,7 @@ module.exports = function ( cfg, opts ) {
 			    plugin              = this,
 			    RootAlias           = opts.vars.rootAlias || "App",
 			    RootAliasRe         = new RegExp("^" + RootAlias, ''),
+			    WPInternalRequestRe = new RegExp("^\-?\!\!?", ''),
 			    roots               = opts.allRoots,
 			    contextDependencies = [],
 			    fileDependencies    = [],
@@ -71,6 +68,7 @@ module.exports = function ( cfg, opts ) {
 			    startBuildTm        = Date.now();
 			
 			// Add some lPack build vars...
+			//vMod.apply(compiler);
 			compiler.options.plugins.push(vMod);
 			compiler.options.plugins.push(
 				new webpack.DefinePlugin(
@@ -83,17 +81,17 @@ module.exports = function ( cfg, opts ) {
 			// add the resolver plugin
 			compiler.options.resolve         = compiler.options.resolve || {};
 			compiler.options.resolve.plugins = compiler.options.resolve.plugins || [];
+			
 			compiler.options.resolve.plugins.push(
 				{
 					target: "resolve",
-					source: "after-described-resolve",
+					source: "parsed-resolve",
 					apply( resolver ) {
 						const target = resolver.ensureHook(this.target);
-						
 						resolver
 							.getHook(this.source)
-							.tapAsync("lPackPlugin_" + currentProfile, ( request, resolveContext, callback ) => {
-								//console.log("Resolve : ", request)
+							.tapAsync("layer-pack", ( request, resolveContext, callback ) => {
+								//console.log('after-described-resolve', request);
 								lPackResolve(
 									request,
 									( err, req, data ) => {
@@ -117,6 +115,143 @@ module.exports = function ( cfg, opts ) {
 					}
 				}
 			)
+			compiler.options.resolve.plugins.push(
+				{
+					target: "module",
+					source: "raw-module",
+					apply( resolver ) {
+						const target = resolver.ensureHook(this.target);
+						resolver
+							.getHook(this.source)
+							.tapAsync(
+								'layer-pack',
+								( request, resolveContext, callback ) => {// based on enhanced resolve ModulesInHierachicDirectoriesPlugin
+									const fs    = resolver.fileSystem;
+									const addrs = getPaths(request.path)
+										.paths.map(p => {
+											return resolver.join(p, "node_modules")
+										})
+										.filter(
+											addr => opts.allModulePath.find(r => addr.startsWith(r))
+										);
+									addrs.pop();//origin mods root
+									addrs.push(
+										...opts.allModulePath, // replace it with those from layers
+										...getPaths(roots[0]) // add mods from head layer parents dir
+											.paths.map(p => {
+												return resolver.join(p, "node_modules")
+											})
+									)
+									forEachBail(
+										addrs,
+										( addr, callback ) => {
+											fs.stat(addr, ( err, stat ) => {
+												//console.log(':::187: ', addr);
+												if ( !err && stat && stat.isDirectory() ) {
+													const obj = {
+														...request,
+														path   : addr,
+														request: "./" + request.request,
+														module : false
+													};
+													
+													const message = "looking for modules in " + addr;
+													return resolver.doResolve(
+														target,
+														obj,
+														message,
+														resolveContext,
+														callback
+													);
+												}
+												if ( resolveContext.log )
+													resolveContext.log(
+														addr + " doesn't exist or is not a directory"
+													);
+												if ( resolveContext.missingDependencies )
+													resolveContext.missingDependencies.add(addr);
+												//console.log(':::not found: ', request.request);
+												return callback();
+											});
+										},
+										callback
+									);
+								}
+							)
+					}
+				}
+			)
+			compiler.options.resolveLoader         = compiler.options.resolveLoader || {};
+			compiler.options.resolveLoader.plugins = compiler.options.resolveLoader.plugins || [];
+			compiler.options.resolveLoader.plugins.push(
+				{
+					target: "module",
+					source: "raw-module",
+					apply( resolver ) {
+						const target = resolver.ensureHook(this.target);
+						resolver
+							.getHook(this.source)
+							.tapAsync(
+								'layer-pack',
+								( request, resolveContext, callback ) => {// based on enhanced resolve ModulesInHierachicDirectoriesPlugin
+									const fs    = resolver.fileSystem;
+									const addrs =
+										      getPaths(request.path)
+											      .paths.map(p => {
+											      return resolver.join(p, "node_modules")
+										      })
+											      .filter(
+												      addr => opts.allModulePath.find(r => addr.startsWith(r))
+											      );
+									addrs.push(path.normalize(opts.allWebpackRoot[0] + '/node_modules'));//origin
+									// @todo may need modules path starting from first parent with wp cfg to front layer
+									//addrs.push(
+									//	...opts.allModulePath, // replace it with those from layers
+									//	//...getPaths(roots[0]) // add mods from head layer parents dir
+									//	//	.paths.map(p => {
+									//	//		return resolver.join(p, "node_modules")
+									//	//	})
+									//)
+									//console.log(':::197: ', request.path, request.request, addrs, opts.allWebpackCfg);
+									forEachBail(
+										addrs,
+										( addr, callback ) => {
+											fs.stat(addr, ( err, stat ) => {
+												//console.log(':::187: ', addr);
+												if ( !err && stat && stat.isDirectory() ) {
+													const obj = {
+														...request,
+														path   : addr,
+														request: "./" + request.request,
+														module : false
+													};
+													
+													const message = "looking for modules in " + addr;
+													return resolver.doResolve(
+														target,
+														obj,
+														message,
+														resolveContext,
+														callback
+													);
+												}
+												if ( resolveContext.log )
+													resolveContext.log(
+														addr + " doesn't exist or is not a directory"
+													);
+												if ( resolveContext.missingDependencies )
+													resolveContext.missingDependencies.add(addr);
+												//console.log(':::not found: ', request.request);
+												return callback();
+											});
+										},
+										callback
+									);
+								}
+							)
+					}
+				}
+			)
 			
 			// include node modules path allowing node executables to require external
 			// modules
@@ -124,14 +259,6 @@ module.exports = function ( cfg, opts ) {
 				compiler.options.plugins.push(
 					new InjectPlugin(function () {
 						                 return "" +
-							                 (
-								                 is.string(compiler.options.devtool)
-								                 && compiler.options.devtool.includes("source-map")
-								                 ?
-								                 "/** layer pack externals sourcemaps**/\n" +
-									                 "require('source-map-support').install();\n"
-								                 : ""
-							                 ) +
 							                 "/** layer pack externals modules loader **/\n" +
 							                 fs.readFileSync(path.join(__dirname, '../etc/node/loadModulePaths_inject.js')) +
 							                 `()(
@@ -140,22 +267,25 @@ module.exports = function ( cfg, opts ) {
         cDir:path.join(__non_webpack_require__.main.path,${JSON.stringify(path.normalize(path.relative(compiler.options.output.path, opts.projectRoot)).replace(/\\/g, '/'))})
     },
     ${JSON.stringify(path.relative(opts.projectRoot, compiler.options.output.path).replace(/\\/g, '/'))}
-);`
+);` +
+							                 (
+								                 is.string(compiler.options.devtool)
+								                 && compiler.options.devtool.includes("source-map")
+								                 ?
+								                 "/** layer pack externals sourcemaps**/\n" +
+									                 "require('source-map-support').install();\n"
+								                 : ""
+							                 )
 					                 },
 					                 ENTRY_ORDER.First)
 				)
 			}
 			;
-			
-			
-			// add resolve paths
-			compiler.options.resolve = compiler.options.resolve || {};
-			
 			// requiered for $super resolving
 			compiler.options.resolve.cacheWithContext = true;
 			
-			compiler.options.resolve.modules = compiler.options.resolve.modules || [];
-			compiler.options.resolve.modules.unshift(...opts.allModulePath);
+			//compiler.options.resolve.modules = compiler.options.resolve.modules || [];
+			//compiler.options.resolve.modules.unshift("node_modules", ...opts.allModulePath);
 			compiler.options.resolveLoader         = compiler.options.resolveLoader || {};
 			compiler.options.resolveLoader.modules = compiler.options.resolveLoader.modules || [];
 			compiler.options.resolveLoader.modules.unshift(...opts.allModulePath);
@@ -165,7 +295,7 @@ module.exports = function ( cfg, opts ) {
 				availableExts.push(...compiler.options.resolve.extensions);
 			}
 			else availableExts = ["", ".webpack.js", ".web.js", ".js"];
-			availableExts = availableExts.filter(ext => ((ext != '.')));
+			availableExts = availableExts.filter(ext => ((ext !== '.')));
 			availableExts.push(...availableExts.filter(ext => ext).map(ext => ('/index' + ext)));
 			availableExts.unshift('');
 			
@@ -173,16 +303,23 @@ module.exports = function ( cfg, opts ) {
 			 * The main resolver / glob mngr
 			 */
 			function lPackResolve( data, cb, proxy ) {
-				let requireOrigin = data.context && data.context.issuer,
-				    context       = requireOrigin && path.dirname(requireOrigin),
-				    reqPath       = data.request || data.path,
-				    tmpPath;
+				let requireOrigin   = data.context && data.context.issuer,
+				    context         = requireOrigin && path.dirname(requireOrigin),// || data.path,
+				    reqPath         = data.request,
+				    tmpPath, suffix = "";
 				
 				// do not re resolve
 				if ( data.lPackOriginRequest ) {
 					return cb();
 				}
-				
+				reqPath = reqPath.replace(/\\/g, '/');
+				if ( /[\?\#][^\/\\]+$/.test(reqPath) ) {
+					let tmp = reqPath.match(/^(.*)([\?\#][^\/\\]+$)/);
+					suffix  = tmp[2];
+					reqPath = tmp[1];
+					
+				}
+				//!requireOrigin&&/svg/.test(reqPath)&&console.log('lPackResolve::lPackResolve:244: ',  reqPath);
 				data.lPackOriginRequest = reqPath;
 				
 				if ( context && /^\./.test(reqPath) && (tmpPath = roots.find(r => path.resolve(context + '/' + reqPath).startsWith(r))) ) {
@@ -190,7 +327,7 @@ module.exports = function ( cfg, opts ) {
 				}
 				
 				let isSuper = /^\$super$/.test(reqPath),
-				    isGlob  = reqPath.indexOf('*') != -1,
+				    isGlob  = reqPath.indexOf('*') !== -1,
 				    isRoot  = RootAliasRe.test(reqPath);
 				
 				// glob resolving...
@@ -214,15 +351,18 @@ module.exports = function ( cfg, opts ) {
 						RootAliasRe,
 						useHotReload,
 						function ( e, filePath, content ) {
-							//console.warn("glob", filePath)
+							console.warn("glob", filePath, data)
 							let req = {
 								...data,
-								relativePath: undefined,
-								path        : filePath,
-								resource    : filePath,
-								module      : false,
-								file        : true,
-								request     : filePath,
+								fullySpecified               : true,
+								_ResolverCachePluginCacheMiss: false,
+								cacheable                    : false,
+								relativePath                 : undefined,
+								path                         : filePath,
+								resource                     : filePath,
+								module                       : false,
+								file                         : true,
+								request                      : filePath,
 							};
 							cb(e, req, content);
 						}
@@ -279,12 +419,13 @@ module.exports = function ( cfg, opts ) {
 								              reqPath, requireOrigin);
 								return cb()
 							}
-							//console.log("find %s\t\t\t=> %s", reqPath, filePath);
+							///svg/.test(reqPath)&&console.log('lPackResolve::lPackResolve:244: ',reqPath,  filePath);
+							//suffix &&console.log("find %s\t\t\t=> %s", data);
 							let req = {
 								...data,
 								path        : filePath,
 								relativePath: undefined,
-								//request     : filePath,
+								request     : filePath + suffix,
 								resource    : filePath
 							};
 							cb(null, req);
@@ -297,14 +438,27 @@ module.exports = function ( cfg, opts ) {
 			
 			// sass resolver
 			this._sassImporter = function ( url, requireOrigin, cb, next ) {
-				let tmpPath;
-				if ( requireOrigin &&
-					/^\./.test(url) &&
-					(tmpPath = roots.find(r => path.resolve(path.dirname(requireOrigin) + '/' + url).startsWith(r))) ) {
-					
-					url = (RootAlias + path.resolve(path.dirname(requireOrigin) + '/' + url).substr(tmpPath.length)).replace(/\\/g, '/');
+				let suffix = "";
+				url        = url.replace(/\\/g, "/");
+				if ( requireOrigin ) {
+					let tmpPath = roots.find(r => path.resolve(path.dirname(requireOrigin) + '/' + url).startsWith(r));
+					if ( tmpPath && /^\.\//.test(url) ) {
+						url = (RootAlias + path.resolve(path.dirname(requireOrigin) + '/' + url).substr(tmpPath.length)).replace(/\\/g, '/');
+					}
+					if ( tmpPath && !RootAliasRe.test(url) && url.includes("/") && /^[a-zA-Z_]/.test(url) ) {
+						url = (RootAlias + path.resolve(path.dirname(requireOrigin) + '/' + url).substr(tmpPath.length)).replace(/\\/g, '/');
+					}
 				}
-				
+				if ( url.includes("?") ) {
+					let tmp = url.split("?");
+					url     = tmp.shift();
+					suffix  = "?" + tmp.join("?");
+				}
+				if ( url.includes("#") ) {
+					let tmp = url.split("#");
+					url     = tmp.shift();
+					suffix  = "#" + tmp.join("#");
+				}
 				if ( RootAliasRe.test(url) || url[0] === '$' || url[0] === '.' ) {
 					lPackResolve(
 						{
@@ -314,17 +468,22 @@ module.exports = function ( cfg, opts ) {
 							request: path.normalize(url)
 						},
 						( e, found, contents ) => {
+							//console.log('plugin::_sassImporter:368: ',url, (found.resource || found.path));
 							if ( found || contents ) {
-								cb && cb(contents && { contents } || { file: found.resource || found.path });
+								cb && cb(contents && { contents } || { file: (found.resource || found.path) + suffix });
 							}
 							else {
-								next && next()
+								next ?
+								next(url + suffix, requireOrigin, cb)
+								     :
+								cb();
+								
 							}
 							
 						}
 					)
 				}
-				else return cb(url, requireOrigin, cb);
+				else return next ? next(url, requireOrigin, cb) : cb();
 			};
 			
 			// wp hook
@@ -364,14 +523,18 @@ module.exports=
 				                                       if ( excludeExternals )
 					                                       if ( nmf.hooks.resolve )// wp5
 					                                       {
-						                                       nmf.hooks.resolve.tap('layer-pack', function ( data, callback ) {
+						                                       nmf.hooks.factorize.tap('layer-pack', function ( data, callback ) {
 							                                       let requireOrigin = data.contextInfo.issuer,
 							                                           context       = data.context || path.dirname(requireOrigin),
 							                                           request       = data.request,
 							                                           mkExt         = isBuiltinModule(data.request),
 							                                           isInRoot;
 							
-							                                       if ( data.request === "$super" || !data.contextInfo.issuer )// entry points ?
+							                                       //console.log(':::373: ', requireOrigin,
+							                                       // data.request, mkExt);
+							                                       if ( request === 'source-map-support' )
+								                                       mkExt = true;
+							                                       else if ( data.request === "$super" || !requireOrigin )// entry points ?
 								                                       return;
 							
 							                                       if ( !mkExt ) {
@@ -383,7 +546,10 @@ module.exports=
 									                                       ? (isInRoot = roots.find(r => path.resolve(context + '/' + data.request).startsWith(r)))
 									                                       : (isInRoot = roots.find(r =>
 										                                                                path.resolve(data.request).startsWith(r))));
+								
 							                                       }
+							                                       //console.log(':::373: ', requireOrigin,
+							                                       // data.request, mkExt);
 							                                       if ( mkExt &&
 								                                       (
 									                                       !externalRE
@@ -397,6 +563,7 @@ module.exports=
 							                                                                                    // an
 							                                                                                    // internal
 							                                       ) {
+								                                       //console.log(':::400: ', data);
 								                                       return new ExternalModule(
 									                                       request,
 									                                       opts.vars.externalMode || "commonjs"
@@ -404,7 +571,10 @@ module.exports=
 								
 							                                       }
 							                                       else {
-								                                       return;
+								                                       ///shortid/.test(context) &&
+								                                       // console.log(':::387: ', context,
+								                                       // data.request, mkExt, data.dependencies);
+								                                       // return;
 							                                       }
 							
 						                                       });
@@ -467,9 +637,10 @@ module.exports=
 			
 			// do update the globs v files
 			
-			compiler.hooks.watchRun.tap('layer-pack', ( compilation ) => {
-				//console.log(activeGlobs)
-				// todo : the glob indexes files are auto deleted
+			compiler.hooks.watchRun.tapAsync('layer-pack', ( compiler, callback ) => {
+				console.log("modifiedFiles", compiler.modifiedFiles, activeGlobs)
+				//debugger
+				// todo : the glob indexes files are auto deleted in wp4
 				for ( let reqPath in activeGlobs.jsx )
 					if ( activeGlobs.jsx.hasOwnProperty(reqPath) ) {
 						utils.indexOf(
@@ -481,11 +652,17 @@ module.exports=
 							fileDependencies,
 							RootAlias,
 							RootAliasRe,
-							function ( e, filePath, content ) {
+							useHotReload,
+							function ( e, filePath, content, changed ) {
+								//console.warn(':::653: ', reqPath, changed);
+								changed && compiler.hooks.compile.call(filePath, Date.now())
+								changed && compiler.watchFileSystem.watcher.fileWatchers.get(filePath)._events.change(Date.now());
+								//if ( changed )
+								//	debugger
 							}
 						)
 					}
-				
+				//
 				for ( let reqPath in activeGlobs.scss )
 					if ( activeGlobs.scss.hasOwnProperty(reqPath) ) {
 						utils.indexOfScss(
@@ -497,10 +674,20 @@ module.exports=
 							fileDependencies,
 							RootAlias,
 							RootAliasRe,
+							useHotReload,
 							function ( e, filePath, content ) {
 							}
 						)
 					}
+				//this._watcher = watcher.compiler || watcher;
+				//const virtualFiles = compiler.inputFileSystem._virtualFiles;
+				//const fts = compiler.fileTimestamps;
+				//if (virtualFiles && fts && typeof fts.set === 'function') {
+				//	Object.keys(virtualFiles).forEach((file) => {
+				//		fts.set(file, +virtualFiles[file].stats.mtime);
+				//	});
+				//}
+				callback();
 			})
 			// should deal with hot reload watched files & dirs
 			compiler.hooks.afterEmit.tapAsync('layer-pack', ( compilation, cb ) => {
@@ -522,14 +709,20 @@ module.exports=
 					});
 				}
 				else {// webpack 4
+					//debugger;
 					// Add file dependencies if they're not already tracked
 					fileDependencies.forEach(( file ) => {
+						!compilation.fileDependencies.has(file) &&
 						compilation.fileDependencies.add(file);
 					});
+					fileDependencies.length = 0;
+					//console.log('plugin:::696: ', contextDependencies);
 					// Add context dependencies if they're not already tracked
 					contextDependencies.forEach(( context ) => {
+						!compilation.contextDependencies.has(context) &&
 						compilation.contextDependencies.add(context);
 					});
+					contextDependencies.length = 0;
 				}
 				cb();
 				cache = {};

@@ -11,7 +11,6 @@
  *  @author : Nathanael Braun
  *  @contact : n8tz.js@gmail.com
  */
-
 let layerPack = require('../..'),
     is        = require('is'),
     cfg       = layerPack.getSuperWebpackCfg(process.env.__LPACK_PROFILE__, true);

@@ -69,8 +69,8 @@ module.exports = {
 		if ( allCfgInstances[profile] )
 			return allCfgInstances[profile];
 		
-		ModPathLoader.loadWpPaths(cfg.allModulePath);
-		
+		ModPathLoader.loadWpPaths(cfg.allModulePath,[path.normalize(cfg.allWebpackRoot[0] + "/node_modules")]);
+		//console.log('exports::getSuperWebpackCfg:73: ', cfg.allModulePath);
 		try {
 			if ( !head && cfg.allCfg[0].config && cfg.allWebpackCfg[1] )
 				wpCfg = require(cfg.allWebpackCfg[1]);
