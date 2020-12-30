@@ -84,32 +84,18 @@ module.exports = function ( cfg, opts ) {
 			
 			compiler.options.resolve.plugins.push(
 				{
-					target: "resolve",
+					target: "after-described-resolve",
 					source: "parsed-resolve",
 					apply( resolver ) {
 						const target = resolver.ensureHook(this.target);
 						resolver
 							.getHook(this.source)
 							.tapAsync("layer-pack", ( request, resolveContext, callback ) => {
-								//console.log('after-described-resolve', request);
+								//console.log('after-described-resolve', request.request);
 								lPackResolve(
 									request,
 									( err, req, data ) => {
 										callback(err, req)
-									},
-									( err, req, data ) => {
-										resolver.doResolve(
-											target,
-											req || request,
-											"resolved lPack files using " + currentProfile, resolveContext,
-											( err, result ) => {
-												//console.log("Proxy resolved : ", err,
-												// result)
-												if ( err ) return callback(err);
-												if ( result ) return callback(null, result);
-												return callback();
-											});
-										
 									})
 							});
 					}
@@ -127,6 +113,7 @@ module.exports = function ( cfg, opts ) {
 								'layer-pack',
 								( request, resolveContext, callback ) => {// based on enhanced resolve ModulesInHierachicDirectoriesPlugin
 									const fs    = resolver.fileSystem;
+									//console.log(':::116: ', request.path);
 									const addrs = getPaths(request.path)
 										.paths.map(p => {
 											return resolver.join(p, "node_modules")
