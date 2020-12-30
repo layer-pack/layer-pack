@@ -1,6 +1,6 @@
 {
   "name": "layer-pack",
-  "version": "1.1.4",
+  "version": "1.2.0",
   "description": "Webpack plugin to make inheritable code layers, glob imports, easy multi packages app & shared webpack configs",
   "license": "MIT",
   "main": "src/index.js",
@@ -36,8 +36,8 @@
   },
   "devDependencies": {},
   "peerDependencies": {
-    "webpack-cli": "^3.0.0",
-    "webpack": "^4.0.0"
+    "webpack-cli": "^3.0.0 || ^4.0.0",
+    "webpack": "^4.0.0 || ^5.11.0"
   },
   "dependencies": {
     "deep-extend": "^0.6.0",
