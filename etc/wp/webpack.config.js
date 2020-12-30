@@ -22,10 +22,6 @@
  *
  *   @author : Nathanael Braun
  *   @contact : n8tz.js@gmail.com
- */  SOFTWARE.
- *
- *   @author : Nathanael Braun
- *   @contact : n8tz.js@gmail.com
  */
 let layerPack = require('../..'),
     is        = require('is'),
