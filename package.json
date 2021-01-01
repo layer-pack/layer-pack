@@ -1,6 +1,6 @@
 {
   "name": "layer-pack",
-  "version": "1.2.2",
+  "version": "1.2.4",
   "description": "Webpack plugin to make inheritable code layers, glob imports, easy multi packages app & shared webpack configs",
   "license": "MIT",
   "main": "src/index.js",
@@ -12,13 +12,15 @@
     "lpack": "etc/cli/lpack",
     "lpack-dev-server": "etc/cli/lpack-dev-server",
     "lpack-init": "etc/cli/lpack-init",
-    "lpack-run": "etc/cli/lpack-run"
+    "lpack-run": "etc/cli/lpack-run",
+    "lpack-setup": "etc/cli/lpack-setup"
   },
   "scripts": {
     "lpack": "node etc/cli/lpack.js",
     "lpack-dev-server": "node etc/cli/lpack-dev-server.js",
     "lpack-init": "node etc/cli/lpack-init.js",
-    "lpack-run": "node etc/cli/lpack-run.js"
+    "lpack-run": "node etc/cli/lpack-run.js",
+    "lpack-setup": "node etc/cli/lpack-setup.js"
   },
   "author": "N8tz <n8tz.js@gmail.com>",
   "maintainers": [
@@ -49,7 +51,6 @@
     "mustache": "^3.0.1",
     "resolve": "^1.17.0",
     "strip-json-comments": "^3.1.1",
-    "virtual-module-webpack-plugin": "^0.3.0",
     "webpack-inject-plugin": "^1.5.4",
     "webpack-merge": "^4.2.2",
     "webpack-virtual-modules": "^0.4.1"

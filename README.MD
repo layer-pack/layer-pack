@@ -92,16 +92,17 @@ So you can share, version, extend & switch your webpack conf & boilerplate via n
 
 ## Caveats ?
 
-- Remember that devDependencies of dependencies are NOT installed so layers should only use (peer)Dependencies
 - Node builds hardwrite the (node_)modules directories locations in the build, so it rely on layers location ( excepts if including externals in the builds )
 - Context based webpack requires are not processed by layer-pack, they have the normal webpack behavior
 - Sass imports have limitations from sass compiler, as we can't rely on relative import we need to use absolute internal path or inherit will fail ( ex: App/assets/stuff.jpg, not ./assets/stuff.jpg )
+- Module resolution may eventually broke dependencies in some special cases ( like using wp plugin in != layers )
 
 ## Improvements / todo
 
 - Allow compiling inheritable packages code separately (slice the build) 
 - Pure Babel plugin to avoid compilation / webpack
 - Optimisations
+- Better module resolution ( still some complex node_modules stucture cases who broke some sub-deps resolution )
 
 ## Alternative to
 

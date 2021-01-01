@@ -97,7 +97,7 @@ Add a ".layers.json" file near the package.json of each projects :
 
 ## Using layer-pack in the webpack configs
 
-Add the following webpack config :
+Example webpack config :
 
 ```es6
 const layerPack  = require('layer-pack'),
@@ -167,6 +167,19 @@ let wpCfg = layerPack.getSuperWebpackCfg(/* "profileId" */);
 
 module.exports = wpCfg;
 
+```
+
+## Setup layers for development ( install inherited layers devDependencies )
+
+DevDependencies of dependencies are not installed, so layer-pack can install them using the following command : 
+
+```bash
+# from the head project
+lpack-setup # npm all inherited layers using "default" profile
+
+lpack-setup :www # the same for the "www" profile layers
+
+lpack :? # get available profiles
 ```
 
 ## CLI

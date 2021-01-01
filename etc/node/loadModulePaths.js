@@ -36,33 +36,33 @@ let Module         = require('module').Module,
 
 Module._nodeModulePaths = function ( from ) {
 	let paths, rootMod;
-	//if (
-	//	from === baseDir
-	//	||
-	//	allRoots.find(path => (from.substr(0, path.length) === path))
-	//) {
-	//	paths = [].concat(modPath).concat(__oldNMP(from));
-	//	return paths;
-	//}
-	//else {
-	paths = __oldNMP(from);
-	if ( modPath.length ) {
-		paths = paths.filter(
-			dir => modPath.find(path => (dir.startsWith(path)))
-		);
-		
-		
-		//if ( !paths.length )
-		//	return [...__oldNMP(from)];
-		// node_modules from head
-		rootMod = paths.pop();// keep inherited order if not sub node_modules
-		//console.log('::_nodeModulePaths:27: ', from, modPath, paths);
-		paths.push(...allWpRoots, ...__oldNMP(path.resolve(path.join(modPath[0], '..'))), ...__oldNMP(from));// add
-	                                                                                                         // normal
-	                                                                                                         // parents
+	if (
+		from === baseDir
+		||
+		allRoots.find(path => (from.substr(0, path.length) === path))
+	) {
+		paths = [].concat(modPath).concat(__oldNMP(from));
+		return paths;
 	}
-	return paths;
-	//}
+	else {
+		paths = __oldNMP(from);
+		if ( modPath.length ) {
+			paths = paths.filter(
+				dir => modPath.find(path => (dir.startsWith(path)))
+			);
+			
+			
+			//if ( !paths.length )
+			//	return [...__oldNMP(from)];
+			// node_modules from head
+			rootMod = paths.pop();// keep inherited order if not sub node_modules
+			//console.log('::_nodeModulePaths:27: ', from, modPath, paths);
+			paths.push(...allWpRoots, ...__oldNMP(path.resolve(path.join(modPath[0], '..'))), ...__oldNMP(from));// add
+		                                                                                                         // normal
+		                                                                                                         // parents
+		}
+		return paths;
+	}
 };
 
 module.exports = {

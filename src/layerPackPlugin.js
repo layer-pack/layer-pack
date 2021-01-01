@@ -86,9 +86,10 @@ module.exports = function ( cfg, opts ) {
 			    useHotReload        = !!compiler.options.devServer,
 			    startBuildTm        = Date.now();
 			
-			// Add some lPack build vars...
-			//vMod.apply(compiler);
+			// Add the virtual module plugin
 			compiler.options.plugins.push(vMod);
+			
+			// Add some lPack build vars...
 			compiler.options.plugins.push(
 				new webpack.DefinePlugin(
 					{
@@ -97,10 +98,13 @@ module.exports = function ( cfg, opts ) {
 						...constDef
 					}));
 			
-			// add the resolver plugin
+			// add the resolvers plugins
+			// @todo : directly use the packages.json & a advanced resolvers
+			// @todo : there must be big optims
 			compiler.options.resolve         = compiler.options.resolve || {};
 			compiler.options.resolve.plugins = compiler.options.resolve.plugins || [];
 			
+			// resolver for intra App requires
 			compiler.options.resolve.plugins.push(
 				{
 					target: "after-described-resolve",
@@ -119,7 +123,8 @@ module.exports = function ( cfg, opts ) {
 							});
 					}
 				}
-			)
+			);
+			// resolver for deps & deps of deps
 			compiler.options.resolve.plugins.push(
 				{
 					target: "module",
@@ -186,7 +191,8 @@ module.exports = function ( cfg, opts ) {
 							)
 					}
 				}
-			)
+			);
+			// resolvers for the loaders
 			compiler.options.resolveLoader         = compiler.options.resolveLoader || {};
 			compiler.options.resolveLoader.plugins = compiler.options.resolveLoader.plugins || [];
 			compiler.options.resolveLoader.plugins.push(
@@ -247,7 +253,6 @@ module.exports = function ( cfg, opts ) {
 													);
 												if ( resolveContext.missingDependencies )
 													resolveContext.missingDependencies.add(addr);
-												//console.log(':::not found: ', request.request);
 												return callback();
 											});
 										},
@@ -257,10 +262,9 @@ module.exports = function ( cfg, opts ) {
 							)
 					}
 				}
-			)
+			);
 			
-			// include node modules path allowing node executables to require external
-			// modules
+			// Add required code & info to resolve bundled mods (may fail & require install sub deps manually)
 			if ( /^(async-)?node$/.test(buildTarget) && excludeExternals ) {
 				compiler.options.plugins.push(
 					new InjectPlugin(function () {
@@ -287,11 +291,11 @@ module.exports = function ( cfg, opts ) {
 				)
 			}
 			;
-			// requiered for $super resolving
+			
+			// required for $super resolving
 			compiler.options.resolve.cacheWithContext = true;
 			
-			//compiler.options.resolve.modules = compiler.options.resolve.modules || [];
-			//compiler.options.resolve.modules.unshift("node_modules", ...opts.allModulePath);
+			// possibly useless
 			compiler.options.resolveLoader         = compiler.options.resolveLoader || {};
 			compiler.options.resolveLoader.modules = compiler.options.resolveLoader.modules || [];
 			compiler.options.resolveLoader.modules.unshift(...opts.allModulePath);
@@ -318,16 +322,22 @@ module.exports = function ( cfg, opts ) {
 				if ( data.lPackOriginRequest ) {
 					return cb();
 				}
+				
+				// sass may send windows paths
 				reqPath = reqPath.replace(/\\/g, '/');
+				
+				// sass may send suffix with the uri
 				if ( /[\?\#][^\/\\]+$/.test(reqPath) ) {
 					let tmp = reqPath.match(/^(.*)([\?\#][^\/\\]+$)/);
 					suffix  = tmp[2];
 					reqPath = tmp[1];
 					
 				}
-				//!requireOrigin&&/svg/.test(reqPath)&&console.log('lPackResolve::lPackResolve:244: ',  reqPath);
+				
+				// keep original request
 				data.lPackOriginRequest = reqPath;
 				
+				// if this is a relative require find & add the right root path
 				if ( context && /^\./.test(reqPath) && (tmpPath = roots.find(r => path.resolve(context + '/' + reqPath).startsWith(r))) ) {
 					reqPath = (RootAlias + path.resolve(context + '/' + reqPath).substr(tmpPath.length)).replace(/\\/g, '/');
 				}
@@ -338,7 +348,6 @@ module.exports = function ( cfg, opts ) {
 				
 				// glob resolving...
 				if ( isGlob ) {
-					
 					if ( /\.s?css$/.test(requireOrigin) )
 						activeGlobs.scss[reqPath] = true;
 					else
@@ -360,15 +369,8 @@ module.exports = function ( cfg, opts ) {
 							//console.warn("glob", filePath, data)
 							let req = {
 								...data,
-								//fullySpecified               : true,
-								//_ResolverCachePluginCacheMiss: false,
-								//cacheable                    : false,
-								//relativePath                 : undefined,
 								path    : filePath,
-								resource: filePath,
-								//module                       : false,
-								//file                         : true,
-								//request                      : filePath,
+								resource: filePath
 							};
 							cb(e, req, content);
 						}
@@ -378,7 +380,6 @@ module.exports = function ( cfg, opts ) {
 				if ( !isRoot && !isSuper ) { // let wp deal with it
 					return cb()
 				}
-				
 				
 				// $super resolving..
 				if ( isSuper ) {
@@ -425,8 +426,6 @@ module.exports = function ( cfg, opts ) {
 								              reqPath, requireOrigin);
 								return cb()
 							}
-							///svg/.test(reqPath)&&console.log('lPackResolve::lPackResolve:244: ',reqPath,  filePath);
-							//suffix &&console.log("find %s\t\t\t=> %s", data);
 							let req = {
 								...data,
 								path        : filePath,
@@ -438,8 +437,6 @@ module.exports = function ( cfg, opts ) {
 						}
 					);
 				}
-				//console.error("wtf \n'%s' (required in '%s')",
-				//              reqPath, requireOrigin);
 			}
 			
 			// sass resolver
@@ -525,7 +522,7 @@ module.exports=
 					                                       path.normalize(roots[0] + '/.___layerPackIndexUtils.js'),
 					                                       fs.readFileSync(path.join(__dirname, '../etc/utils/indexUtils.js'))
 				                                       );
-				
+				                                       // deal with externals
 				                                       if ( excludeExternals )
 					                                       if ( nmf.hooks.resolve )// wp5
 					                                       {
@@ -536,8 +533,6 @@ module.exports=
 							                                           mkExt         = isBuiltinModule(data.request),
 							                                           isInRoot;
 							
-							                                       //console.log(':::373: ', requireOrigin,
-							                                       // data.request, mkExt);
 							                                       if ( request === 'source-map-support' )
 								                                       mkExt = true;
 							                                       else if ( data.request === "$super" || !requireOrigin )// entry points ?
@@ -554,8 +549,6 @@ module.exports=
 										                                                                path.resolve(data.request).startsWith(r))));
 								
 							                                       }
-							                                       //console.log(':::373: ', requireOrigin,
-							                                       // data.request, mkExt);
 							                                       if ( mkExt &&
 								                                       (
 									                                       !externalRE
@@ -569,7 +562,6 @@ module.exports=
 							                                                                                    // an
 							                                                                                    // internal
 							                                       ) {
-								                                       //console.log(':::400: ', data);
 								                                       return new ExternalModule(
 									                                       request,
 									                                       opts.vars.externalMode || "commonjs"
@@ -634,17 +626,14 @@ module.exports=
 							                                       };
 						                                       });
 					                                       }
-				                                       //nmf.plugin("rebuildModule", ( req, cb ) => {
-				                                       //    console.log("rebuildModule", req.request);
-				                                       //    cb();
-				                                       //});
 			                                       }
 			);
-			// do update the globs indexes files
+			
+			// do update the globs indexes files on hot reload
 			compiler.hooks.compilation.tap('layer-pack', ( compilation, params ) => {
 				let toBeRebuilt = [];
 				
-				// force rebuild in wp5
+				// force rebuild in wp5 without full recompile
 				compilation.buildQueue &&
 				compilation.buildQueue.hooks &&
 				compilation.buildQueue.hooks.beforeAdd
@@ -659,8 +648,8 @@ module.exports=
 				                     }
 				           );
 				
-				// the glob indexes files are auto deleted in wp4 & not rebuilt in wp5
-				// if they were changed they will be rebuilt
+				// the glob indexes files are not rebuilt
+				// if they were changed they will be rebuilt by the beforeAdd hook
 				for ( let reqPath in activeGlobs.jsx )
 					if ( activeGlobs.jsx.hasOwnProperty(reqPath) ) {
 						utils.indexOf(
