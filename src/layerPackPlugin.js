@@ -71,7 +71,7 @@ module.exports = function ( cfg, opts ) {
 		 * The main plugin fn
 		 * @param compiler
 		 */
-		apply       : function ( compiler ) {
+		apply: function ( compiler ) {
 			let cache               = {},
 			    plugin              = this,
 			    RootAlias           = opts.vars.rootAlias || "App",
@@ -84,6 +84,7 @@ module.exports = function ( cfg, opts ) {
 			    activeGlobs         = { scss: {}, jsx: {} },
 			    buildTarget         = compiler.options.target || "web",
 			    useHotReload        = !!compiler.options.devServer,
+			    isNodeBuild         = /^(async-)?node$/.test(buildTarget),
 			    startBuildTm        = Date.now();
 			
 			// Add the virtual module plugin
@@ -124,6 +125,7 @@ module.exports = function ( cfg, opts ) {
 					}
 				}
 			);
+			
 			// resolver for deps & deps of deps
 			compiler.options.resolve.plugins.push(
 				{
@@ -136,23 +138,72 @@ module.exports = function ( cfg, opts ) {
 							.tapAsync(
 								'layer-pack',
 								( request, resolveContext, callback ) => {// based on enhanced resolve ModulesInHierachicDirectoriesPlugin
-									const fs    = resolver.fileSystem;
-									//console.log(':::116: ', request.path);
-									const addrs = getPaths(request.path)
-										.paths.map(p => {
-											return resolver.join(p, "node_modules")
-										})
-										.filter(
-											addr => opts.allModulePath.find(r => addr.startsWith(r))
-										);
-									addrs.pop();//origin mods root
-									addrs.push(
-										...opts.allModulePath, // replace it with those from layers
-										...getPaths(roots[0]) // add mods from head layer parents dir
+									const fs         = resolver.fileSystem,
+									      isInternal = roots.find(r => path.resolve(request.path).startsWith(r));
+									let addrs        = [];
+									let packageName  = request.request.match(/^(\@[^\\\/]+[\\\/][^\\\/]+|[^\\\/]+)/i)[0];
+									if ( isInternal ) {
+										addrs.push(
+											...opts.allModulePath.filter(// custom lib dir
+											                             ( p, i ) => !opts.allModuleRoots.find(mp => (path.join(mp, "node_modules") === p))
+											),
+											...opts.allModuleRoots.filter(// priorize defined deps to avoid "shared" deps
+											                              ( p, i ) => (
+												                              opts.allPackageCfg[i].dependencies
+												                              && opts.allPackageCfg[i].dependencies[packageName]
+											                              )
+											).map(p => {
+												return resolver.join(p, "node_modules")
+											}),
+											...opts.allModuleRoots.filter(
+												( p, i ) => !(
+													opts.allPackageCfg[i].dependencies
+													&& opts.allPackageCfg[i].dependencies[packageName]
+												)
+											).map(p => {
+												return resolver.join(p, "node_modules")
+											})
+											,
+											...getPaths(roots[0]) // add mods from head layer parents dir
+												.paths.map(p => {
+													return resolver.join(p, "node_modules")
+												})
+										)
+									}
+									else {
+										addrs = getPaths(request.path)
 											.paths.map(p => {
 												return resolver.join(p, "node_modules")
 											})
-									)
+											.filter(
+												addr => opts.allModulePath.find(r => addr.startsWith(r))
+											)
+										addrs.pop();//origin mods root
+										addrs.push(
+											// replace it with those from layers
+											...opts.allModuleRoots.filter(
+												( p, i ) => (
+													opts.allPackageCfg[i].dependencies
+													&& opts.allPackageCfg[i].dependencies[packageName]
+												)
+											).map(p => {
+												return resolver.join(p, "node_modules")
+											}),
+											...opts.allModuleRoots.filter(
+												( p, i ) => !(
+													opts.allPackageCfg[i].dependencies
+													&& opts.allPackageCfg[i].dependencies[packageName]
+												)
+											).map(p => {
+												return resolver.join(p, "node_modules")
+											})
+											,
+											...getPaths(roots[0]) // add mods from head layer parents dir
+												.paths.map(p => {
+													return resolver.join(p, "node_modules")
+												})
+										)
+									}
 									forEachBail(
 										addrs,
 										( addr, callback ) => {
@@ -206,25 +257,33 @@ module.exports = function ( cfg, opts ) {
 							.tapAsync(
 								'layer-pack',
 								( request, resolveContext, callback ) => {// based on enhanced resolve ModulesInHierachicDirectoriesPlugin
-									const fs    = resolver.fileSystem;
-									const addrs =
-										      getPaths(request.path)
-											      .paths.map(p => {
-											      return resolver.join(p, "node_modules")
-										      })
-											      .filter(
-												      addr => opts.allModulePath.find(r => addr.startsWith(r))
-											      );
+									const fs        = resolver.fileSystem;
+									const addrs     = [];
+									let packageName = request.request.match(/^(\@[^\\\/]+[\\\/][^\\\/]+|[^\\\/]+)/i)[0];
+									addrs.push(
+										...opts.allModuleRoots.filter(
+											( p, i ) => (
+												opts.allPackageCfg[i].devDependencies
+												&& opts.allPackageCfg[i].devDependencies[packageName]
+											)
+										).map(p => {
+											return resolver.join(p, "node_modules")
+										}),
+										...opts.allModuleRoots.filter(
+											( p, i ) => !(
+												opts.allPackageCfg[i].devDependencies
+												&& opts.allPackageCfg[i].devDependencies[packageName]
+											)
+										).map(p => {
+											return resolver.join(p, "node_modules")
+										})
+										//...getPaths(roots[0]) // add mods from head layer parents dir
+										//	.paths.map(p => {
+										//		return resolver.join(p, "node_modules")
+										//	})
+									)
 									addrs.push(path.normalize(opts.allWebpackRoot[0] + '/node_modules'));//origin
-									// @todo may need modules path starting from first parent with wp cfg to front layer
-									//addrs.push(
-									//	...opts.allModulePath, // replace it with those from layers
-									//	//...getPaths(roots[0]) // add mods from head layer parents dir
-									//	//	.paths.map(p => {
-									//	//		return resolver.join(p, "node_modules")
-									//	//	})
-									//)
-									//console.log(':::197: ', request.path, request.request, addrs, opts.allWebpackCfg);
+									
 									forEachBail(
 										addrs,
 										( addr, callback ) => {
@@ -265,30 +324,37 @@ module.exports = function ( cfg, opts ) {
 			);
 			
 			// Add required code & info to resolve bundled mods (may fail & require install sub deps manually)
-			if ( /^(async-)?node$/.test(buildTarget) && excludeExternals ) {
+			if ( isNodeBuild && excludeExternals ) {
 				compiler.options.plugins.push(
 					new InjectPlugin(function () {
-						                 return "" +
-							                 "/** layer pack externals modules loader **/\n" +
-							                 fs.readFileSync(path.join(__dirname, '../etc/node/loadModulePaths_inject.js')) +
-							                 `()(
-    {
-        allModulePath:${JSON.stringify(opts.allModulePath.map(p => path.normalize(path.relative(opts.projectRoot, p)).replace(/\\/g, '/')))},
-        cDir:path.join(__non_webpack_require__.main.path,${JSON.stringify(path.normalize(path.relative(compiler.options.output.path, opts.projectRoot)).replace(/\\/g, '/'))})
-    },
-    ${JSON.stringify(path.relative(opts.projectRoot, compiler.options.output.path).replace(/\\/g, '/'))}
-);` +
-							                 (
-								                 is.string(compiler.options.devtool)
-								                 && compiler.options.devtool.includes("source-map")
-								                 ?
-								                 "/** layer pack externals sourcemaps**/\n" +
-									                 "require('source-map-support').install();\n"
-								                 : ""
-							                 )
-					                 },
-					                 ENTRY_ORDER.First)
-				)
+						return "" +
+							"/** layer pack externals modules loader **/\n" +
+							fs.readFileSync(path.join(__dirname,
+							                          '../etc/node/loadModulePaths_inject.js')) +
+							`()( {
+							 allModulePath:${JSON.stringify(opts.allModulePath.map(p => path.normalize(path.relative(opts.projectRoot, p)).replace(/\\/g, '/')))},
+							 allModuleRoots:${JSON.stringify(opts.allModuleRoots.map(p => path.normalize(path.relative(opts.projectRoot, p + "/node_modules")).replace(/\\/g, '/')))},
+							 allDeps:${JSON.stringify(opts.allModuleRoots.map(
+								( p, i ) => (
+									opts.allPackageCfg[i].dependencies ?
+									Object.keys(opts.allPackageCfg[i].dependencies)
+									                                   :
+									[]
+								)
+							))},
+							 cDir:path.join(__non_webpack_require__.main.path,${
+								JSON.stringify(path.normalize(path.relative(compiler.options.output.path,
+								                                            opts.projectRoot)).replace(/\\/g, '/'))
+							})
+							},
+							${JSON.stringify(path.relative(opts.projectRoot, compiler.options.output.path).replace(/\\/g, '/'))}
+							);` +
+							(is.string(compiler.options.devtool) &&
+							 compiler.options.devtool.includes("source-map")
+							 ? "/** layer pack externals sourcemaps**/\n" +
+								 "require('source-map-support').install();\n"
+							 : "")
+					}, ENTRY_ORDER.First))
 			}
 			;
 			
@@ -403,9 +469,9 @@ module.exports = function ( cfg, opts ) {
 								path        : filePath,
 								relativePath: undefined,
 								//request     : filePath,
-								resource    : filePath,
-								module      : false,
-								file        : true
+								resource: filePath,
+								module  : false,
+								file    : true
 							});
 						}
 					);
@@ -555,18 +621,31 @@ module.exports=
 									                                       || externalRE.test(request)
 								                                       )
 								                                       &&
-								                                       !(!isInRoot && /^\./.test(data.request)) // so
-							                                                                                    // it's
-							                                                                                    // relative
-							                                                                                    // to
-							                                                                                    // an
-							                                                                                    // internal
+								                                       !(!isInRoot && /^\./.test(data.request))
 							                                       ) {
-								                                       return new ExternalModule(
-									                                       request,
-									                                       opts.vars.externalMode || "commonjs"
-								                                       );
-								
+								                                       if ( !isNodeBuild || !opts.vars.hardResolveExternals ) // keep external as-is for browsers builds
+									                                       return callback(null, new ExternalModule(
+										                                       data.request,
+										                                       opts.vars.externalMode || "commonjs"
+									                                       ));
+								                                       else // hard resolve for node if possible
+									                                       compiler.resolverFactory.get("normal", {
+										                                       mainFields: ["main", "module"],
+										                                       extensions: [".js"]
+									                                       })
+									                                               .doResolve(
+										                                               'resolve',
+										                                               { ...data, path: context },
+										                                               "External resolve of " +
+											                                               request, ( err, request ) => {
+											                                               return callback(null, new ExternalModule(err ||
+											                                                                                        !request
+											                                                                                        ? data.request
+											                                                                                        :
+											                                                                                        path.relative(compiler.options.output.path,
+											                                                                                                      request.path).replace(/\\/g, '/'),
+											                                                                                        opts.vars.externalMode || "commonjs"));
+										                                               });
 							                                       }
 							                                       else {
 								                                       ///shortid/.test(context) &&
@@ -590,15 +669,13 @@ module.exports=
 									                                       return factory(data, callback);
 								
 								                                       if ( !mkExt ) {
-									                                       //console.log(data, context, roots)
-									                                       // is it external ? @todo
+									                                       // is it external ?
 									                                       mkExt = !(
 										                                       RootAliasRe.test(data.request) ||
 										                                       context &&
 										                                       /^\./.test(data.request)
 										                                       ? (isInRoot = roots.find(r => path.resolve(context + '/' + data.request).startsWith(r)))
-										                                       : (isInRoot = roots.find(r =>
-											                                                                path.resolve(data.request).startsWith(r))));
+										                                       : (isInRoot = roots.find(r => path.resolve(data.request).startsWith(r))));
 								                                       }
 								                                       if ( mkExt &&
 									                                       (
@@ -613,10 +690,31 @@ module.exports=
 								                                                                                    // an
 								                                                                                    // internal
 								                                       ) {
-									                                       return callback(null, new ExternalModule(
-										                                       request,
-										                                       opts.vars.externalMode || "commonjs"
-									                                       ));
+									
+									                                       if ( !isNodeBuild || !opts.vars.hardResolveExternals ) // keep external as-is for browsers builds
+										                                       return callback(null, new ExternalModule(
+											                                       data.request,
+											                                       opts.vars.externalMode || "commonjs"
+										                                       ));
+									                                       else // hard resolve for node if possible
+										                                       compiler.resolverFactory.get("normal",
+										                                                                    {
+											                                                                    mainFields: ["main", "module"],
+											                                                                    extensions: [".js"]
+										                                                                    }).doResolve(
+											                                       'resolve', {
+												                                       ...data,
+												                                       path: context
+											                                       },
+											                                       "External resolve of " + request, ( err,
+											                                                                           request ) => {
+												                                       return callback(null, new
+												                                       ExternalModule(err || !request ?
+												                                                      data.request :
+												                                                      path.relative(compiler.options.output.path,
+												                                                                    request.path).replace(/\\/g, '/'),
+												                                                      opts.vars.externalMode || "commonjs"));
+											                                       });
 									
 								                                       }
 								                                       else {

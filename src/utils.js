@@ -132,6 +132,7 @@ const utils = {
 		    allWebpackRoot = [],
 		    allModuleRoots = [],
 		    allCfg         = [],
+		    allPackageCfg  = [],
 		    allTemplates   = {},
 		    allScripts     = {},
 		    vars           = {},
@@ -243,6 +244,7 @@ const utils = {
 				    function ( where, i, arr, cProfile ) {
 					    cProfile        = cProfile || profileConfig.basedOn || profileId;
 					    let cfg         = getlPackConfigFrom(where),
+					        profile,
 					        modPath     = path.normalize(where + "/node_modules"),
 					        realProfile = cProfile;
 					
@@ -255,13 +257,14 @@ const utils = {
 						    realProfile = "default";
 					    }
 					
-					    cfg = cfg.layerPack[realProfile];
 					
-					    if ( cfg.localAlias )
+					    profile = cfg.layerPack[realProfile];
+					
+					    if ( profile.localAlias )
 						    localAlias = {
 							    ...localAlias,
 							    ...Object
-								    .keys(cfg.localAlias)
+								    .keys(profile.localAlias)
 								    .reduce(
 									    ( aliases, alias ) => (aliases[alias] = path.join(where, cfg.aliases[alias]), aliases),
 									    {}
@@ -269,9 +272,9 @@ const utils = {
 						    };
 					
 					    // add the vars
-					    if ( cfg.vars )
+					    if ( profile.vars )
 						    vars = {
-							    ...jsonTplApply(cfg.vars, {
+							    ...jsonTplApply(profile.vars, {
 								    packagePath: where,
 								    projectPath: projectRoot,
 								    packageConfig
@@ -279,26 +282,27 @@ const utils = {
 							    ...vars
 						    };
 					
-					    allCfg.push(cfg);
+					    allCfg.push(profile);
+					    allPackageCfg.push(cfg);
 					
-					    if ( cfg.config ) {
-						    allWebpackCfg.push(path.resolve(path.normalize(where + '/' + cfg.config)));
+					    if ( profile.config ) {
+						    allWebpackCfg.push(path.resolve(path.normalize(where + '/' + profile.config)));
 						    allWebpackRoot.push(path.resolve(path.normalize(where)));
 					    }
 					
-					    roots.push(fs.realpathSync(path.normalize(where + "/" + (cfg.rootFolder || 'App'))));
+					    roots.push(fs.realpathSync(path.normalize(where + "/" + (profile.rootFolder || 'App'))));
 					
-					    if ( cfg.scripts )
-						    Object.keys(cfg.scripts)
+					    if ( profile.scripts )
+						    Object.keys(profile.scripts)
 						          .reduce(
-							          ( h, k ) => (h[k] = h[k] || path.resolve(path.normalize(where + '/' + cfg.scripts[k])), h),
+							          ( h, k ) => (h[k] = h[k] || path.resolve(path.normalize(where + '/' + profile.scripts[k])), h),
 							          allScripts
 						          );
 					    //
-					    cfg.libsPath &&
-					    fs.existsSync(path.normalize(where + "/" + cfg.libsPath))
+					    profile.libsPath &&
+					    fs.existsSync(path.normalize(where + "/" + profile.libsPath))
 					    && libPath.push(
-						    fs.realpathSync(path.normalize(where + "/" + cfg.libsPath)));
+						    fs.realpathSync(path.normalize(where + "/" + profile.libsPath)));
 					
 					    checkIfDir(fs, modPath)
 					    && allModulePath.push(fs.realpathSync(modPath));
@@ -331,6 +335,7 @@ const utils = {
 				}),
 			};
 		allCfg.unshift(profileConfig);
+		allPackageCfg.unshift(packageConfig);
 		return {
 			allWebpackCfg,
 			allWebpackRoot,
@@ -342,6 +347,7 @@ const utils = {
 			localAlias,
 			allModuleRoots,
 			allCfg,
+			allPackageCfg,
 			allModId,
 			vars,
 			projectRoot
