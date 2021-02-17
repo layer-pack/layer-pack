@@ -70,7 +70,10 @@ Add a ".layers.json" file near the package.json of each projects :
    				// ( for nodes builds & components )
    				// * this could be a RegExp like "^(?!react|@babel)" but packed libs can require externalized
    				"externals"   : true,
-   				
+				
+                // (node only) make external requiered modules using pre resolved relative paths when requiering from the build 
+				"hardResolveExternals": true,
+                
    				"production"   : true,
    				
    				"someValues"   :{
