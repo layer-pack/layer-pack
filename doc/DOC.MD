@@ -71,7 +71,8 @@ Add a ".layers.json" file near the package.json of each projects :
    				// * this could be a RegExp like "^(?!react|@babel)" but packed libs can require externalized
    				"externals"   : true,
 				
-                // (node only) make external requiered modules using pre resolved relative paths when requiering from the build 
+                // (node only) make external requiered modules using pre resolved relative paths when requiered from the build 
+                // ex. : require('my_module') -> require('../../node_modules/my_module/index.js')
 				"hardResolveExternals": true,
                 
    				"production"   : true,
