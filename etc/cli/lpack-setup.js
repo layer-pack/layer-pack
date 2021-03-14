@@ -61,7 +61,7 @@ toBeSetup.forEach(
 	( root, i ) => {
 		console.info('Setup layer "', confs[profile].allModId[i], '" ( ', path.relative(process.cwd(), root), " )");
 		spawnSync(
-			"npm" + (isWin ? ".cmd" : ""), ["install", "--only=dev"],
+			"npm" + (isWin ? ".cmd" : ""), ["install"],
 			{
 				cwd  : root,
 				stdio: 'inherit',
