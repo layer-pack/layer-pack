@@ -46,5 +46,8 @@ module.exports = {
 			Object.assign(module, target[fPath[i]]);
 			target[fPath[i]] = module;
 		}
+		else {// when we are in hot reload this may delete some sub modules... @todo
+			target[fPath[i]] = module;
+		}
 	}
 };
