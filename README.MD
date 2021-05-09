@@ -30,7 +30,7 @@ Feel free to test / feedback / make contribs<br/>
 - Test layers independently
 - Compile in 1 step, with the source map
 - Use multiple dev servers sharing the same code layers
-- .. and stop creating tons of highly dependants intra-app modules 
+- .. and stop creating tons of mini-mods with 80% of theirs code who just link them
 
 ### Make glob imports on inherited directories ( from local or inherited packages )
 
