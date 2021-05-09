@@ -14,7 +14,7 @@ Easily split webpack projects into multiple npm packages
 </p>
 
 <p align="center">
-This is solid beta; Feel free to test / feedback / make contribs<br/>
+Feel free to test / feedback / make contribs<br/>
 </p>
 
 
@@ -22,7 +22,7 @@ This is solid beta; Feel free to test / feedback / make contribs<br/>
 
 ## Main features :
 
-### Split you're projects into multiple inheritable npm packages
+### Split you're projects into multiple inheritable npm packages ( intead of tons of mini-modules highly linked )
 
 - inherit & share most of the code between projects
 - Include or not layers like dev tools, admin, etc
@@ -30,6 +30,7 @@ This is solid beta; Feel free to test / feedback / make contribs<br/>
 - Test layers independently
 - Compile in 1 step, with the source map
 - Use multiple dev servers sharing the same code layers
+- .. and stop creating tons of highly dependants intra-app modules 
 
 ### Make glob imports on inherited directories ( from local or inherited packages )
 
@@ -95,8 +96,7 @@ So you can share, version, extend & switch your webpack conf & boilerplate via n
 - Node builds hardwrite the (node_)modules relative directories locations in the build, so it rely on the layers location
 - Context based webpack requires are not processed by layer-pack, they have the normal webpack behavior
 - Sass imports have limitations from sass compiler, as we can't rely on relative import we need to use absolute internal path or inherit will fail ( ex: App/assets/stuff.jpg, not ./assets/stuff.jpg )
-- Node builds Module resolution may eventually broke sub dependencies in some special rare cases ( can be fix by repeating related deps in the head layer )
-- Including externals in Node builds can be tricky
+- Node builds Module resolution may eventually broke sub dependencies in some special rare cases ( can be fix by repeating related deps in the head layer or by keeping dev layer )
 
 ## Improvements / todo
 
@@ -107,6 +107,7 @@ So you can share, version, extend & switch your webpack conf & boilerplate via n
 
 ## Alternative to
 
+ - Splitting big projects in thousands of modules
  - Lerna, ...
 
 ## Contributors ?
