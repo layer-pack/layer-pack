@@ -100,7 +100,7 @@ So you can share, version, extend & switch your webpack conf & boilerplate via n
 
 ## Improvements / todo
 
-- Allow compiling inheritable packages code separately (slice the build) 
+- Allow compiling inheritable packages code separately ( 1 layer = 1 dll ) 
 - Pure Babel plugin to avoid compilation / webpack
 - Optimisations
 - Better module resolution
