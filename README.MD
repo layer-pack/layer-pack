@@ -22,7 +22,7 @@ Feel free to test / feedback / make contribs<br/>
 
 ## Main features :
 
-### Split you're projects into multiple inheritable npm packages ( intead of tons of highly linked mini-modules )
+### Split you're projects into multiple inheritable npm packages ( instead of tons of highly linked mini-modules )
 
 - inherit & share most of the code between projects
 - Include or not layers like dev tools, admin, etc
