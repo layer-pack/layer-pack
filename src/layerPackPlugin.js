@@ -574,7 +574,7 @@ module.exports=
 				                                       if ( excludeExternals )
 					                                       if ( nmf.hooks.resolve )// wp5
 					                                       {
-						                                       nmf.hooks.factorize.tap('layer-pack', function ( data, callback ) {
+						                                       nmf.hooks.factorize.tapAsync('layer-pack', function ( data, callback ) {
 							                                       let requireOrigin = data.contextInfo.issuer,
 							                                           context       = data.context || path.dirname(requireOrigin),
 							                                           request       = data.request,
@@ -611,31 +611,32 @@ module.exports=
 										                                       opts.vars.externalMode || "commonjs"
 									                                       ));
 								                                       else // hard resolve for node if possible
-									                                       compiler.resolverFactory.get("normal", {
-										                                       mainFields: ["main", "module"],
-										                                       extensions: [".js"]
-									                                       })
-									                                               .doResolve(
-										                                               'resolve',
-										                                               { ...data, path: context },
-										                                               "External resolve of " +
-											                                               request, ( err, request ) => {
-											                                               return callback(null, new ExternalModule(err ||
-											                                                                                        !request
-											                                                                                        ? data.request
-											                                                                                        :
-											                                                                                        path.relative(compiler.options.output.path,
-											                                                                                                      request.path).replace(/\\/g, '/'),
-											                                                                                        opts.vars.externalMode || "commonjs"));
-										                                               });
+									                                       return compiler.resolverFactory.get(
+										                                       "normal",
+										                                       {
+											                                       mainFields: ["main", "module"],
+											                                       extensions: [".js"]
+										                                       }
+									                                       ).doResolve(
+										                                       'resolve',
+										                                       {
+											                                       ...data,
+											                                       path: context
+										                                       },
+										                                       "External resolve of " + request,
+										                                       ( err, request ) => {
+											                                       return callback(null, new ExternalModule(err ||
+											                                                                                !request
+											                                                                                ? data.request
+											                                                                                :
+											                                                                                path.relative(compiler.options.output.path,
+											                                                                                              request.path).replace(/\\/g, '/'),
+											                                                                                opts.vars.externalMode || "commonjs"));
+										                                       });
 							                                       }
 							                                       else {
-								                                       ///shortid/.test(context) &&
-								                                       // console.log(':::387: ', context,
-								                                       // data.request, mkExt, data.dependencies);
-								                                       // return;
+								                                       return callback(null, data.request);
 							                                       }
-							
 						                                       });
 					                                       }
 					                                       else {
