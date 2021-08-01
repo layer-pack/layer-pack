@@ -183,6 +183,9 @@ lpack-setup # npm all inherited layers using "default" profile
 
 lpack-setup :www # the same for the "www" profile layers
 
+lpack-setup :www ci # setup with npm ci
+#lpack-setup :profile (npm command) # setup with specific npm command
+
 lpack :? # get available profiles
 ```
 
