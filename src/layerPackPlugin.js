@@ -16,6 +16,16 @@ const path                 = require('path'),
       isBuiltinModule      = require('is-builtin-module'),
       VirtualModulesPlugin = require('webpack-virtual-modules');
 
+const RE = {
+	winSlash     : /\\/g,
+	localPath    : /^\./g,
+	sassSuffix   : /[\?\#][^\/\\]+$/,
+	getSassSuffix: /^(.*)([\?\#][^\/\\]+$)/,
+	isSuper      : /^\$super$/,
+	isSass       : /\.s?css$/,
+	packageName  : /^(\@[^\\\/]+[\\\/][^\\\/]+|[^\\\/]+)/i
+};
+
 module.exports = function ( cfg, opts ) {
 	let plugin;
 	
@@ -58,8 +68,6 @@ module.exports = function ( cfg, opts ) {
 			    plugin              = this,
 			    RootAlias           = opts.vars.rootAlias || "App",
 			    RootAliasRe         = new RegExp("^" + RootAlias, ''),
-			    WPInternalRequestRe = new RegExp("^\-?\!\!?", ''),
-			    PackageNameRE       = /^(\@[^\\\/]+[\\\/][^\\\/]+|[^\\\/]+)/i,
 			    roots               = opts.allRoots,
 			    modulesPathByLength = [...opts.allModulePath]
 				    .sort(( a, b ) => b.length - a.length),
@@ -85,8 +93,6 @@ module.exports = function ( cfg, opts ) {
 					}));
 			
 			// add the resolvers plugins
-			// @todo : directly use the packages.json & a advanced resolvers
-			// @todo : there must be big optims
 			compiler.options.resolve         = compiler.options.resolve || {};
 			compiler.options.resolve.plugins = compiler.options.resolve.plugins || [];
 			
@@ -131,7 +137,7 @@ module.exports = function ( cfg, opts ) {
 									      isInternal = roots.find(r => path.resolve(request.path).startsWith(r));
 									let addrs        = [],
 									    rootModPath,
-									    packageName  = request.request.match(PackageNameRE)[0];
+									    packageName  = request.request.match(RE.packageName)[0];
 									
 									//console.log(':::156: ', request.request, request.path, isInternal);
 									if ( !!isInternal ) {
@@ -253,7 +259,7 @@ module.exports = function ( cfg, opts ) {
 								( request, resolveContext, callback ) => {// based on enhanced resolve ModulesInHierachicDirectoriesPlugin
 									const fs        = resolver.fileSystem;
 									const addrs     = [];
-									let packageName = request.request.match(PackageNameRE)[0];
+									let packageName = request.request.match(RE.packageName)[0];
 									addrs.push(
 										...opts.allModuleRoots.filter(
 											( p, i ) => (
@@ -384,36 +390,40 @@ module.exports = function ( cfg, opts ) {
 				}
 				
 				// sass may send windows paths
-				reqPath = reqPath.replace(/\\/g, '/');
+				reqPath = reqPath.replace(RE.winSlash, '/');
 				
 				// sass may send suffix with the uri
-				if ( /[\?\#][^\/\\]+$/.test(reqPath) ) {
-					let tmp = reqPath.match(/^(.*)([\?\#][^\/\\]+$)/);
+				if ( RE.sassSuffix.test(reqPath) ) {
+					let tmp = reqPath.match(RE.getSassSuffix);
 					suffix  = tmp[2];
 					reqPath = tmp[1];
-					
 				}
 				
 				// keep original request
 				data.lPackOriginRequest = reqPath;
 				
 				// if this is a relative require find & add the right root path
-				if ( context && /^\./.test(reqPath) && (tmpPath = roots.find(r => path.resolve(context + '/' + reqPath).startsWith(r))) ) {
-					reqPath = (RootAlias + path.resolve(context + '/' + reqPath).substr(tmpPath.length)).replace(/\\/g, '/');
+				if ( context
+					&& RE.localPath.test(reqPath)
+					&& (tmpPath = roots.find(r => path.resolve(context + '/' + reqPath).startsWith(r)))
+				) {
+					reqPath = (RootAlias + path.resolve(context + '/' + reqPath)
+					                           .substr(tmpPath.length))
+						.replace(RE.winSlash, '/');
 				}
 				
-				let isSuper = /^\$super$/.test(reqPath),
+				let isSuper = RE.isSuper.test(reqPath),
 				    isGlob  = reqPath.indexOf('*') !== -1,
 				    isRoot  = RootAliasRe.test(reqPath);
 				
 				// glob resolving...
 				if ( isGlob ) {
-					if ( /\.s?css$/.test(requireOrigin) )
+					if ( RE.isSass.test(requireOrigin) )
 						activeGlobs.scss[reqPath] = true;
 					else
 						activeGlobs.jsx[reqPath] = true;
 					
-					return (/\.s?css$/.test(requireOrigin)
+					return (RE.isSass.test(requireOrigin)
 					        ? utils.indexOfScss
 					        : utils.indexOf)(
 						vMod,
@@ -502,14 +512,17 @@ module.exports = function ( cfg, opts ) {
 			// sass resolver
 			this._sassImporter = function ( url, requireOrigin, cb, next ) {
 				let suffix = "";
-				url        = url.replace(/\\/g, "/");
+				url        = url.replace(RE.winSlash, "/");
 				if ( requireOrigin ) {
 					let tmpPath = roots.find(r => path.resolve(path.dirname(requireOrigin) + '/' + url).startsWith(r));
-					if ( tmpPath && /^\.\//.test(url) ) {
-						url = (RootAlias + path.resolve(path.dirname(requireOrigin) + '/' + url).substr(tmpPath.length)).replace(/\\/g, '/');
+					if ( tmpPath && RE.localPath.test(url) ) {
+						url = (RootAlias + path.resolve(path.dirname(requireOrigin) + '/' + url)
+						                       .substr(tmpPath.length))
+							.replace(RE.winSlash, '/');
 					}
 					if ( tmpPath && !RootAliasRe.test(url) && url.includes("/") && /^[a-zA-Z_]/.test(url) ) {
-						url = (RootAlias + path.resolve(path.dirname(requireOrigin) + '/' + url).substr(tmpPath.length)).replace(/\\/g, '/');
+						url = (RootAlias + path.resolve(path.dirname(requireOrigin) + '/' + url).substr(tmpPath.length))
+							.replace(RE.winSlash, '/');
 					}
 				}
 				if ( url.includes("?") ) {
@@ -668,7 +681,7 @@ module.exports=
 									                                       mkExt = !(
 										                                       RootAliasRe.test(data.request) ||
 										                                       context &&
-										                                       /^\./.test(data.request)
+										                                       RE.localPath.test(data.request)
 										                                       ? (isInRoot = roots.find(r => path.resolve(context + '/' + data.request).startsWith(r)))
 										                                       : (isInRoot = roots.find(r => path.resolve(data.request).startsWith(r))));
 								                                       }
@@ -678,12 +691,12 @@ module.exports=
 										                                       || externalRE.test(request)
 									                                       )
 									                                       &&
-									                                       !(!isInRoot && /^\./.test(data.request)) // so
-								                                                                                    // it's
-								                                                                                    // relative
-								                                                                                    // to
-								                                                                                    // an
-								                                                                                    // internal
+									                                       !(!isInRoot && RE.localPath.test(data.request)) // so
+									                                       // it's
+									                                       // relative
+									                                       // to
+									                                       // an
+									                                       // internal
 								                                       ) {
 									
 									                                       if ( !isNodeBuild || !opts.vars.hardResolveExternals ) // keep external as-is for browsers builds
