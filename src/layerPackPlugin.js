@@ -59,7 +59,10 @@ module.exports = function ( cfg, opts ) {
 			    RootAlias           = opts.vars.rootAlias || "App",
 			    RootAliasRe         = new RegExp("^" + RootAlias, ''),
 			    WPInternalRequestRe = new RegExp("^\-?\!\!?", ''),
+			    PackageNameRE       = /^(\@[^\\\/]+[\\\/][^\\\/]+|[^\\\/]+)/i,
 			    roots               = opts.allRoots,
+			    modulesPathByLength = [...opts.allModulePath]
+				    .sort(( a, b ) => b.length - a.length),
 			    contextDependencies = [],
 			    fileDependencies    = [],
 			    availableExts       = [],
@@ -109,6 +112,10 @@ module.exports = function ( cfg, opts ) {
 			);
 			
 			// resolver for deps & deps of deps
+			// here is the big complex pbm: make work node_modules dir & inherited modules dirs
+			// main pbm is deps of deps may be in parents dir or in other layers modules dirs
+			// In some cases this can cause duplicates of compatible imports versions
+			// there probably some optims & cache options
 			compiler.options.resolve.plugins.push(
 				{
 					target: "module",
@@ -122,9 +129,12 @@ module.exports = function ( cfg, opts ) {
 								( request, resolveContext, callback ) => {// based on enhanced resolve ModulesInHierachicDirectoriesPlugin
 									const fs         = resolver.fileSystem,
 									      isInternal = roots.find(r => path.resolve(request.path).startsWith(r));
-									let addrs        = [];
-									let packageName  = request.request.match(/^(\@[^\\\/]+[\\\/][^\\\/]+|[^\\\/]+)/i)[0];
-									if ( isInternal ) {
+									let addrs        = [],
+									    rootModPath,
+									    packageName  = request.request.match(PackageNameRE)[0];
+									
+									//console.log(':::156: ', request.request, request.path, isInternal);
+									if ( !!isInternal ) {
 										addrs.push(
 											...opts.allModulePath.filter(// custom lib dir
 											                             ( p, i ) => !opts.allModuleRoots.find(mp => (path.join(mp, "node_modules") === p))
@@ -144,43 +154,47 @@ module.exports = function ( cfg, opts ) {
 												)
 											).map(p => {
 												return resolver.join(p, "node_modules")
-											})
-											,
-											...getPaths(roots[0]) // add mods from head layer parents dir
+											}),
+											...getPaths(opts.allLayerRoot[0]) // add mods from head layer parents dir
 												.paths.map(p => {
 													return resolver.join(p, "node_modules")
 												})
-										)
+										);
 									}
 									else {
-										addrs = getPaths(request.path)
+										// get all possible sub node_modules until the current layer's node_modules
+										addrs       = getPaths(request.path)
 											.paths.map(p => {
 												return resolver.join(p, "node_modules")
-											})
-											.filter(
-												addr => opts.allModulePath.find(r => addr.startsWith(r))
-											)
-										addrs.pop();//origin mods root
+											});
+										rootModPath = modulesPathByLength.find(r => addrs[0].startsWith(r))
+										if ( rootModPath )
+											addrs = addrs.filter(
+												addr => addr.startsWith(rootModPath)
+											);
+										else
+											addrs = [];
+										
+										addrs.pop();//rm origin mods root
+										
 										addrs.push(
-											// replace it with those from layers
-											...opts.allModuleRoots.filter(
-												( p, i ) => (
-													opts.allPackageCfg[i].dependencies
-													&& opts.allPackageCfg[i].dependencies[packageName]
-												)
+											...opts.allModuleRoots.filter(// prefer layer where its defined in deps
+											                              ( p, i ) => (
+												                              opts.allPackageCfg[i].dependencies
+												                              && opts.allPackageCfg[i].dependencies[packageName]
+											                              )
 											).map(p => {
 												return resolver.join(p, "node_modules")
 											}),
-											...opts.allModuleRoots.filter(
-												( p, i ) => !(
-													opts.allPackageCfg[i].dependencies
-													&& opts.allPackageCfg[i].dependencies[packageName]
-												)
+											...opts.allModuleRoots.filter(// if not defined try shared deps ( not formally defined in deps )
+											                              ( p, i ) => !(
+												                              opts.allPackageCfg[i].dependencies
+												                              && opts.allPackageCfg[i].dependencies[packageName]
+											                              )
 											).map(p => {
 												return resolver.join(p, "node_modules")
-											})
-											,
-											...getPaths(roots[0]) // add mods from head layer parents dir
+											}),
+											...getPaths(opts.allLayerRoot[0]) // add mods from head layer parents dir
 												.paths.map(p => {
 													return resolver.join(p, "node_modules")
 												})
@@ -190,7 +204,6 @@ module.exports = function ( cfg, opts ) {
 										addrs,
 										( addr, callback ) => {
 											fs.stat(addr, ( err, stat ) => {
-												//console.log(':::187: ', addr);
 												if ( !err && stat && stat.isDirectory() ) {
 													const obj = {
 														...request,
@@ -214,7 +227,6 @@ module.exports = function ( cfg, opts ) {
 													);
 												if ( resolveContext.missingDependencies )
 													resolveContext.missingDependencies.add(addr);
-												//console.log(':::not found: ', request.request);
 												return callback();
 											});
 										},
@@ -241,7 +253,7 @@ module.exports = function ( cfg, opts ) {
 								( request, resolveContext, callback ) => {// based on enhanced resolve ModulesInHierachicDirectoriesPlugin
 									const fs        = resolver.fileSystem;
 									const addrs     = [];
-									let packageName = request.request.match(/^(\@[^\\\/]+[\\\/][^\\\/]+|[^\\\/]+)/i)[0];
+									let packageName = request.request.match(PackageNameRE)[0];
 									addrs.push(
 										...opts.allModuleRoots.filter(
 											( p, i ) => (

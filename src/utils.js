@@ -112,6 +112,7 @@ const utils = {
 		    allModId       = [],
 		    allWebpackCfg  = [],
 		    allWebpackRoot = [],
+		    allLayerRoot   = [projectRoot],
 		    allModuleRoots = [],
 		    allCfg         = [],
 		    allPackageCfg  = [],
@@ -266,6 +267,7 @@ const utils = {
 					
 					    allCfg.push(profile);
 					    allPackageCfg.push(cfg);
+					    allLayerRoot.push(where);
 					
 					    if ( profile.config ) {
 						    allWebpackCfg.push(path.resolve(path.normalize(where + '/' + profile.config)));
@@ -323,6 +325,7 @@ const utils = {
 			allWebpackRoot,
 			allModulePath,
 			allRoots,
+			allLayerRoot,
 			allTemplates,
 			allScripts,
 			allExtPath,
