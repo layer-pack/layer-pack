@@ -91,16 +91,22 @@ So you can share, version, extend & switch your webpack conf & boilerplate via n
 
 ## Draft doc [here](doc/DOC.MD)
 
+## Fixs 
+
+- Webpack 5 module cache.type = "filesystem" require resolve.cache=false in order to force regeneration of virtual indexes files
+- Node builds Module resolution may eventually broke sub dependencies in some special rare cases ( can be fix by repeating related deps in the head layer or by keeping dev layer )
+
+
 ## Caveats ?
+
 
 - Node builds hardwrite the (node_)modules relative directories locations in the build, so it rely on the layers location
 - Context based webpack requires are not processed by layer-pack, they have the normal webpack behavior
 - Sass imports have limitations from sass compiler, as we can't rely on relative import we need to use absolute internal path or inherit will fail ( ex: App/assets/stuff.jpg, not ./assets/stuff.jpg )
-- Node builds Module resolution may eventually broke sub dependencies in some special rare cases ( can be fix by repeating related deps in the head layer or by keeping dev layer )
 
 ## Improvements / todo
 
-- Allow compiling inheritable packages code separately ( 1 layer = 1 dll ) 
+- Allow compiling layers separately 
 - Pure Babel plugin to avoid compilation / webpack
 - Optimisations
 - Better module resolution

@@ -23,7 +23,7 @@ const RE = {
 	getSassSuffix: /^(.*)([\?\#][^\/\\]+$)/,
 	isSuper      : /^\$super$/,
 	isSass       : /\.s?css$/,
-	packageName  : /^(\@[^\\\/]+[\\\/][^\\\/]+|[^\\\/]+)/i
+	packageName  : /^(\@[^\\\/]+[\\\/][^\\\/]+|[^\\\/]+)(.*)$/i
 };
 
 module.exports = function ( cfg, opts ) {
@@ -116,7 +116,7 @@ module.exports = function ( cfg, opts ) {
 					}
 				}
 			);
-			
+			let resolveCache = {};
 			// resolver for deps & deps of deps
 			// here is the big complex pbm: make work node_modules dir & inherited modules dirs
 			// main pbm is deps of deps may be in parents dir or in other layers modules dirs
@@ -133,13 +133,19 @@ module.exports = function ( cfg, opts ) {
 							.tapAsync(
 								'layer-pack',
 								( request, resolveContext, callback ) => {// based on enhanced resolve ModulesInHierachicDirectoriesPlugin
-									const fs         = resolver.fileSystem,
-									      isInternal = roots.find(r => path.resolve(request.path).startsWith(r));
-									let addrs        = [],
+									const fs                            = resolver.fileSystem,
+									      isInternal                    = roots.find(r => path.resolve(request.path).startsWith(r));
+									let addrs                           = [],
 									    rootModPath,
-									    packageName  = request.request.match(RE.packageName)[0];
+									    [, packageName, packageSubPath] = request.request.match(RE.packageName),
+									    key                             = request.path + "!|!" + request.request;
 									
-									//console.log(':::156: ', request.request, request.path, isInternal);
+									if ( resolveCache[key] ) {
+										//console.log('Use cache ', key);
+										request.path = resolveCache[key];
+										return callback(null, request);
+									}
+									
 									if ( !!isInternal ) {
 										addrs.push(
 											...opts.allModulePath.filter(// custom lib dir
@@ -206,6 +212,7 @@ module.exports = function ( cfg, opts ) {
 												})
 										)
 									}
+									addrs = addrs.filter(( path, i ) => addrs.indexOf(path) === i);
 									forEachBail(
 										addrs,
 										( addr, callback ) => {
@@ -224,7 +231,14 @@ module.exports = function ( cfg, opts ) {
 														obj,
 														message,
 														resolveContext,
-														callback
+														( err, res ) => {
+															//console.log(':::236: ', request.path, request.request,
+															// packageName, addr, err, res && res.path);
+															if ( res && res.path )
+																resolveCache[key] = res.path;
+															
+															callback(err, res)
+														}
 													);
 												}
 												if ( resolveContext.log )
@@ -356,7 +370,6 @@ module.exports = function ( cfg, opts ) {
 							 : "")
 					}, ENTRY_ORDER.First))
 			}
-			;
 			
 			// required for $super resolving
 			compiler.options.resolve.cacheWithContext = true;
@@ -563,13 +576,14 @@ module.exports = function ( cfg, opts ) {
 			};
 			
 			// wp hook
-			compiler.hooks.normalModuleFactory.tap("layer-pack",
-			                                       function ( nmf ) {
-				
-				                                       utils.addVirtualFile(
-					                                       vMod, compiler.inputFileSystem,
-					                                       path.normalize(roots[0] + '/.buildInfos.json.js'),
-					                                       `
+			compiler.hooks.normalModuleFactory.tap(
+				"layer-pack",
+				function ( nmf ) {
+					
+					utils.addVirtualFile(
+						vMod, compiler.inputFileSystem,
+						path.normalize(roots[0] + '/.buildInfos.json.js'),
+						`
 module.exports=
             {
                 project    : {
@@ -588,154 +602,157 @@ module.exports=
                 allModId   : ${JSON.stringify(opts.allModId)}
             };
 						                `
-				                                       );
-				
-				                                       utils.addVirtualFile(
-					                                       vMod, compiler.inputFileSystem,
-					                                       path.normalize(roots[0] + '/.___layerPackIndexUtils.js'),
-					                                       fs.readFileSync(path.join(__dirname, '../etc/utils/indexUtils.js'))
-				                                       );
-				                                       // deal with externals
-				                                       if ( excludeExternals )
-					                                       if ( nmf.hooks.resolve )// wp5
-					                                       {
-						                                       nmf.hooks.factorize.tapAsync('layer-pack', function ( data, callback ) {
-							                                       let requireOrigin = data.contextInfo.issuer,
-							                                           context       = data.context || path.dirname(requireOrigin),
-							                                           request       = data.request,
-							                                           mkExt         = isBuiltinModule(data.request),
-							                                           isInRoot;
-							
-							                                       if ( request === 'source-map-support' )
-								                                       mkExt = true;
-							                                       else if ( data.request === "$super" || !requireOrigin )// entry points ?
-								                                       return;
-							
-							                                       if ( !mkExt ) {
-								                                       // is it external ? @todo
-								                                       mkExt = !(
-									                                       RootAliasRe.test(data.request) ||
-									                                       context &&
-									                                       /^\./.test(data.request)
-									                                       ? (isInRoot = roots.find(r => path.resolve(context + '/' + data.request).startsWith(r)))
-									                                       : (isInRoot = roots.find(r =>
-										                                                                path.resolve(data.request).startsWith(r))));
+					);
+					
+					utils.addVirtualFile(
+						vMod, compiler.inputFileSystem,
+						path.normalize(roots[0] + '/.___layerPackIndexUtils.js'),
+						fs.readFileSync(path.join(__dirname, '../etc/utils/indexUtils.js'))
+					);
+					// deal with externals
+					if ( excludeExternals )
+						if ( nmf.hooks.resolve )// wp5
+						{
+							nmf.hooks.factorize.tapAsync('layer-pack', function ( data, callback ) {
+								let requireOrigin = data.contextInfo.issuer,
+								    context       = data.context || path.dirname(requireOrigin),
+								    request       = data.request,
+								    mkExt         = isBuiltinModule(data.request),
+								    isInRoot;
 								
-							                                       }
-							                                       if ( mkExt &&
-								                                       (
-									                                       !externalRE
-									                                       || externalRE.test(request)
-								                                       )
-								                                       &&
-								                                       !(!isInRoot && /^\./.test(data.request))
-							                                       ) {
-								                                       if ( !isNodeBuild || !opts.vars.hardResolveExternals ) // keep external as-is for browsers builds
-									                                       return callback(null, new ExternalModule(
-										                                       data.request,
-										                                       opts.vars.externalMode || "commonjs"
-									                                       ));
-								                                       else // hard resolve for node if possible
-									                                       return compiler.resolverFactory.get(
-										                                       "normal",
-										                                       {
-											                                       mainFields: ["main", "module"],
-											                                       extensions: [".js"]
-										                                       }
-									                                       ).doResolve(
-										                                       'resolve',
-										                                       {
-											                                       ...data,
-											                                       path: context
-										                                       },
-										                                       "External resolve of " + request,
-										                                       ( err, request ) => {
-											                                       return callback(null, new ExternalModule(err ||
-											                                                                                !request
-											                                                                                ? data.request
-											                                                                                :
-											                                                                                path.relative(compiler.options.output.path,
-											                                                                                              request.path).replace(/\\/g, '/'),
-											                                                                                opts.vars.externalMode || "commonjs"));
-										                                       });
-							                                       }
-							                                       else {
-								                                       return callback(null, data.request);
-							                                       }
-						                                       });
-					                                       }
-					                                       else {
-						                                       nmf.plugin('factory', function ( factory ) {
-							                                       return function ( data, callback ) {
-								                                       let requireOrigin = data.contextInfo.issuer,
-								                                           context       = data.context || path.dirname(requireOrigin),
-								                                           request       = data.request,
-								                                           mkExt         = isBuiltinModule(data.request),
-								                                           isInRoot;
+								//console.log('plugin::apply:82: ext', isNodeBuild);
+								if ( request === 'source-map-support' )
+									mkExt = true;
+								else if ( data.request === "$super" || !requireOrigin )// entry points ?
+								{
+									//console.log(':::631: ', this, data);
+									return callback(null, undefined);
+								}
 								
-								                                       if ( data.request === "$super" || !data.contextInfo.issuer )// entry points ?
-									                                       return factory(data, callback);
-								
-								                                       if ( !mkExt ) {
-									                                       // is it external ?
-									                                       mkExt = !(
-										                                       RootAliasRe.test(data.request) ||
-										                                       context &&
-										                                       RE.localPath.test(data.request)
-										                                       ? (isInRoot = roots.find(r => path.resolve(context + '/' + data.request).startsWith(r)))
-										                                       : (isInRoot = roots.find(r => path.resolve(data.request).startsWith(r))));
-								                                       }
-								                                       if ( mkExt &&
-									                                       (
-										                                       !externalRE
-										                                       || externalRE.test(request)
-									                                       )
-									                                       &&
-									                                       !(!isInRoot && RE.localPath.test(data.request)) // so
-									                                       // it's
-									                                       // relative
-									                                       // to
-									                                       // an
-									                                       // internal
-								                                       ) {
+								if ( !mkExt ) {
+									// is it external ? @todo
+									mkExt = !(
+										RootAliasRe.test(data.request) ||
+										context &&
+										/^\./.test(data.request)
+										? (isInRoot = roots.find(r => path.resolve(context + '/' + data.request).startsWith(r)))
+										: (isInRoot = roots.find(r =>
+											                         path.resolve(data.request).startsWith(r))));
 									
-									                                       if ( !isNodeBuild || !opts.vars.hardResolveExternals ) // keep external as-is for browsers builds
-										                                       return callback(null, new ExternalModule(
-											                                       data.request,
-											                                       opts.vars.externalMode || "commonjs"
-										                                       ));
-									                                       else // hard resolve for node if possible
-										                                       compiler.resolverFactory.get("normal",
-										                                                                    {
-											                                                                    mainFields: ["main", "module"],
-											                                                                    extensions: [".js"]
-										                                                                    }).doResolve(
-											                                       'resolve', {
-												                                       ...data,
-												                                       path: context
-											                                       },
-											                                       "External resolve of " + request, ( err,
-											                                                                           request ) => {
-												                                       return callback(null, new
-												                                       ExternalModule(err || !request ?
-												                                                      data.request :
-												                                                      path.relative(compiler.options.output.path,
-												                                                                    request.path).replace(/\\/g, '/'),
-												                                                      opts.vars.externalMode || "commonjs"));
-											                                       });
+								}
+								if ( mkExt &&
+									(
+										!externalRE
+										|| externalRE.test(request)
+									)
+									&&
+									!(!isInRoot && /^\./.test(data.request))
+								) {
+									if ( !isNodeBuild || !opts.vars.hardResolveExternals ) // keep external as-is for browsers builds
+										return callback(null, new ExternalModule(
+											data.request,
+											opts.vars.externalMode || "commonjs"
+										));
+									else // hard resolve for node if possible
+										return compiler.resolverFactory.get(
+											"normal",
+											{
+												mainFields: ["main", "module"],
+												extensions: [".js"]
+											}
+										).doResolve(
+											'resolve',
+											{
+												...data,
+												path: context
+											},
+											"External resolve of " + request,
+											( err, request ) => {
+												return callback(null, new ExternalModule(err ||
+												                                         !request
+												                                         ? data.request
+												                                         :
+												                                         path.relative(compiler.options.output.path,
+												                                                       request.path).replace(/\\/g, '/'),
+												                                         opts.vars.externalMode || "commonjs"));
+											});
+								}
+								else {
+									return callback(null, undefined);
+								}
+							});
+						}
+						else {
+							nmf.plugin('factory', function ( factory ) {
+								return function ( data, callback ) {
+									let requireOrigin = data.contextInfo.issuer,
+									    context       = data.context || path.dirname(requireOrigin),
+									    request       = data.request,
+									    mkExt         = isBuiltinModule(data.request),
+									    isInRoot;
 									
-								                                       }
-								                                       else {
-									                                       return factory(data, callback);
-								                                       }
-								
-							                                       };
-						                                       });
-					                                       }
-			                                       }
+									if ( data.request === "$super" || !data.contextInfo.issuer )// entry points ?
+										return factory(data, callback);
+									
+									if ( !mkExt ) {
+										// is it external ?
+										mkExt = !(
+											RootAliasRe.test(data.request) ||
+											context &&
+											RE.localPath.test(data.request)
+											? (isInRoot = roots.find(r => path.resolve(context + '/' + data.request).startsWith(r)))
+											: (isInRoot = roots.find(r => path.resolve(data.request).startsWith(r))));
+									}
+									if ( mkExt &&
+										(
+											!externalRE
+											|| externalRE.test(request)
+										)
+										&&
+										!(!isInRoot && RE.localPath.test(data.request)) // so
+										// it's
+										// relative
+										// to
+										// an
+										// internal
+									) {
+										
+										if ( !isNodeBuild || !opts.vars.hardResolveExternals ) // keep external as-is for browsers builds
+											return callback(null, new ExternalModule(
+												data.request,
+												opts.vars.externalMode || "commonjs"
+											));
+										else // hard resolve for node if possible
+											compiler.resolverFactory.get("normal",
+											                             {
+												                             mainFields: ["main", "module"],
+												                             extensions: [".js"]
+											                             }).doResolve(
+												'resolve', {
+													...data,
+													path: context
+												},
+												"External resolve of " + request, ( err,
+												                                    request ) => {
+													return callback(null, new
+													ExternalModule(err || !request ?
+													               data.request :
+													               path.relative(compiler.options.output.path,
+													                             request.path).replace(/\\/g, '/'),
+													               opts.vars.externalMode || "commonjs"));
+												});
+										
+									}
+									else {
+										return factory(data, callback);
+									}
+									
+								};
+							});
+						}
+				}
 			);
-			
-			// do update the globs indexes files on hot reload
+			//  do update the globs indexes files on hot reload
 			compiler.hooks.compilation.tap('layer-pack', ( compilation, params ) => {
 				let toBeRebuilt = [];
 				
