@@ -18,7 +18,7 @@ const path                 = require('path'),
 
 const RE = {
 	winSlash     : /\\/g,
-	localPath    : /^\./g,
+	localPath    : /^\./,
 	sassSuffix   : /[\?\#][^\/\\]+$/,
 	getSassSuffix: /^(.*)([\?\#][^\/\\]+$)/,
 	isSuper      : /^\$super$/,
@@ -75,10 +75,18 @@ module.exports = function ( cfg, opts ) {
 			    fileDependencies    = [],
 			    availableExts       = [],
 			    activeGlobs         = { scss: {}, jsx: {} },
+			    activeIgnoredFiles,
 			    buildTarget         = compiler.options.target || "web",
 			    useHotReload        = !!compiler.options.devServer,
 			    isNodeBuild         = /^(async-)?node$/.test(buildTarget),
 			    startBuildTm        = Date.now();
+			
+			compiler.options.watchOptions         = compiler.options.watchOptions || {};
+			compiler.options.watchOptions.ignored = compiler.options.watchOptions.ignored || [];
+			if ( is.string(compiler.options.watchOptions.ignored) )
+				compiler.options.watchOptions.ignored = [compiler.options.watchOptions.ignored];
+			activeIgnoredFiles = compiler.options.watchOptions.ignored;
+			activeIgnoredFiles.push(roots[0] + "/MapOf.*.gen.js");
 			
 			// Add the virtual module plugin
 			compiler.options.plugins.push(vMod);
@@ -172,6 +180,7 @@ module.exports = function ( cfg, opts ) {
 													return resolver.join(p, "node_modules")
 												})
 										);
+										//console.log(':::183: ', packageName, request.request, addrs);
 									}
 									else {
 										// get all possible sub node_modules until the current layer's node_modules
@@ -395,6 +404,8 @@ module.exports = function ( cfg, opts ) {
 				let requireOrigin   = data.context && data.context.issuer,
 				    context         = requireOrigin && path.dirname(requireOrigin),// || data.path,
 				    reqPath         = data.request,
+				    isRelative,
+				    relativeAbsPath = path.resolve(path.join(context || "", reqPath)),
 				    tmpPath, suffix = "";
 				
 				// do not re resolve
@@ -414,15 +425,21 @@ module.exports = function ( cfg, opts ) {
 				
 				// keep original request
 				data.lPackOriginRequest = reqPath;
-				
-				// if this is a relative require find & add the right root path
-				if ( context
+				isRelative              = context
 					&& RE.localPath.test(reqPath)
-					&& (tmpPath = roots.find(r => path.resolve(context + '/' + reqPath).startsWith(r)))
-				) {
-					reqPath = (RootAlias + path.resolve(context + '/' + reqPath)
-					                           .substr(tmpPath.length))
+					&& !!(tmpPath = roots.find(r => relativeAbsPath.startsWith(r)));
+				//console.log('lPackResolve::lPackResolve:417: ', reqPath, context, isRelative,
+				//            !!context
+				//	            ,!!RE.localPath.test(reqPath)
+				//	            ,!!(tmpPath = roots.find(r => relativeAbsPath.startsWith(r)))
+				//            )
+				//;
+				// if this is a relative require find & add the right root path
+				if ( isRelative ) {
+					//console.warn('lPackResolve::lPackResolve:417: !!!!!', reqPath);
+					reqPath = (RootAlias + relativeAbsPath.substr(tmpPath.length))
 						.replace(RE.winSlash, '/');
+					//console.log('lPackResolve::lPackResolve:417: ', reqPath);
 				}
 				
 				let isSuper = RE.isSuper.test(reqPath),
@@ -435,6 +452,9 @@ module.exports = function ( cfg, opts ) {
 						activeGlobs.scss[reqPath] = true;
 					else
 						activeGlobs.jsx[reqPath] = true;
+					
+					//if ( activeIgnoredFiles.indexOf(reqPath) === -1 )
+					//	activeIgnoredFiles.push(reqPath);
 					
 					return (RE.isSass.test(requireOrigin)
 					        ? utils.indexOfScss
@@ -604,6 +624,10 @@ module.exports=
 						                `
 					);
 					
+					!activeIgnoredFiles.includes(roots[0] + '/.buildInfos.json.js')
+					&& activeIgnoredFiles.push(roots[0] + '/.buildInfos.json.js');
+					!activeIgnoredFiles.includes(roots[0] + '/.___layerPackIndexUtils.js')
+					&& activeIgnoredFiles.push(roots[0] + '/.___layerPackIndexUtils.js');
 					utils.addVirtualFile(
 						vMod, compiler.inputFileSystem,
 						path.normalize(roots[0] + '/.___layerPackIndexUtils.js'),
@@ -752,6 +776,12 @@ module.exports=
 						}
 				}
 			);
+			// debug updated file
+			//compiler.hooks.watchRun.tap('WatchRun', ( compiler ) => {
+			//	console.log('plugin:::765: updated :', compiler.modifiedFiles);
+			//	console.log('plugin:::765: deleted :', compiler.removedFiles);
+			//
+			//});
 			//  do update the globs indexes files on hot reload
 			compiler.hooks.compilation.tap('layer-pack', ( compilation, params ) => {
 				let toBeRebuilt = [];
@@ -813,44 +843,51 @@ module.exports=
 						)
 					}
 			})
+			
 			// should deal with hot reload watched files & dirs
-			compiler.hooks.afterEmit.tapAsync('layer-pack', ( compilation, cb ) => {
-				compilation.fileDependencies    = compilation.fileDependencies || [];
-				compilation.contextDependencies = compilation.contextDependencies || [];
-				if ( compilation.fileDependencies.concat ) {
-					// Add file dependencies if they're not already tracked
-					fileDependencies.forEach(( file ) => {
-						if ( compilation.fileDependencies.indexOf(file) == -1 ) {
-							compilation.fileDependencies.push(file);
-						}
-					});
+			if ( compiler.hooks.afterDone ) // wp5
+				compiler.hooks.afterDone
+				        .tap('layer-pack', ( { compilation }, cb ) => {
 					
-					// Add context dependencies if they're not already tracked
-					contextDependencies.forEach(( context ) => {
-						if ( compilation.contextDependencies.indexOf(context) == -1 ) {
-							compilation.contextDependencies.push(context);
-						}
-					});
-				}
-				else {// webpack 4
-					//debugger;
-					// Add file dependencies if they're not already tracked
-					fileDependencies.forEach(( file ) => {
-						!compilation.fileDependencies.has(file) &&
-						compilation.fileDependencies.add(file);
-					});
-					fileDependencies.length = 0;
-					//console.log('plugin:::696: ', contextDependencies);
-					// Add context dependencies if they're not already tracked
-					contextDependencies.forEach(( context ) => {
-						!compilation.contextDependencies.has(context) &&
-						compilation.contextDependencies.add(context);
-					});
-					contextDependencies.length = 0;
-				}
-				cb();
-				cache = {};
-			});
+					
+					        fileDependencies.length    = 0;
+					        contextDependencies.length = 0;
+					
+					        // seems to fix wp5 endless compilation loop using docker volume + long build time
+					        compiler.options.watch
+					        && process.nextTick(
+						        tm => {
+							        compiler.watchFileSystem.watcher.watch([], roots)
+						        }
+					        )
+					
+					        cache = {};
+				        });
+			else // wp4
+				compiler.hooks.afterEmit
+				        .tapAsync('layer-pack', ( compilation, cb ) => {
+					        // old method
+					        //
+					        //
+					        // Add file dependencies if they're not already tracked
+					        fileDependencies.forEach(( file ) => {
+					            !compilation.fileDependencies.has(file) &&
+					            compilation.fileDependencies.add(file);
+					        });
+
+					        fileDependencies.length = 0;
+
+					        // Add context dependencies if they're not already tracked
+					        contextDependencies.forEach(( context ) => {
+					            !compilation.contextDependencies.has(context) &&
+					            compilation.contextDependencies.add(context);
+					        });
+
+					        contextDependencies.length = 0;
+					        //
+					        cache = {};
+					        cb();
+				        });
 		}
 	}
 }
