@@ -95,7 +95,7 @@ So you can share, version, extend & switch your webpack conf & boilerplate via n
 
 - Webpack 5 module cache.type = "filesystem" require resolve.cache=false in order to force regeneration of virtual indexes files
 - Node builds Module resolution may eventually broke sub dependencies in some special rare cases ( can be fix by repeating related deps in the head layer or by keeping dev layer )
-
+- Due to compat, wp5 work better with node >=14
 
 ## Caveats ?
 

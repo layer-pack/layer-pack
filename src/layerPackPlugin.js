@@ -868,7 +868,6 @@ module.exports=
 				        .tapAsync('layer-pack', ( compilation, cb ) => {
 					        // old method
 					        //
-					        //
 					        // Add file dependencies if they're not already tracked
 					        fileDependencies.forEach(( file ) => {
 					            !compilation.fileDependencies.has(file) &&
@@ -884,7 +883,6 @@ module.exports=
 					        });
 
 					        contextDependencies.length = 0;
-					        //
 					        cache = {};
 					        cb();
 				        });
