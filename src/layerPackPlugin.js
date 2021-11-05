@@ -851,7 +851,7 @@ module.exports=
 					
 					
 					        // seems to fix wp5 endless compilation loop using docker volume + long build time
-					        (compiler.options.watch || process.argv[1].indexOf('webpack-dev-server'))
+					        (compiler.options.watch || process.argv[1].indexOf('webpack-dev-server')!==-1)
 					        && process.nextTick(
 						        tm => {
 							        compiler.watchFileSystem.watcher.watch([], roots)
