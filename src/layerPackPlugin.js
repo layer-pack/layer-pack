@@ -850,14 +850,13 @@ module.exports=
 				        .tap('layer-pack', ( { compilation }, cb ) => {
 					
 					
-					        fileDependencies.length    = 0;
-					        contextDependencies.length = 0;
-					
 					        // seems to fix wp5 endless compilation loop using docker volume + long build time
-					        compiler.options.watch
+					        (compiler.options.watch || process.argv[1].indexOf('webpack-dev-server'))
 					        && process.nextTick(
 						        tm => {
 							        compiler.watchFileSystem.watcher.watch([], roots)
+							        fileDependencies.length    = 0;
+							        contextDependencies.length = 0;
 						        }
 					        )
 					
@@ -870,20 +869,20 @@ module.exports=
 					        //
 					        // Add file dependencies if they're not already tracked
 					        fileDependencies.forEach(( file ) => {
-					            !compilation.fileDependencies.has(file) &&
-					            compilation.fileDependencies.add(file);
+						        !compilation.fileDependencies.has(file) &&
+						        compilation.fileDependencies.add(file);
 					        });
-
+					
 					        fileDependencies.length = 0;
-
+					
 					        // Add context dependencies if they're not already tracked
 					        contextDependencies.forEach(( context ) => {
-					            !compilation.contextDependencies.has(context) &&
-					            compilation.contextDependencies.add(context);
+						        !compilation.contextDependencies.has(context) &&
+						        compilation.contextDependencies.add(context);
 					        });
-
+					
 					        contextDependencies.length = 0;
-					        cache = {};
+					        cache                      = {};
 					        cb();
 				        });
 		}
