@@ -869,6 +869,7 @@ module.exports=
 					        //
 					        // Add file dependencies if they're not already tracked
 					        fileDependencies.forEach(( file ) => {
+						        compilation.fileDependencies&&
 						        !compilation.fileDependencies.has(file) &&
 						        compilation.fileDependencies.add(file);
 					        });
@@ -877,6 +878,7 @@ module.exports=
 					
 					        // Add context dependencies if they're not already tracked
 					        contextDependencies.forEach(( context ) => {
+						        compilation.contextDependencies&&
 						        !compilation.contextDependencies.has(context) &&
 						        compilation.contextDependencies.add(context);
 					        });
