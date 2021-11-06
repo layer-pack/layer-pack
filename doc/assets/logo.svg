@@ -29,17 +29,17 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="11.2"
-     inkscape:cx="19.670293"
+     inkscape:cx="3.3756501"
      inkscape:cy="31.500084"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
      units="px"
      width="64px"
-     inkscape:window-width="2491"
+     inkscape:window-width="2498"
      inkscape:window-height="1417"
-     inkscape:window-x="1981"
-     inkscape:window-y="-8"
+     inkscape:window-x="1494"
+     inkscape:window-y="851"
      inkscape:window-maximized="1" />
   <metadata
      id="metadata2654">
@@ -96,16 +96,30 @@
            id="path2613" />
       </g>
     </g>
-    <text
-       xml:space="preserve"
-       style="font-style:normal;font-weight:normal;font-size:1.96949935px;line-height:1.25;font-family:sans-serif;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.11362495"
-       x="8.3559351"
-       y="296.37305"
-       id="text2622"><tspan
-         sodipodi:role="line"
-         id="tspan2620"
+    <g
+       id="g4535">
+      <text
+         id="text2622"
+         y="296.37305"
+         x="8.3559351"
+         style="font-style:normal;font-weight:normal;font-size:1.96949935px;line-height:1.25;font-family:sans-serif;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:#ffffff;stroke-width:0.10583333;stroke-opacity:1;stroke-miterlimit:4;stroke-dasharray:none"
+         xml:space="preserve"><tspan
+           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans Bold';stroke-width:0.10583333;stroke:#ffffff;stroke-opacity:1;stroke-miterlimit:4;stroke-dasharray:none"
+           y="296.37305"
+           x="8.3559351"
+           id="tspan2620"
+           sodipodi:role="line">layer-pack</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-weight:normal;font-size:1.96949935px;line-height:1.25;font-family:sans-serif;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.10583333;stroke-opacity:1;stroke-miterlimit:4;stroke-dasharray:none;"
          x="8.3559351"
          y="296.37305"
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans Bold';stroke-width:0.11362495">layer-pack</tspan></text>
+         id="text4529"><tspan
+           sodipodi:role="line"
+           id="tspan4527"
+           x="8.3559351"
+           y="296.37305"
+           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans Bold';stroke-width:0.10583333;stroke:none;stroke-opacity:1;stroke-miterlimit:4;stroke-dasharray:none;">layer-pack</tspan></text>
+    </g>
   </g>
 </svg>
