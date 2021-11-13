@@ -105,7 +105,7 @@ Example webpack config :
 
 ```es6
 const layerPack  = require('layer-pack'),
-      lPackPlugin  = layerPack.plugin(/* json in .layers.conf can be directly used here */),
+      lPackPlugin  = layerPack.plugin(/* json in .layers.json can be directly used here */),
       lPackCfg     = layerPack.getConfig(),
       isExcluded = layerPack.isFileExcluded();
       
@@ -158,7 +158,7 @@ module.exports = [
 ]
 ```
 
-Also, Webpack config from a parent package profile can be overrided  :
+Also, Webpack config from a parent package profile can be override using "proxy" webpack cfg :
 
 webpack.config.js
 ```jsx
@@ -175,10 +175,16 @@ module.exports = wpCfg;
 
 ## Setup layers for development ( install inherited layers devDependencies )
 
-DevDependencies of dependencies are not installed, so layer-pack can install them using the following command : 
+DevDependencies of dependencies are not installed, so there 2 options :
+
+- layer-pack can install them, using the following command : 
 
 ```bash
-# from the head project
+# from the leaf project layers:
+npm i
+
+# then: 
+
 lpack-setup # npm all inherited layers using "default" profile
 
 lpack-setup :www # the same for the "www" profile layers
@@ -188,6 +194,7 @@ lpack-setup :www ci # setup with npm ci
 
 lpack :? # get available profiles
 ```
+- Or, you can install them, starting from the root layers
 
 ## CLI
 
@@ -216,8 +223,8 @@ lpack :? # get available profiles
 When using glob with require or es6 import, the plugin generate a virtual file on the fly.<br>
 Basing the string captured by the parenthesis, the plugin generate es6 named exports.
 
-- If the captured string contain "/" or  "\\", it will be walk & set in JS way
-- If it contain invalid variable identifier it will not be available as named export (only in the default export)
+- If the captured string contain "/" or  "\\", it will split and walk & set in JS way
+- If it contain invalid JS variable identifier it will not be available as named export (only in the default export)
 
 Ex :
 ```jsx harmony
@@ -225,7 +232,7 @@ Ex :
 import Comps from "App/components/(**/*).jsx";
 // if a file match App/components/(media/VideoPlayer).jsx
 console.log(Comps);
-// it will contain Comps.media.VideoPlayer
+// it will contain { Comps : { media : VideoPlayer } }
 
 import AllActionsByFolder from "App/store/(*)/actions.js";
 // or
@@ -233,6 +240,11 @@ import {MyCompByFileName} from "App/ui/components/(*).jsx"; // ( big import list
 // or
 import {myFolder} from "App/ui/components/(**/*).jsx"; // ( walk & set myFolder/MyComp in myFolder.MyComp )
 ```
+
+Glob imports generate virtual files "just in time".
+
+These files do named exports & use an unique file name, so same glob import use the same files.
+
 
 ## More about building with inherit
 
@@ -243,14 +255,14 @@ It's called ".buildInfos.json" & contain the following infos :
 
 ```
 {
-    /* from the package.json file */
+    /* from the project package.json file */
     project    : {
         name
         description
         author
         version
     },
-    /* the profile id */
+    /* the profile id used to build */
     profile,
     /* the timestamp when the build has been made */
     buildDate,
@@ -263,10 +275,5 @@ It's called ".buildInfos.json" & contain the following infos :
 }
 ```
 
-### Glob resolving
-
-Glob imports generate virtual files "just in time".
-
-These files do named exports & use an unique file name, so same glob import use the same files.
 
 [![*](https://www.google-analytics.com/collect?v=1&tid=UA-82058889-1&cid=555&t=event&ec=project&ea=view&dp=%2Fproject%2Flayer-pack&dt=doc)](#)

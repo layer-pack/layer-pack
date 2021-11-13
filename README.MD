@@ -22,7 +22,7 @@ Feel free to test / feedback / make contribs<br/>
 
 ## Main features :
 
-### Split you're projects into multiple inheritable npm packages ( instead of tons of highly linked mini-modules )
+### Split you're projects into multiple inheritable npm packages 
 
 - inherit & share most of the code between projects
 - Include or not layers like dev tools, admin, etc
@@ -30,7 +30,7 @@ Feel free to test / feedback / make contribs<br/>
 - Test layers independently
 - Compile in 1 step, with the source map
 - Use multiple dev servers sharing the same code layers
-- .. and stop creating tons of mini-mods with 60% of theirs code who just link them
+- .. and stop creating tons of mini-mods with 50% of theirs code who just link them
 
 ### Make glob imports on inherited directories ( from local or inherited packages )
 
@@ -107,22 +107,19 @@ So you can share, version, extend & switch your webpack conf & boilerplate via n
 ## Improvements / todo
 
 - Allow compiling layers separately 
-- Pure Babel plugin to avoid compilation / webpack
 - Optimisations
 - Better module resolution
 
 ## Alternative to
 
  - Splitting big projects in thousands of modules
- - Lerna, ...
+ - Lerna, others mono-repo tool chains...
 
 ## Contributors ?
 
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](#)
 
 <!-- BACKERS/ -->
-
-<h2>Backers</h2>
 
 <h3>Sponsors</h3>
 

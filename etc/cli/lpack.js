@@ -12,8 +12,9 @@
 const path    = require('path'),
       utils   = require('./utils'),
       resolve = require('resolve'),
+      fs      = require('fs'),
       spawn   = require('child_process').spawn,
-      lpack     = require('../../src');
+      lpack   = require('../../src');
 
 let cmd,
     wpCli,
@@ -21,6 +22,11 @@ let cmd,
     profile  = 'default',
     nodeArgz = [],
     confs    = lpack.getAllConfigs();
+
+if ( argz[0] === "-v" ) {
+	console.info("layer-pack v" + JSON.parse(fs.readFileSync(path.join(__dirname, "../../package.json"))).version);
+	process.exit();
+}
 
 while ( argz[0] && /^\-/.test(argz[0]) )
 	nodeArgz.push(argz.shift());
