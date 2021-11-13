@@ -88,6 +88,7 @@ module.exports = function ( cfg, opts ) {
 			activeIgnoredFiles = compiler.options.watchOptions.ignored;
 			activeIgnoredFiles.push(roots[0] + "/MapOf.*.gen.js");
 			
+			
 			// Add the virtual module plugin
 			compiler.options.plugins.push(vMod);
 			
@@ -784,7 +785,7 @@ module.exports=
 			//});
 			//  do update the globs indexes files on hot reload
 			compiler.hooks.compilation.tap('layer-pack', ( compilation, params ) => {
-				let toBeRebuilt = [];
+				let toBeRebuilt = [], anySassChange;
 				
 				// force rebuild in wp5 without full recompile
 				compilation.buildQueue &&
@@ -795,6 +796,9 @@ module.exports=
 					                     if ( toBeRebuilt.includes(module.resource) ) {
 						                     //console.info("Index was Updated ", module.resource, module._forceBuild)
 						                     toBeRebuilt.splice(toBeRebuilt.indexOf(module.resource), 1);
+						                     module._forceBuild = true;
+					                     }
+					                     else if ( /scss/.test(module.resource) && anySassChange ) {
 						                     module._forceBuild = true;
 					                     }
 					                     cb()
@@ -836,6 +840,7 @@ module.exports=
 							RootAliasRe,
 							useHotReload,
 							function ( e, filePath, content, changed ) {
+								anySassChange = true;
 								if ( changed ) {
 									toBeRebuilt.push(filePath)
 								}
@@ -851,7 +856,7 @@ module.exports=
 					
 					
 					        // seems to fix wp5 endless compilation loop using docker volume + long build time
-					        (compiler.options.watch || process.argv[1].indexOf('webpack-dev-server')!==-1)
+					        (compiler.options.watch || process.argv[1].indexOf('webpack-dev-server') !== -1)
 					        && process.nextTick(
 						        tm => {
 							        compiler.watchFileSystem.watcher.watch([], roots)
@@ -869,7 +874,7 @@ module.exports=
 					        //
 					        // Add file dependencies if they're not already tracked
 					        fileDependencies.forEach(( file ) => {
-						        compilation.fileDependencies&&
+						        compilation.fileDependencies &&
 						        !compilation.fileDependencies.has(file) &&
 						        compilation.fileDependencies.add(file);
 					        });
@@ -878,7 +883,7 @@ module.exports=
 					
 					        // Add context dependencies if they're not already tracked
 					        contextDependencies.forEach(( context ) => {
-						        compilation.contextDependencies&&
+						        compilation.contextDependencies &&
 						        !compilation.contextDependencies.has(context) &&
 						        compilation.contextDependencies.add(context);
 					        });
