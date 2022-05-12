@@ -798,7 +798,7 @@ module.exports=
 						                     toBeRebuilt.splice(toBeRebuilt.indexOf(module.resource), 1);
 						                     module._forceBuild = true;
 					                     }
-					                     else if ( /scss/.test(module.resource) && anySassChange ) {
+					                     else if ( /\.scss/.test(module.resource) && anySassChange ) {
 						                     module._forceBuild = true;
 					                     }
 					                     cb()
