@@ -1,6 +1,6 @@
 {
   "name": "layer-pack",
-  "version": "2.0.9",
+  "version": "2.0.10",
   "description": "Webpack plugin to make inheritable code layers, glob imports, easy multi packages app & shared webpack configs",
   "license": "MIT",
   "main": "src/index.js",

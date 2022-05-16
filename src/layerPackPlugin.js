@@ -840,8 +840,8 @@ module.exports=
 							RootAliasRe,
 							useHotReload,
 							function ( e, filePath, content, changed ) {
-								anySassChange = true;
 								if ( changed ) {
+									anySassChange = true;
 									toBeRebuilt.push(filePath)
 								}
 							}
