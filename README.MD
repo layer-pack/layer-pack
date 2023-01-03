@@ -17,7 +17,6 @@ Easily split webpack projects into multiple npm packages
 Feel free to test / feedback / make contribs<br/>
 </p>
 
-
 ## Check the samples [here](https://github.com/n8tz/layer-pack-samples)
 
 ## Main features :
@@ -30,9 +29,10 @@ Feel free to test / feedback / make contribs<br/>
 - Test layers independently
 - Compile in 1 step, with the source map
 - Use multiple dev servers sharing the same code layers
-- .. and stop creating tons of mini-mods with 50% of theirs code who just link them
 
-### Make glob imports on inherited directories ( from local or inherited packages )
+### Make glob imports 
+
+Layer pack allow import using glob patterns ( from current and inherited packages )
 
 ```jsx
 import allModules from "App/modules/*.module.js";
@@ -86,7 +86,6 @@ export default class MyOverrided extend $super{
 
 So you can share, version, extend & switch your webpack conf & boilerplate via npm
 
-
 ## Check the samples [here](https://github.com/n8tz/layer-pack-samples)
 
 ## Draft doc [here](doc/DOC.MD)
@@ -95,20 +94,12 @@ So you can share, version, extend & switch your webpack conf & boilerplate via n
 
 - Webpack 5 module cache.type = "filesystem" require resolve.cache=false in order to force regeneration of virtual indexes files
 - Node builds Module resolution may eventually broke sub dependencies in some special rare cases ( can be fix by repeating related deps in the head layer or by keeping dev layer )
-- Due to compat, wp5 work better with node >=14
 
 ## Caveats ?
-
 
 - Node builds hardwrite the (node_)modules relative directories locations in the build, so it rely on the layers location
 - Context based webpack requires are not processed by layer-pack, they have the normal webpack behavior
 - Sass imports have limitations from sass package, it doesn't tell which file do the import but the source file that was imported in webpack, so scss files must use absolute path ( eg: App/assets/stuff.jpg, not ./assets/stuff.jpg )
-
-## Improvements / todo
-
-- Allow compiling layers separately 
-- Optimisations
-- Better module resolution
 
 ## Alternative to
 

@@ -23,6 +23,10 @@ let cmd,
     script  = 'i',
     confs   = lpack.getAllConfigs();
 
+if ( process.env.__IS_LPACK_SETUP__ ) {// ignore sub setup as another setup is running
+	process.exit(0)
+}
+
 if ( argz[0] && /^\:.*$/.test(argz[0]) )
 	profile = argz.shift().replace(/^\:(.*)$/, '$1');
 if ( argz[0] )
@@ -49,7 +53,7 @@ toBeSetup.forEach(
 			{
 				cwd  : root,
 				stdio: 'inherit',
-				env  : { ...process.env, '__LPACK_PROFILE__': profile }
+				env  : { ...process.env, '__LPACK_PROFILE__': profile, '__IS_LPACK_SETUP__': true }
 			}
 		);
 	}
