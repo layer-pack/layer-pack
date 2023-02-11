@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 BRAUN Nathanael
+ * Copyright 2023 BRAUN Nathanael
  *
  * Use of this source code is governed by an MIT-style
  * license that can be found in the LICENSE file or at
@@ -130,25 +130,56 @@ const utils = {
 			        layerIdList          = [],
 			        seen                 = {};
 			
-			    profileConfig.extend && profileConfig.extend.forEach(function walk( layerId, i, x, mRoot, cProfile, libsPath = profileConfig.libsPath ) {
+			    profileConfig.extend && profileConfig.extend.forEach(function walk( layerId, i, x, mRoot, cProfile, libsPath ) {
+				
+				    if ( !mRoot && profileConfig.libsPath ) {
+					    libsPath = profileConfig.libsPath
+				    }
+				
 				    mRoot    = mRoot || projectRoot;
 				    cProfile = cProfile || profileConfig.basedOn || profileId;
 				
-				    // find the inheritable package path & cfg
-				    let where       = libsPath && fs.existsSync(path.normalize(projectRoot + "/" + libsPath + "/" + layerId))
-				                      ? "/" + libsPath + "/" :
-				                      "/node_modules/",
-				        cfg         = getlPackConfigFrom(mRoot + where + layerId),
-				        realProfile = cProfile;
+				    if ( libsPath && !Array.isArray(libsPath) )
+					    libsPath = [libsPath]
 				
-				    // if the package is not here it may sibling this one...
-				    if ( !cfg || !cfg.layerPack ) {
-					    where = "/../";
-					    cfg   = getlPackConfigFrom(mRoot + where + layerId);
-					
+				    if ( !libsPath )
+					    libsPath = [];
+				
+				    libsPath = libsPath.map(
+					    p => fs.realpathSync(path.normalize(
+						    path.isAbsolute(p)
+						    ? p
+						    : path.join(mRoot, p)
+					    ))
+				    )
+				
+				    // find the inheritable package path & cfg
+				    let where;
+				    for ( let p = 0; libsPath.length > p; p++ ) {
+					    where = path.join(libsPath[p], layerId);
+					    if ( fs.existsSync(where) )
+						    break;
+					    where = "";
+				    }
+				    if ( !where ) {
+					    where = path.join(mRoot, "node_modules", layerId);
+					    if ( !fs.existsSync(where) ) {
+						    // if the package is not here it may sibling this one...
+						    where = path.join(mRoot, "..", layerId);
+						    if ( !fs.existsSync(where) ) {
+							    throw new Error("layer-pack > Can't found :" + layerId + " defined in " + mRoot);
+						    }
+					    }
+				    }
+				    let
+					    cfg         = getlPackConfigFrom(where),
+					    realProfile = cProfile;
+				
+				    if ( !cfg ) {
+					    throw new Error("layer-pack : Can't found config of " + layerId + " defined in " + mRoot);
 				    }
 				
-				    layerPathList.push(path.resolve(path.normalize(mRoot + where + layerId)));
+				    layerPathList.push(path.resolve(where));
 				    layerIdList.push(layerId);
 				
 				    while ( cfg && cfg.layerPack && is.string(cfg.layerPack[realProfile]) ) {// profile alias
@@ -166,19 +197,28 @@ const utils = {
 							    .forEach(
 								    ( mid, y ) => walk(
 									    mid, y, null,
-									    mRoot + where + layerId,
+									    where,
 									    cfg.layerPack[realProfile].basedOn || realProfile,
 									    cfg.layerPack[realProfile].libsPath
+									    ? [
+											    ...libsPath,
+											    ...(
+												    Array.isArray(cfg.layerPack[realProfile].libsPath)
+												    ? cfg.layerPack[realProfile].libsPath
+												    : [cfg.layerPack[realProfile].libsPath]
+											    )
+										    ]
+									    : libsPath
 								    )
 							    )
 				    }
 				    else {
 					    if ( !cfg )
-						    throw new Error("layer-pack : Can't inherit an not installed module :\nNot found :" + mRoot + where + layerId);
+						    throw new Error("layer-pack : Can't inherit an not installed module :\nNot found :" + layerId + " defined in " + mRoot);
 					    if ( !cfg.layerPack )
-						    throw new Error("layer-pack : Can't inherit a module with no layerPack in the package.json/.layers.json :\nAt :" + mRoot + where + layerId);
+						    throw new Error("layer-pack : Can't inherit a module with no layerPack in the package.json/.layers.json :\nAt :" + layerId + " defined in " + mRoot);
 					    if ( !cfg.layerPack[realProfile] )
-						    throw new Error("layer-pack : Can't inherit a module without the requested profile\nAt :" + mRoot + where + layerId + "\nRequested profile :" + cProfile);
+						    throw new Error("layer-pack : Can't inherit a module without the requested profile\nAt :" + layerId + " defined in " + mRoot + "\nRequested profile :" + cProfile);
 				    }
 				
 			    })
@@ -197,11 +237,24 @@ const utils = {
 		    })(),
 		    // deduce all the roots & others values
 		    allRoots       = (function () {
-			    let roots = [projectRoot + '/' + rootDir], libPath = [];
+			    let roots            = [projectRoot + '/' + rootDir],
+			        libPath          = [],
+			        layerLibsPathDef = Array.isArray(profileConfig.libsPath)
+			                           ? profileConfig.libsPath
+			                           : profileConfig.libsPath && [profileConfig.libsPath] || [];
 			
-			    profileConfig.libsPath
-			    && fs.existsSync(path.normalize(projectRoot + "/" + profileConfig.libsPath))
-			    && libPath.push(path.normalize(projectRoot + "/" + profileConfig.libsPath));
+			    layerLibsPathDef
+				    .forEach(
+					    p => {
+						    p = fs.realpathSync(path.normalize(
+							    path.isAbsolute(p)
+							    ? p
+							    : path.join(projectRoot, p)
+						    ));
+						    fs.existsSync(p)
+						    && libPath.push(p);
+					    }
+				    )
 			
 			    allModulePath.push(path.normalize(projectRoot + '/node_modules'));
 			    allModuleRoots.push(projectRoot);
@@ -283,11 +336,22 @@ const utils = {
 							          allScripts
 						          );
 					    //
-					    profile.libsPath &&
-					    fs.existsSync(path.normalize(where + "/" + profile.libsPath))
-					    && libPath.push(
-						    fs.realpathSync(path.normalize(where + "/" + profile.libsPath)));
+					    let layerLibsPathDef = Array.isArray(profile.libsPath)
+					                           ? profile.libsPath
+					                           : profile.libsPath && [profile.libsPath] || [];
 					
+					    layerLibsPathDef
+						    .forEach(
+							    p => {
+								    p = fs.realpathSync(path.normalize(
+									    path.isAbsolute(p)
+									    ? p
+									    : path.join(where, p)
+								    ));
+								    fs.existsSync(p)
+								    && libPath.push(p);
+							    }
+						    )
 					    checkIfDir(fs, modPath)
 					    && allModulePath.push(fs.realpathSync(modPath));
 				    }
@@ -409,8 +473,8 @@ const utils = {
 				.replace(/\./ig, '\\.')
 				.replace(/\*\*\\\//ig, '(?:(?:*\\/)+)?')
 				.replace(/\*/ig, '[^\\\\\\/]+');
-		if (subPath[0]==='/')
-			subPath=subPath.substr(1);
+		if ( subPath[0] === '/' )
+			subPath = subPath.substr(1);
 		input = input.replace(/[\(\)]/g, '');
 		
 		
@@ -431,7 +495,7 @@ const utils = {
 						        wPath = path.dirname(file);
 						
 						    if ( !files[uPath] ) {
-								//console.log('utils:::431: ', uPath, name,file, _root + "/" + subPath,files);
+							    //console.log('utils:::431: ', uPath, name,file, _root + "/" + subPath,files);
 							    //fileDependencies.push(path.normalize(file));
 							    filesToAdd.push([uPath, name]);
 							

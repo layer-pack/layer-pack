@@ -11,6 +11,8 @@
 
 # How to use
 
+The simpler is to start from a  sample & update its deps.
+
 Samples [here](https://github.com/n8tz/layer-pack-samples)
 
 ## Create & inherit packages
@@ -20,6 +22,8 @@ Add layer-pack to packages deps
 ```bash
 npm i -s layer-pack // on all inheritable projects with wp conf & on the head project
 ```
+
+Then, layer-pack need a file with a configuration for each build profiles.
 
 Add a ".layers.json" file near the package.json of each projects :
 

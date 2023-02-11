@@ -19,7 +19,60 @@ Feel free to test / feedback / make contribs<br/>
 
 ## Check the samples [here](https://github.com/n8tz/layer-pack-samples)
 
+## What's Layer-pack ?
+
+Layer-pack is a webpack plugin allowing way better code maintainability and structure flexibility by solving two majors problems in big JS/TS apps:
+
+- The first problem we often have on big JS/TS projects, is that we rapidly need to import a lot of internal files on almost any files. 
+This usually lead to complex maintenance and many ( too much ) list of imports & requires.
+
+- The second, is that we can't easily "extend" an existing app, we are always forced to make various interfacing systems & API, maintain separated build configurations and common components   
+
+Layer pack solve this by using more powerful resolving concepts :
+
+- It "namespace" the application files, so we can use absolute imports where we shouldn't use relative paths
+- It allow us to use glob patterns in imports statements, so we can directly import files & directory tree without specifying all theirs names
+- It allow to literally "inherit" a layer-pack based application or "application layer" including theirs build configuration & dependencies
+- It allow to define multiple profiles "inheriting" different layer-pack based packages and using different root source code directory 
+
 ## Main features :
+
+### Namespace you're application
+
+So you can stop using easily broken relative imports :
+```jsx
+// import stuff from "../../../config"; // no more
+import stuff from "App/config"; // aw yeah
+```
+
+### Use glob patterns in imports statements
+
+Layer pack allow using glob patterns in imports statements :
+
+```jsx
+import allModules from "App/modules/*.module.js";
+// or
+// import allModules from "App/modules/*/index.js";
+```
+
+It can also convert directories & files names to JS named exports :
+
+```jsx
+// or using es6 named exports
+import AllActionsByStoreName from "App/store/(*)/actions.js";
+// or
+import {MyCompByFileName} from "App/ui/components/(*).jsx"; // ( big import list to maintain ) no more ! :)
+// or
+import {myFolder} from "App/ui/components/(**/*).jsx"; // ( walk & set myFolder/MyComp in myFolder.MyComp )
+```
+
+Glob imports also work in Scss :
+
+```scss
+
+@import "App/ui/**/*.scss"; // 1 import to rulz them all
+
+```
 
 ### Split you're projects into multiple inheritable npm packages 
 
@@ -30,35 +83,7 @@ Feel free to test / feedback / make contribs<br/>
 - Compile in 1 step, with the source map
 - Use multiple dev servers sharing the same code layers
 
-### Make glob imports 
 
-Layer pack allow import using glob patterns ( from current and inherited packages )
-
-```jsx
-import allModules from "App/modules/*.module.js";
-// or
-// import allModules from "App/modules/*/index.js";
-// or using es6 named exports
-// import AllActions from "App/store/(*)/actions.js";
-// or
-// import {MyCompByFileName} from "App/ui/components/(*).jsx"; // ( big import list to maintain ) no more ! :)
-// or
-// import {myFolder} from "App/ui/components/(**/*).jsx"; // ( walk & set myFolder/MyComp in myFolder.MyComp )
-```
-
-```scss
-
-@import "App/modules/*.module.scss"; // 1 import to rulz them all
-
-```
-
-### Namespace you're application
-
-So you can stop using easily broken relative imports :
-```jsx
-// import stuff from "../../../config"; // no more
-import stuff from "App/config"; // aw yeah
-```
 
 ### Easily override inherited project
 
@@ -90,17 +115,14 @@ So you can share, version, extend & switch your webpack conf & boilerplate via n
 
 ## Draft doc [here](doc/DOC.MD)
 
-## Fixs 
+## Things to know
 
+- Using webpack features or plugin that depend or modify resolving may be tricky
+- Node builds include the (node_)modules relative directories locations to preserve inherited dependencies 
+- Sass imports have limitations from the sass package who doesn't tell which file do imports to resolve but the root source file that was imported in webpack, so scss files must use absolute path ( eg: App/assets/stuff.jpg, not ./assets/stuff.jpg )
 - Webpack 5 module cache.type = "filesystem" require resolve.cache=false in order to force regeneration of virtual indexes files
-- Node builds Module resolution may eventually broke sub dependencies in some special rare cases ( can be fix by repeating related deps in the head layer or by keeping dev layer )
-
-## Caveats ?
-
-- Node builds hardwrite the (node_)modules relative directories locations in the build, so it rely on the layers location
 - Context based webpack requires are not processed by layer-pack, they have the normal webpack behavior
-- Sass imports have limitations from sass package, it doesn't tell which file do the import but the source file that was imported in webpack, so scss files must use absolute path ( eg: App/assets/stuff.jpg, not ./assets/stuff.jpg )
-
+ 
 ## Alternative to
 
  - Splitting big projects in thousands of modules
