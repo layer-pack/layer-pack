@@ -28,7 +28,8 @@ Layer-pack is a webpack plugin allowing better code maintainability and structur
 
 Layer pack propose to solves theses problems using a more powerful import resolving concept:
 
-- It "namespaces" the application files, so we can use absolute imports where we shouldn't use relative paths, This allows us to use glob patterns in import statements, so we can directly import files and a directory tree without specifying all of their names
+- It "namespaces" the application files, so we can use absolute imports where we shouldn't use relative paths, 
+- It allows us to use glob patterns in import statements, so we can directly import files and a directory tree without specifying all of their names
 - It literally allows to "inherit" layer pack based packages or "app layers", including theirs build configuration and dependencies
 
 Also, it allows to define multiple profiles "inheriting" from different packages based on layer packs and using different root source code directories
