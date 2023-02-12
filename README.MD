@@ -21,19 +21,17 @@ Feel free to test / feedback / make contribs<br/>
 
 ## What's Layer-pack ?
 
-Layer-pack is a webpack plugin allowing way better code maintainability and structure flexibility by solving two majors problems in big JS/TS apps:
+Layer-pack is a webpack plugin allowing better code maintainability and structure flexibility by solving two major problems in large JS/TS applications:
 
-- The first problem we often have on big JS/TS projects, is that we rapidly need to import a lot of internal files on almost any files. 
-This usually lead to complex maintenance and many ( too much ) list of imports & requires.
+- The first problem is that we often have to import a lot of internal files on almost all files. This usually leads to complex maintenance and (too) many import and requirement lists.
+- The second is that we cannot easily "extend" an existing application, we are still forced to create various interfacing systems and APIs, maintain build configurations and list them as separate common components.
 
-- The second, is that we can't easily "extend" an existing app, we are always forced to make various interfacing systems & API, maintain separated build configurations and common components   
+Layer pack propose to solves theses problems using a more powerful import resolving concept:
 
-Layer pack solve this by using more powerful resolving concepts :
+- It "namespaces" the application files, so we can use absolute imports where we shouldn't use relative paths, This allows us to use glob patterns in import statements, so we can directly import files and a directory tree without specifying all of their names
+- It literally allows to "inherit" layer pack based packages or "app layers", including theirs build configuration and dependencies
 
-- It "namespace" the application files, so we can use absolute imports where we shouldn't use relative paths
-- It allow us to use glob patterns in imports statements, so we can directly import files & directory tree without specifying all theirs names
-- It allow to literally "inherit" a layer-pack based application or "application layer" including theirs build configuration & dependencies
-- It allow to define multiple profiles "inheriting" different layer-pack based packages and using different root source code directory 
+Also, it allows to define multiple profiles "inheriting" from different packages based on layer packs and using different root source code directories
 
 ## Main features :
 
