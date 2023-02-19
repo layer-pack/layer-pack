@@ -45,9 +45,9 @@ Add a ".layers.json" file near the package.json of each projects :
   "api": {
     "rootFolder": "App",
     // optional folder(s) containing libs overrides for dev or monorepo purposes
-    // ( these libs will have precedence over node_modules )
-    // ( can contain inherited packages )
-    "libsPath": "./libs",
+    // * Libs in theses paths will have precedence over the node_modules directories
+    // * They can also contain the inherited layers
+    "libsPath": ["./libs"],
     // optional webpack config
     "config": "./webpack.config.api.js",
     "extend": [
