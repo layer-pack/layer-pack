@@ -8,10 +8,9 @@
 <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat" />
 </p>
 
-
 # How to use
 
-The simpler is to start from a  sample & update its deps.
+The simpler is to start from a sample & update its deps.
 
 Samples [here](https://github.com/n8tz/layer-pack-samples)
 
@@ -20,88 +19,83 @@ Samples [here](https://github.com/n8tz/layer-pack-samples)
 Add layer-pack to packages deps
 
 ```bash
-npm i -s layer-pack // on all inheritable projects with wp conf & on the head project
+npm i -s layer-pack // on all inheritable projects with wp conf & on the head projects
 ```
 
 Then, layer-pack need a file with a configuration for each build profiles.
 
 Add a ".layers.json" file near the package.json of each projects :
 
-```jsx
+```json
 {
-   		"default": {// default profile id
+  "default": {
+    // default profile id
 
-   		    // local root that will be mapped on App/...
-   			"rootFolder": "App",
+    // local root that will be mapped on App/...
+    "rootFolder": "App",
+    // list of the inherited layers in theirs layer precedence order ( 1st layer override 2nd & so on )
+    "extend": [
+      "parentProject"
+      // parentProject must have layerPack.default with his own extend value & be in node_modules or in "libsPath" value
+    ]
+  },
+  // optionally we can define multiple profile
+  // profiles extend the same profile id from inherited layers, 
+  // if it does'nt exist default will be used ( but it will still search for the same profile in the next inherited layers )  
+  "api": {
+    "rootFolder": "App",
+    // optional folder(s) containing libs overrides for dev or monorepo purposes
+    // ( these libs will have precedence over node_modules )
+    // ( can contain inherited packages )
+    "libsPath": "./libs",
+    // optional webpack config
+    "config": "./webpack.config.api.js",
+    "extend": [
+      "parentProject"
+    ]
+  },
+  // optionally we can define profile with different wp config 
+  "Comp": {
+    "config": "./webpack.config.www.js",
+    // optional profile id to search in the inherited packages
+    "basedOn": "someSuperProfile_in_parents",
+    // optional vars
+    // all theses values are available in the webpack config using lPackCfg.vars.*
+    // Theses values will override thoses from the parent layers
+    "vars": {
+      // all @optional
 
-   			"extend"    : [
-   				"parentProject" // parentProject must have layerPack.default with his own extend value & be in node_modules or in "libsPath" value
-   			]
-   		},
-   		// optionally we can define multiple profile
-   		"api"    : {// profiles extend same profile id from inherited packages, if it does'nt exist default will be used 
-   			"rootFolder": "App",
-
-   			// optional folder containing libs overrides for dev purposes
-   			// ( these libs will have precedence over node_modules )
-   			// ( can contain inherited packages )
-   			"libsPath": "./libs",
-
-   			// optional webpack config
-   			"config"    : "./webpack.config.api.js",
-
-   			"extend"    : [
-   				"parentProject"
-   			]
-   		},
-   		// optionally we can define profile with some wp config overrides
-   		"Comp"   : {
-   			"config": "./webpack.config.www.js",
-
-   			// optional profile id to use in the inherited packages
-   			"basedOn": "someSuperProfile_in_parents",
-
-   			// optional vars
-   			// all theses values are available in the webpack config using lPackCfg.vars.*
-   			"vars"  : {
-   				// all @optional
-
-   				// override the root folder alias ( default to "App" )
-   				// So all inner build inheritable files will be requierable using require("Comp/some/stuff")
-   				"rootAlias"   : "MyApp",
-
-   				// make anything outside the inheritable folder external
-   				// ( for nodes builds & components )
-   				// * this could be a RegExp like "^(?!react|@babel)" but packed libs can require externalized
-   				"externals"   : true,
-				
-                // (node only) make external requiered modules using pre resolved relative paths when requiered from the build 
-                // ex. : require('my_module') -> require('../../node_modules/my_module/index.js')
-				"hardResolveExternals": true,
-                
-   				"production"   : true,
-   				
-   				"someValues"   :{
-   				    // lPack apply simple tpl on the vars
-   				    // here the available values :
-   				    // packagePath   : the path of the package associated with this config file
-   				    // projectPath   : the path of the head project
-   				    // packageConfig : package.json of the head project
-   				    "withSomeTemplatedValues" : "<%packagePath%>/AppStatic/index.html.tpl"
-
-   				},
-   				// webpack config patch (applied using webpack-merge)
-                "webpackPatch": {
-                
-                }
-   				
-   			},
-   			"extend": [
-   				"parentProject"
-   			]
-   		}
+      // override the root folder alias ( default to "App" )
+      // So all inner build inheritable files will be requierable using require("Comp/some/stuff")
+      "rootAlias": "MyApp",
+      // make anything outside the inheritable folder external
+      // ( for nodes builds & components )
+      // * this could be a RegExp like "^(?!react|@babel)" but packed libs can require externalized
+      "externals": true,
+      // (node only) make external requiered modules using pre resolved relative paths when requiered from the build 
+      // ex. : require('my_module') -> require('../../node_modules/my_module/index.js')
+      "hardResolveExternals": true,
+      "production": true,
+      "someValues": {
+        // lPack apply simple tpl on the vars
+        // here the available values :
+        // packagePath   : the path of the package associated with this config file
+        // projectPath   : the path of the head project
+        // packageConfig : package.json of the head project
+        "withSomeTemplatedValues": "<%packagePath%>/AppStatic/index.html.tpl"
+      },
+      // webpack config patch (applied using webpack-merge)
+      "webpackPatch": {}
+    },
+    "extend": [
+      "parentProject"
+    ]
+  }
 }
 ```
+
+_.layers.json can be replaced with a .layers.js exporting the profiles conf, so we can also add webpack plugins via
+the "webpackPatch" prop_
 
 ## Using layer-pack in the webpack configs
 
@@ -165,6 +159,7 @@ module.exports = [
 Also, Webpack config from a parent package profile can be override using "proxy" webpack cfg :
 
 webpack.config.js
+
 ```jsx
 var layerPack = require('layer-pack');
 
@@ -181,7 +176,7 @@ module.exports = wpCfg;
 
 DevDependencies of dependencies are not installed, so there 2 options :
 
-- layer-pack can install them, using the following command : 
+- layer-pack can install them, using the following command :
 
 ```bash
 # from the leaf project layers:
@@ -198,7 +193,9 @@ lpack-setup :www ci # setup with npm ci
 
 lpack :? # get available profiles
 ```
-- Or, you can install them, starting from the root layers
+
+- Or if they are in a folder listed in "libsPath", you can install them yourself ( in this case putting them in thte
+  package.json is useless )
 
 ## CLI
 
@@ -231,6 +228,7 @@ Basing the string captured by the parenthesis, the plugin generate es6 named exp
 - If it contain invalid JS variable identifier it will not be available as named export (only in the default export)
 
 Ex :
+
 ```jsx harmony
 
 import Comps from "App/components/(**/*).jsx";
@@ -242,20 +240,19 @@ import AllActionsByFolder from "App/store/(*)/actions.js";
 // or
 import {MyCompByFileName} from "App/ui/components/(*).jsx"; // ( big import list to maintain ) no more ! :)
 // or
-import {myFolder} from "App/ui/components/(**/*).jsx"; // ( walk & set myFolder/MyComp in myFolder.MyComp )
+import {myFolder}         from "App/ui/components/(**/*).jsx"; // ( walk & set myFolder/MyComp in myFolder.MyComp )
 ```
 
 Glob imports generate virtual files "just in time".
 
 These files do named exports & use an unique file name, so same glob import use the same files.
 
-
 ## More about building with inherit
 
 ### .buildInfos.json
 
 layer-pack add a virtual file with some build info in the root folder.
-It's called ".buildInfos.json" & contain the following infos :
+It's called ".buildInfos.json" & contain the following values :
 
 ```
 {
@@ -278,6 +275,3 @@ It's called ".buildInfos.json" & contain the following infos :
     allModId
 }
 ```
-
-
-[![*](https://www.google-analytics.com/collect?v=1&tid=UA-82058889-1&cid=555&t=event&ec=project&ea=view&dp=%2Fproject%2Flayer-pack&dt=doc)](#)

@@ -2,7 +2,7 @@
 <p align="center"><img  width="192" src ="https://github.com/layer-pack/layer-pack/raw/master/doc/assets/logo.svg?sanitize=true" /></p>
 <br/>
 <p align="center">
-Easily split webpack projects into multiple npm packages
+Webpack plugin to make inheritable code layers, named glob imports, easy multi packages app & shared webpack configs
 </p>
 <h1></h1>
 <p align="center">
@@ -13,17 +13,11 @@ Easily split webpack projects into multiple npm packages
 <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat" />
 </p>
 
-<p align="center">
-Feel free to test / feedback / make contribs<br/>
-</p>
-
-## Check the samples [here](https://github.com/n8tz/layer-pack-samples)
-
 ## What's Layer-pack ?
 
-Layer-pack is a webpack plugin allowing better code maintainability and structure flexibility by solving two major problems in large JS/TS applications:
+Layer-pack is a webpack plugin allowing better code maintainability and flexibility by solving some of the most major problems of large JS/TS applications :
 
-- The first problem is that we often have to import a lot of internal files on almost all files. This usually leads to complex maintenance and (too) many import and requirement lists.
+- The first one, we often have to multiply internal imports in the project files. This usually leads to complex maintenance and (too) many import and require statements.
 - The second is that we cannot easily "extend" an existing application, we are still forced to create various interfacing systems and APIs, maintain build configurations and list them as separate common components.
 
 Layer pack propose to solves theses problems using a more powerful import resolving concept:
@@ -33,6 +27,8 @@ Layer pack propose to solves theses problems using a more powerful import resolv
 - It literally allows to "inherit" layer pack based packages or "app layers", including theirs build configuration and dependencies
 
 Also, it allows to define multiple profiles "inheriting" from different packages based on layer packs and using different root source code directories
+
+## Check the samples [here](https://github.com/n8tz/layer-pack-samples)
 
 ## Main features :
 
