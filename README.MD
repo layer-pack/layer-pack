@@ -18,7 +18,7 @@ Webpack plugin to make inheritable code layers, named glob imports, easy multi p
 Layer-pack is a webpack plugin allowing better code maintainability and flexibility by solving some of the most major problems of large JS/TS applications :
 
 - The first one, we often have to multiply internal imports in the project files. This usually leads to complex maintenance and (too) many import and require statements.
-- The second is that we cannot easily "extend" an existing application, we are still forced to create various interfacing systems and APIs, maintain build configurations and list them as separate common components.
+- The second is that we cannot easily "extend" an existing application, we are still forced to create various interfacing systems and APIs, maintain separates build configurations and dependencies lists.
 
 Layer pack propose to solves theses problems using a more powerful import resolving concept:
 
@@ -29,6 +29,8 @@ Layer pack propose to solves theses problems using a more powerful import resolv
 Also, it allows to define multiple profiles "inheriting" from different packages based on layer packs and using different root source code directories
 
 ## Check the samples [here](https://github.com/n8tz/layer-pack-samples)
+
+## Small doc [here](doc/DOC.MD)
 
 ## Main features :
 
@@ -108,7 +110,7 @@ So you can share, version, extend & switch your webpack conf & boilerplate via n
 
 ## Check the samples [here](https://github.com/n8tz/layer-pack-samples)
 
-## Draft doc [here](doc/DOC.MD)
+## Small doc [here](doc/DOC.MD)
 
 ## Things to know
 

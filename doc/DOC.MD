@@ -26,7 +26,7 @@ Then, layer-pack need a file with a configuration for each build profiles.
 
 Add a ".layers.json" file near the package.json of each projects :
 
-```json
+```jsx
 {
   "default": {
     // default profile id
