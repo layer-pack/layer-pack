@@ -486,7 +486,7 @@ const utils = {
 				if ( checkIfDir(fs, path.normalize(_root + "/" + subPath)) ) {
 					contextDependencies.push(path.normalize(_root + "/" + subPath))
 				}
-				glob.sync([_root + '/' + path.normalize(input)], { fs: vfs })// should use wp fs
+				glob.sync([_root + '/' + path.normalize(input)])// should use wp fs
 				    .forEach(
 					    file => {
 						    let name  = file.substr(path.normalize(_root + "/" + subPath).length).match(new RegExp("^\\/" + globToRe + "$")),
@@ -579,7 +579,7 @@ const utils = {
 						)
 					)
 				);
-				glob.sync([_root + '/' + path.normalize(input)], { fs: vfs })
+				glob.sync([_root + '/' + path.normalize(input)])
 				    .forEach(
 					    file => {
 						    //!files[RootAlias + file.substr(_root.length)]
