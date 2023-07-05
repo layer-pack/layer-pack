@@ -129,22 +129,22 @@ const utils = {
 			        dedupedLayerPathList = [],
 			        layerIdList          = [],
 			        seen                 = {};
-			
+			    
 			    profileConfig.extend && profileConfig.extend.forEach(function walk( layerId, i, x, mRoot, cProfile, libsPath ) {
-				
+				    
 				    if ( !mRoot && profileConfig.libsPath ) {
 					    libsPath = profileConfig.libsPath
 				    }
-				
+				    
 				    mRoot    = mRoot || projectRoot;
 				    cProfile = cProfile || profileConfig.basedOn || profileId;
-				
+				    
 				    if ( libsPath && !Array.isArray(libsPath) )
 					    libsPath = [libsPath]
-				
+				    
 				    if ( !libsPath )
 					    libsPath = [];
-				
+				    
 				    libsPath = libsPath.map(
 					    p => fs.realpathSync(path.normalize(
 						    path.isAbsolute(p)
@@ -152,7 +152,7 @@ const utils = {
 						    : path.join(mRoot, p)
 					    ))
 				    )
-				
+				    
 				    // find the inheritable package path & cfg
 				    let where;
 				    for ( let p = 0; libsPath.length > p; p++ ) {
@@ -174,23 +174,23 @@ const utils = {
 				    let
 					    cfg         = getlPackConfigFrom(where),
 					    realProfile = cProfile;
-				
+				    
 				    if ( !cfg ) {
 					    throw new Error("layer-pack : Can't found config of " + layerId + " defined in " + mRoot);
 				    }
-				
+				    
 				    layerPathList.push(path.resolve(where));
 				    layerIdList.push(layerId);
-				
+				    
 				    while ( cfg && cfg.layerPack && is.string(cfg.layerPack[realProfile]) ) {// profile alias
 					    realProfile = cfg.layerPack[realProfile];
 				    }
 				    if ( cfg && cfg.layerPack && !cfg.layerPack[realProfile] ) {
 					    realProfile = "default";
 				    }
-				
+				    
 				    if ( cfg && cfg.layerPack && cfg.layerPack[realProfile] ) {
-					
+					    
 					    if ( cfg.layerPack[realProfile].extend )
 						    cfg.layerPack[realProfile]
 							    .extend
@@ -220,9 +220,9 @@ const utils = {
 					    if ( !cfg.layerPack[realProfile] )
 						    throw new Error("layer-pack : Can't inherit a module without the requested profile\nAt :" + layerId + " defined in " + mRoot + "\nRequested profile :" + cProfile);
 				    }
-				
+				    
 			    })
-			
+			    
 			    /**
 			     * dedupe inherited ( last is first )
 			     */
@@ -232,7 +232,7 @@ const utils = {
 					    dedupedLayerPathList.push(layerPathList[i]);
 				    }
 			    }
-			
+			    
 			    return dedupedLayerPathList;
 		    })(),
 		    // deduce all the roots & others values
@@ -242,7 +242,7 @@ const utils = {
 			        layerLibsPathDef = Array.isArray(profileConfig.libsPath)
 			                           ? profileConfig.libsPath
 			                           : profileConfig.libsPath && [profileConfig.libsPath] || [];
-			
+			    
 			    layerLibsPathDef
 				    .forEach(
 					    p => {
@@ -255,27 +255,27 @@ const utils = {
 						    && libPath.push(p);
 					    }
 				    )
-			
+			    
 			    allModulePath.push(path.normalize(projectRoot + '/node_modules'));
 			    allModuleRoots.push(projectRoot);
-			
+			    
 			    if ( profileConfig.config ) {
 				    allWebpackCfg.push(path.resolve(path.normalize(projectRoot + '/' + profileConfig.config)))
 				    allWebpackRoot.push(path.resolve(path.normalize(projectRoot)))
 			    }
-			
+			    
 			    if ( profileConfig.templates )
 				    Object.keys(profileConfig.templates)
 				          .forEach(
 					          ( k ) => (allTemplates[k] = allTemplates[k] || path.resolve(path.normalize(projectRoot + '/' + profileConfig.templates[k])))
 				          );
-			
+			    
 			    if ( profileConfig.scripts )
 				    Object.keys(profileConfig.scripts)
 				          .forEach(
 					          ( k ) => (allScripts[k] = allScripts[k] || path.resolve(path.normalize(projectRoot + '/' + profileConfig.scripts[k])))
 				          );
-			
+			    
 			    allExtPath.forEach(
 				    function ( where, i, arr, cProfile ) {
 					    cProfile        = cProfile || profileConfig.basedOn || profileId;
@@ -283,19 +283,19 @@ const utils = {
 					        profile,
 					        modPath     = path.normalize(where + "/node_modules"),
 					        realProfile = cProfile;
-					
+					    
 					    allModuleRoots.push(where);
-					
+					    
 					    while ( cfg && cfg.layerPack && is.string(cfg.layerPack[realProfile]) ) {// profile alias
 						    realProfile = cfg.layerPack[realProfile];
 					    }
 					    if ( cfg && cfg.layerPack && !cfg.layerPack[realProfile] ) {
 						    realProfile = "default";
 					    }
-					
-					
+					    
+					    
 					    profile = cfg.layerPack[realProfile];
-					
+					    
 					    if ( profile.localAlias )
 						    localAlias = {
 							    ...localAlias,
@@ -306,7 +306,7 @@ const utils = {
 									    {}
 								    )
 						    };
-					
+					    
 					    // add the vars
 					    if ( profile.vars )
 						    vars = {
@@ -317,18 +317,18 @@ const utils = {
 							    }),
 							    ...vars
 						    };
-					
+					    
 					    allCfg.push(profile);
 					    allPackageCfg.push(cfg);
 					    allLayerRoot.push(where);
-					
+					    
 					    if ( profile.config ) {
 						    allWebpackCfg.push(path.resolve(path.normalize(where + '/' + profile.config)));
 						    allWebpackRoot.push(path.resolve(path.normalize(where)));
 					    }
-					
+					    
 					    roots.push(fs.realpathSync(path.normalize(where + "/" + (profile.rootFolder || 'App'))));
-					
+					    
 					    if ( profile.scripts )
 						    Object.keys(profile.scripts)
 						          .reduce(
@@ -339,7 +339,7 @@ const utils = {
 					    let layerLibsPathDef = Array.isArray(profile.libsPath)
 					                           ? profile.libsPath
 					                           : profile.libsPath && [profile.libsPath] || [];
-					
+					    
 					    layerLibsPathDef
 						    .forEach(
 							    p => {
@@ -483,28 +483,34 @@ const utils = {
 		roots.forEach(
 			( _root, lvl ) => {
 				//console.log('utils::indexOf:414: ', _root + '/' + path.normalize(input));
-				if ( checkIfDir(fs, path.normalize(_root + "/" + subPath)) ) {
-					contextDependencies.push(path.normalize(_root + "/" + subPath))
+				
+				try {
+					if ( checkIfDir(fs, path.normalize(_root + "/" + subPath)) ) {
+						contextDependencies.push(path.normalize(_root + "/" + subPath))
+						
+						glob.sync([_root + '/' + path.normalize(input)])// wp fs cause new files to be ignored sometimes
+						    .forEach(
+							    file => {
+								    let name  = file.substr(path.normalize(_root + "/" + subPath).length).match(new RegExp("^\\/" + globToRe + "$")),
+								        uPath = RootAlias + file.substr(_root.length),
+								        key   = "_" + uPath.replace(/[^\w]/ig, "_"),
+								        wPath = path.dirname(file);
+								    
+								    if ( !files[uPath] ) {
+									    //console.log('utils:::431: ', uPath, name,file, _root + "/" + subPath,files);
+									    //fileDependencies.push(path.normalize(file));
+									    filesToAdd.push([uPath, name]);
+									    
+								    }
+								    
+								    
+								    files[RootAlias + file.substr(_root.length)] = name && name.length && name[1]; // exportable
+							    }
+						    )
+					}
+				} catch ( e ) {
+				
 				}
-				glob.sync([_root + '/' + path.normalize(input)])// should use wp fs
-				    .forEach(
-					    file => {
-						    let name  = file.substr(path.normalize(_root + "/" + subPath).length).match(new RegExp("^\\/" + globToRe + "$")),
-						        uPath = RootAlias + file.substr(_root.length),
-						        key   = "_" + uPath.replace(/[^\w]/ig, "_"),
-						        wPath = path.dirname(file);
-						
-						    if ( !files[uPath] ) {
-							    //console.log('utils:::431: ', uPath, name,file, _root + "/" + subPath,files);
-							    //fileDependencies.push(path.normalize(file));
-							    filesToAdd.push([uPath, name]);
-							
-						    }
-						
-						
-						    files[RootAlias + file.substr(_root.length)] = name && name.length && name[1]; // exportable
-					    }
-				    )
 			}
 		);
 		filesToAdd = filesToAdd.sort(
@@ -572,22 +578,29 @@ const utils = {
 		
 		roots.forEach(
 			( _root, lvl ) => {
-				contextDependencies.push(
-					path.dirname(
-						path.normalize(
-							_root + '/' + path.normalize(input.replace(/^([^\*]+)\/.*$/, '$1'))
-						)
-					)
-				);
-				glob.sync([_root + '/' + path.normalize(input)])
-				    .forEach(
-					    file => {
-						    //!files[RootAlias + file.substr(_root.length)]
-						    //&& fileDependencies.push(path.normalize(file));
+				try {
+					if ( checkIfDir(fs, path.normalize(_root + "/" + subPath)) ) {
 						
-						    files[RootAlias + file.substr(_root.length)] = true
-					    }
-				    )
+						contextDependencies.push(
+							path.dirname(
+								path.normalize(
+									_root + '/' + path.normalize(input.replace(/^([^\*]+)\/.*$/, '$1'))
+								)
+							)
+						);
+						glob.sync([_root + '/' + path.normalize(input)])
+						    .forEach(
+							    file => {
+								    //!files[RootAlias + file.substr(_root.length)]
+								    //&& fileDependencies.push(path.normalize(file));
+								    
+								    files[RootAlias + file.substr(_root.length)] = true
+							    }
+						    )
+					}
+				} catch ( e ) {
+				
+				}
 			}
 		)
 		code =
