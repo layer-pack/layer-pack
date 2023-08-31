@@ -66,7 +66,7 @@ Add a ".layers.json" file near the package.json of each projects :
       // all @optional
 
       // override the root folder alias ( default to "App" )
-      // So all inner build inheritable files will be requierable using require("Comp/some/stuff")
+      // So all inner build inheritable files will be requierable using require("MyApp/some/stuff")
       "rootAlias": "MyApp",
       // make anything outside the inheritable folder external
       // ( for nodes builds & components )
