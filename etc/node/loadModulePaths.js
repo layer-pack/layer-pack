@@ -17,7 +17,8 @@ let Module         = require('module').Module,
 
 
 Module._nodeModulePaths = function ( from ) {
-	let paths, rootMod;
+	let paths, pPaths, rootMod;
+	
 	if (
 		from === baseDir
 		||
@@ -29,19 +30,19 @@ Module._nodeModulePaths = function ( from ) {
 	else {
 		paths = __oldNMP(from);
 		if ( modPath.length ) {
-			paths = paths.filter(
+			paths  = paths.filter(
 				dir => modPath.find(path => (dir.startsWith(path)))
 			);
-			
-			
+			pPaths = __oldNMP(path.resolve(path.join(modPath[0], '..')));
+			pPaths.shift();
 			//if ( !paths.length )
 			//	return [...__oldNMP(from)];
 			// node_modules from head
-			rootMod = paths.pop();// keep inherited order if not sub node_modules
+			//rootMod = paths.pop();// keep inherited order if not sub node_modules
 			//console.log('::_nodeModulePaths:27: ', from, modPath, paths);
-			paths.push(...allWpRoots, ...__oldNMP(path.resolve(path.join(modPath[0], '..'))), ...__oldNMP(from));// add
-		                                                                                                         // normal
-		                                                                                                         // parents
+			paths.push(...allWpRoots, ...pPaths);// add
+			// normal
+			// parents
 		}
 		return paths;
 	}

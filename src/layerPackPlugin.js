@@ -36,16 +36,16 @@ module.exports = function ( cfg, opts ) {
 	    ExternalModule   = require(path.join(path.dirname(wp), 'ExternalModule')),
 	    getPaths         = require(path.join(path.dirname(wpEr), 'getPaths')),
 	    forEachBail      = require(path.join(path.dirname(wpEr), 'forEachBail')),
-	
+	    
 	    projectPkg       = fs.existsSync(path.normalize(opts.allModuleRoots[0] + "/package.json")) &&
 		    JSON.parse(fs.readFileSync(path.normalize(opts.allModuleRoots[0] + "/package.json"))),
-	
+	    
 	    excludeExternals = opts.vars.externals,
 	    constDef         = opts.vars.DefinePluginCfg || {},
 	    currentProfile   = process.env.__LPACK_PROFILE__ || 'default',
 	    externalRE       = is.string(opts.vars.externals) && new RegExp(opts.vars.externals),
 	    vMod             = new VirtualModulesPlugin();
-	
+	//console.log('exports::exports:48: ', opts);
 	return plugin = {
 		/**
 		 * Return a sass resolver fn
@@ -125,7 +125,8 @@ module.exports = function ( cfg, opts ) {
 					}
 				}
 			);
-			let resolveCache = {};
+			let resolveCache    = {},
+			    resolvingQueues = {};
 			// resolver for deps & deps of deps
 			// here is the big complex pbm: make work node_modules dir & inherited modules dirs
 			// main pbm is deps of deps may be in parents dir or in other layers modules dirs
@@ -151,10 +152,27 @@ module.exports = function ( cfg, opts ) {
 									
 									if ( resolveCache[key] ) {
 										//console.log('Use cache ', key);
-										request.path = resolveCache[key];
-										return callback(null, request);
+										return callback(resolveCache[key].err,
+										                resolveCache[key].res ?
+										                {
+											                ...resolveCache[key].res,
+											                context: request.context
+										                } : null);
 									}
-									
+									resolvingQueues[key] = resolvingQueues[key] || [];
+									resolvingQueues[key].push(
+										( err, res ) => {
+											callback(
+												err,
+												res && res.path
+												? { ...res, context: request.context }
+												: null
+											)
+										}
+									)
+									if ( resolvingQueues[key].length > 1 ) {
+										return;
+									}
 									if ( !!isInternal ) {
 										addrs.push(
 											...opts.allModulePath.filter(// custom lib dir
@@ -223,6 +241,7 @@ module.exports = function ( cfg, opts ) {
 										)
 									}
 									addrs = addrs.filter(( path, i ) => addrs.indexOf(path) === i);
+									
 									forEachBail(
 										addrs,
 										( addr, callback ) => {
@@ -242,11 +261,6 @@ module.exports = function ( cfg, opts ) {
 														message,
 														resolveContext,
 														( err, res ) => {
-															//console.log(':::236: ', request.path, request.request,
-															// packageName, addr, err, res && res.path);
-															if ( res && res.path )
-																resolveCache[key] = res.path;
-															
 															callback(err, res)
 														}
 													);
@@ -260,7 +274,14 @@ module.exports = function ( cfg, opts ) {
 												return callback();
 											});
 										},
-										callback
+										( err, res ) => {
+											
+											resolveCache[key] = { err, res };
+											while ( resolvingQueues[key].length )
+												resolvingQueues[key].pop()(err, res);
+											delete resolvingQueues[key];
+											//callback
+										}
 									);
 								}
 							)
@@ -281,10 +302,15 @@ module.exports = function ( cfg, opts ) {
 							.tapAsync(
 								'layer-pack',
 								( request, resolveContext, callback ) => {// based on enhanced resolve ModulesInHierachicDirectoriesPlugin
-									const fs        = resolver.fileSystem;
-									const addrs     = [];
-									let packageName = request.request.match(RE.packageName)[0];
+									const fs         = resolver.fileSystem;
+									const addrs      = [],
+									      innerPaths = getPaths(request.path)
+										      .paths.map(p => {
+											      return resolver.join(p, "node_modules")
+										      });
+									let packageName  = request.request.match(RE.packageName)[0];
 									addrs.push(
+										//...innerPaths,
 										...opts.allModuleRoots.filter(
 											( p, i ) => (
 												opts.allPackageCfg[i].devDependencies
@@ -638,74 +664,79 @@ module.exports=
 					if ( excludeExternals )
 						if ( nmf.hooks.resolve )// wp5
 						{
-							nmf.hooks.factorize.tapAsync('layer-pack', function ( data, callback ) {
-								let requireOrigin = data.contextInfo.issuer,
-								    context       = data.context || path.dirname(requireOrigin),
-								    request       = data.request,
-								    mkExt         = isBuiltinModule(data.request),
-								    isInRoot;
-								
-								//console.log('plugin::apply:82: ext', isNodeBuild);
-								if ( request === 'source-map-support' )
-									mkExt = true;
-								else if ( data.request === "$super" || !requireOrigin )// entry points ?
-								{
-									//console.log(':::631: ', this, data);
-									return callback(null, undefined);
-								}
-								
-								if ( !mkExt ) {
-									// is it external ? @todo
-									mkExt = !(
-										RootAliasRe.test(data.request) ||
-										context &&
-										/^\./.test(data.request)
-										? (isInRoot = roots.find(r => path.resolve(context + '/' + data.request).startsWith(r)))
-										: (isInRoot = roots.find(r =>
-											                         path.resolve(data.request).startsWith(r))));
+							nmf.hooks.factorize.tapAsync(
+								"layer-pack", function ( data, callback ) {
+									let requireOrigin = data.contextInfo.issuer,
+									    context       = data.context || path.dirname(requireOrigin),
+									    request       = data.request,
+									    mkExt         = isBuiltinModule(data.request),
+									    isInRoot;
 									
-								}
-								if ( mkExt &&
-									(
-										!externalRE
-										|| externalRE.test(request)
-									)
-									&&
-									!(!isInRoot && /^\./.test(data.request))
-								) {
-									if ( !isNodeBuild || !opts.vars.hardResolveExternals ) // keep external as-is for browsers builds
-										return callback(null, new ExternalModule(
-											data.request,
-											opts.vars.externalMode || "commonjs"
-										));
-									else // hard resolve for node if possible
-										return compiler.resolverFactory.get(
-											"normal",
-											{
-												mainFields: ["main", "module"],
-												extensions: [".js"]
-											}
-										).doResolve(
-											'resolve',
-											{
-												...data,
-												path: context
-											},
-											"External resolve of " + request,
-											( err, request ) => {
-												return callback(null, new ExternalModule(err ||
-												                                         !request
-												                                         ? data.request
-												                                         :
-												                                         path.relative(compiler.options.output.path,
-												                                                       request.path).replace(/\\/g, '/'),
-												                                         opts.vars.externalMode || "commonjs"));
-											});
-								}
-								else {
-									return callback(null, undefined);
-								}
-							});
+									//console.log('plugin::apply:82: ext', isNodeBuild);
+									if ( request === 'source-map-support' )
+										mkExt = true;
+									else if ( data.request === "$super" || !requireOrigin )// entry points ?
+									{
+										//console.log(':::631: ', this, data);
+										return callback(null, undefined);
+									}
+									
+									if ( !mkExt ) {
+										// is it external ? @todo
+										mkExt = !(
+											RootAliasRe.test(data.request) ||
+											context &&
+											/^\./.test(data.request)
+											? (isInRoot = roots.find(r => path.resolve(context + '/' + data.request).startsWith(r)))
+											: (isInRoot = roots.find(r =>
+												                         path.resolve(data.request).startsWith(r))));
+										
+									}
+									if ( mkExt &&
+										(
+											!externalRE
+											|| externalRE.test(request)
+										)
+										&&
+										!(!isInRoot && /^\./.test(data.request))
+									) {
+										if ( !isNodeBuild || !opts.vars.hardResolveExternals ) // keep external as-is for browsers builds
+										{
+											let mod = new ExternalModule(
+												data.request,
+												opts.vars.externalMode || "commonjs"
+											);
+											return callback(null, mod);
+										}
+										else // hard resolve for node if possible
+											return compiler.resolverFactory.get(
+												"normal",
+												{
+													mainFields: ["main", "module"],
+													extensions: [".js"]
+												}
+											).doResolve(
+												'resolve',
+												{
+													...data,
+													path: context
+												},
+												"External resolve of " + request,
+												( err, request ) => {
+													let mod = new ExternalModule(err ||
+													                             !request
+													                             ? data.request
+													                             :
+													                             path.relative(compiler.options.output.path,
+													                                           request.path).replace(/\\/g, '/'),
+													                             opts.vars.externalMode || "commonjs");
+													return callback(null, mod);
+												});
+									}
+									else {
+										return callback(null, undefined);
+									}
+								});
 						}
 						else {
 							nmf.plugin('factory', function ( factory ) {
@@ -852,9 +883,9 @@ module.exports=
 			// should deal with hot reload watched files & dirs
 			if ( compiler.hooks.afterDone ) // wp5
 				compiler.hooks.afterDone
-				        .tap('layer-pack', ( { compilation }, cb ) => {
-					
-					
+				        .tap('layer-pack', ( wp, cb ) => {
+					        
+					        
 					        // seems to fix wp5 endless compilation loop using docker volume + long build time
 					        (compiler.options.watch || process.argv[1].indexOf('webpack-dev-server') !== -1)
 					        && process.nextTick(
@@ -864,7 +895,7 @@ module.exports=
 							        contextDependencies.length = 0;
 						        }
 					        )
-					
+					        
 					        cache = {};
 				        });
 			else // wp4
@@ -878,16 +909,16 @@ module.exports=
 						        !compilation.fileDependencies.has(file) &&
 						        compilation.fileDependencies.add(file);
 					        });
-					
+					        
 					        fileDependencies.length = 0;
-					
+					        
 					        // Add context dependencies if they're not already tracked
 					        contextDependencies.forEach(( context ) => {
 						        compilation.contextDependencies &&
 						        !compilation.contextDependencies.has(context) &&
 						        compilation.contextDependencies.add(context);
 					        });
-					
+					        
 					        contextDependencies.length = 0;
 					        cache                      = {};
 					        cb();
