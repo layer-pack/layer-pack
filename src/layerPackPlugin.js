@@ -392,7 +392,7 @@ module.exports = function ( cfg, opts ) {
 									[]
 								)
 							))},
-							 cDir:path.join(__non_webpack_require__.main.path,${
+							 cDir:path.join(__dirname,${
 								JSON.stringify(path.normalize(path.relative(compiler.options.output.path,
 								                                            opts.projectRoot)).replace(/\\/g, '/'))
 							})

@@ -35,14 +35,7 @@ Module._nodeModulePaths = function ( from ) {
 			);
 			pPaths = __oldNMP(path.resolve(path.join(modPath[0], '..')));
 			pPaths.shift();
-			//if ( !paths.length )
-			//	return [...__oldNMP(from)];
-			// node_modules from head
-			//rootMod = paths.pop();// keep inherited order if not sub node_modules
-			//console.log('::_nodeModulePaths:27: ', from, modPath, paths);
-			paths.push(...allWpRoots, ...pPaths);// add
-			// normal
-			// parents
+			paths.push(...allWpRoots, ...pPaths);
 		}
 		return paths;
 	}
@@ -57,11 +50,8 @@ module.exports = {
 		require.main.paths.push(...modPath, ...__initialPaths);
 	},
 	loadWpPaths: function ( allModulePath, allWpPaths ) {
-		//console.log('exports::loadWpPaths:62: ', allModulePath);
 		modPath    = allModulePath;
 		allWpRoots = allWpPaths;
 		baseDir    = false;
-		//require.main.paths.length = 0;
-		//require.main.paths.push(...modPath, ...__initialPaths);
 	}
 };

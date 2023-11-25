@@ -27,7 +27,7 @@ const Module = require('module').Module,
 			return __oldReq.call(this, id);
 		
 		if (// if require is emited from the build
-			!this.parent
+			from === __filename
 		) {
 			paths = [
 				...modPath.filter(p => !allRoots.includes(p)),
@@ -41,18 +41,30 @@ const Module = require('module').Module,
 			];
 		}
 		else {
-			paths   = __oldNMP(from).filter(
-				dir => modPath.find(path => (dir.startsWith(path)))
-			);
-			rootMod = paths.pop();// keep inherited order if not sub node_modules
-			paths.push(
-				...allRoots.filter(
-					( p, i ) => allRootDeps[i].includes(packageName)
-				),
-				...allRoots.filter(
-					( p, i ) => !allRootDeps[i].includes(packageName)
-				)
-			);
+			let isBuildChild, node = this;// if require is emited from a child require of the build
+			while ( node = node.parent ) {
+				if ( node.filename === __filename ) {
+					isBuildChild = true;
+					break;
+				}
+			}
+			if ( isBuildChild ) {
+				paths   = __oldNMP(from).filter(
+					dir => modPath.find(path => (dir.startsWith(path)))
+				);
+				rootMod = paths.pop();// keep inherited order if not sub node_modules
+				paths.push(
+					...allRoots.filter(
+						( p, i ) => allRootDeps[i].includes(packageName)
+					),
+					...allRoots.filter(
+						( p, i ) => !allRootDeps[i].includes(packageName)
+					)
+				);
+			}
+			else {
+				return __oldReq.call(this, id);
+			}
 		}
 		resolved = __non_webpack_require__.resolve(id, { paths: paths });
 		return __oldReq.call(this, resolved);
