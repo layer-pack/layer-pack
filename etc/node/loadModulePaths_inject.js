@@ -18,11 +18,16 @@ const Module = require('module').Module,
 	    __oldReq       = Module.prototype.require;
 	
 	Module.prototype.require = function ( id ) {
-		let paths, rootMod, from = this.filename, resolved;
+		let paths,
+		    rootMod,
+		    from     = this.filename,
+		    fromPath = this.path,
+		    resolved;
 		if ( /^(\.|\/|[\w\W]+\:\\)/.test(id) )
 			return __oldReq.call(this, id);
 		
-		let packageName = id.match(/^(\@[^\\\/]+[\\\/][^\\\/]+|[^\\\/]+)/i)[0];
+		let packageName        = id.match(/^(\@[^\\\/]+[\\\/][^\\\/]+|[^\\\/]+)/i)[0],
+		    isBuildChild, node = this;// if require is emited from a child require of the build
 		if ( !packageName )
 			return __oldReq.call(this, id);
 		
@@ -41,7 +46,6 @@ const Module = require('module').Module,
 			];
 		}
 		else {
-			let isBuildChild, node = this;// if require is emited from a child require of the build
 			while ( node = node.parent ) {
 				if ( node.filename === __filename ) {
 					isBuildChild = true;
@@ -49,7 +53,7 @@ const Module = require('module').Module,
 				}
 			}
 			if ( isBuildChild ) {
-				paths   = __oldNMP(from).filter(
+				paths   = __oldNMP(fromPath).filter(
 					dir => modPath.find(path => (dir.startsWith(path)))
 				);
 				rootMod = paths.pop();// keep inherited order if not sub node_modules
@@ -72,11 +76,9 @@ const Module = require('module').Module,
 	
 	
 	return function loadPaths( { allModulePath, allModuleRoots, allDeps, cDir }, dist ) {
-		modPath                 = allModulePath.map(p => path.join(cDir, p));
-		allRoots                = allModuleRoots.map(p => path.join(cDir, p));
-		allRootDeps             = allDeps;
-		baseDir                 = path.join(cDir, dist);
-		rootModule.paths.length = 0;
-		rootModule.paths.push(...modPath, ...__initialPaths);
+		modPath     = allModulePath.map(p => path.join(cDir, p));
+		allRoots    = allModuleRoots.map(p => path.join(cDir, p));
+		allRootDeps = allDeps;
+		baseDir     = path.join(cDir, dist);
 	}
 })
