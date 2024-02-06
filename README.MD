@@ -28,6 +28,13 @@ Layer pack propose to solves theses problems using a more powerful import resolv
 
 Also, it allows to define multiple profiles "inheriting" from different packages based on layer packs and using different root source code directories
 
+## You... like it / it saved your day / you stole all the code / you want more?
+
+[![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](#)
+
+BTC     : bc1qh43j8jh6dr8v3f675jwqq3nqymtsj8pyq0kh5a<br/>
+Paypal  : <span class="badge-paypal"><a href="https://www.paypal.com/donate/?hosted_button_id=ECHYGKY3GR7CN" title="Donate to this project using Paypal"><img src="https://img.shields.io/badge/paypal-donate-yellow.svg" alt="PayPal donate button" /></a></span>
+
 ## Check the samples [here](https://github.com/n8tz/layer-pack-samples)
 
 ## Small doc [here](doc/DOC.MD)
