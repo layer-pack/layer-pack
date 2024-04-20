@@ -641,12 +641,13 @@ module.exports=
                 },
                 buildDate  : ${startBuildTm},
                 profile    : ${JSON.stringify(currentProfile)},
-                ${/^(async-)?node$/.test(buildTarget) ? `
+                ${
+							/^(async-)?node$/.test(buildTarget)
+							? `
                 projectRoot: require("path").join(__non_webpack_require__.main.path,${JSON.stringify(path.normalize(path.relative(compiler.options.output.path, opts.projectRoot)).replace(/\\/g, '/'))}),
-                ` : ""}
                 vars       : ${JSON.stringify(opts.vars)},
                 allCfg     : ${JSON.stringify(opts.allCfg)},
-                allModId   : ${JSON.stringify(opts.allModId)}
+                allModId   : ${JSON.stringify(opts.allModId)}` : ""}
             };
 						                `
 					);
