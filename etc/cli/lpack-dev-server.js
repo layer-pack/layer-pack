@@ -37,13 +37,13 @@ if ( profile && !confs[profile].allWebpackCfg.length )
 	return console.error("Error : Can't find webpack cfg in the inherited packages using profile id '" + profile + "'\n\r" + utils.printProfilesInfos(confs));
 
 // find da good webpack
-wpCli = resolve.sync('webpack-dev-server', { basedir: path.resolve(path.dirname(confs[profile].allWebpackCfg[0])) });
-wpCli = path.join(wpCli.substr(0, wpCli.lastIndexOf("node_modules")), 'node_modules/webpack-dev-server/bin/webpack-dev-server.js');
+wpCli = resolve.sync('webpack', { basedir: path.resolve(path.dirname(confs[profile].allWebpackCfg[0])) });
+wpCli = path.join(wpCli.substr(0, wpCli.lastIndexOf("node_modules")), 'node_modules/webpack/bin/webpack.js');
 
 console.info("Dev Server using profile id : ", profile, nodeArgz.length && nodeArgz || "");
 
 cmd = spawn(
-	"node", [...nodeArgz, wpCli, '--config', __dirname + '/../wp/webpack.config.js', ...argz],
+	"node", [...nodeArgz, wpCli, "serve",  '--config', __dirname + '/../wp/webpack.config.js', ...[...argz]],
 	{
 		stdio: 'inherit',
 		env  : { ...process.env, '__LPACK_PROFILE__': profile }

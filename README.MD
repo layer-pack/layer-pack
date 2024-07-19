@@ -2,7 +2,7 @@
 <p align="center"><img  width="192" src ="https://github.com/layer-pack/layer-pack/raw/master/doc/assets/logo.svg?sanitize=true" /></p>
 <br/>
 <p align="center">
-Webpack plugin to make inheritable code layers, named glob imports, easy multi packages app & shared webpack configs
+Webpack plugin to make inheritable code layers, named glob imports, easy monorepo / multi packages app & shared webpack configs
 </p>
 <h1></h1>
 <p align="center">
