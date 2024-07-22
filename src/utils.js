@@ -23,7 +23,13 @@ function checkIfDir( fs, file ) {
 		return false
 	}
 }
-
+function realpathSync(p){
+	try{
+		return fs.realpathSync(path.normalize(p))
+	}catch ( e ) {
+		return path.normalize(p);
+	}
+}
 function getlPackConfigFrom( dir ) {
 	let cfg, pkgCfg;
 	try {
@@ -146,11 +152,11 @@ const utils = {
 					    libsPath = [];
 				    
 				    libsPath = libsPath.map(
-					    p => fs.realpathSync(path.normalize(
+					    p => realpathSync(
 						    path.isAbsolute(p)
 						    ? p
 						    : path.join(mRoot, p)
-					    ))
+					    )
 				    )
 				    
 				    // find the inheritable package path & cfg
@@ -246,11 +252,11 @@ const utils = {
 			    layerLibsPathDef
 				    .forEach(
 					    p => {
-						    p = fs.realpathSync(path.normalize(
+						    p = realpathSync(
 							    path.isAbsolute(p)
 							    ? p
 							    : path.join(projectRoot, p)
-						    ));
+						    );
 						    fs.existsSync(p)
 						    && libPath.push(p);
 					    }
@@ -343,11 +349,11 @@ const utils = {
 					    layerLibsPathDef
 						    .forEach(
 							    p => {
-								    p = fs.realpathSync(path.normalize(
+								    p = realpathSync(
 									    path.isAbsolute(p)
 									    ? p
 									    : path.join(where, p)
-								    ));
+								    );
 								    fs.existsSync(p)
 								    && libPath.push(p);
 							    }
