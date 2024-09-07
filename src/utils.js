@@ -471,7 +471,7 @@ const utils = {
 					    .replace(/[\(]/ig, '[')
 					    .replace(/[\)]/ig, ']')
 					    .replace(/\.+/ig, '-')
-					    .replace(/[^\w\-\[\]]/ig, '_')
+					    .replace(/[^\w\-]/ig, '_')
 				    +
 				    '.gen.js')),
 		    globUid         = input,
@@ -619,7 +619,7 @@ const utils = {
 					    .replace(/[\(]/ig, '[')
 					    .replace(/[\)]/ig, ']')
 					    .replace(/\.+/ig, '-')
-					    .replace(/[^\w\-\[\]]/ig, '_') +
+					    .replace(/[^\w\-]/ig, '_') +
 				    '.gen.scss')),
 		    subPath         = "",
 		    globUid         = input,

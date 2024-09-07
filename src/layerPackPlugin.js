@@ -14,7 +14,8 @@ const path                 = require('path'),
       InjectPlugin         = require("webpack-inject-plugin").default,
       ENTRY_ORDER          = require("webpack-inject-plugin").ENTRY_ORDER,
       isBuiltinModule      = require('is-builtin-module'),
-      VirtualModulesPlugin = require('webpack-virtual-modules');
+      VirtualModulesPlugin = require('webpack-virtual-modules'),
+      Watchpack            = require("watchpack");
 
 const RE = {
 	winSlash     : /\\/g,
@@ -771,11 +772,13 @@ module.exports=
 				//console.log(currentProfile, ' WatchRun: ', compiler.watchFileSystem.watcher.watcherOptions.ignored);
 				triggerGlobUpdates(compiler, compiler.modifiedFiles, compiler.removedFiles);
 				//console.log(currentProfile, ' WatchRun: ', compiler.modifiedFiles, compiler.removedFiles);
+				//cd ../../rocinante/rocinante.core/&&cp src/*.* node_modules/layer-pack/src
 			});
 			//  do update the globs indexes files on hot reload
 			compiler.hooks.compilation.tap('layer-pack', ( compilation, params ) => {
 				let toBeRebuilt = [], anySassChange;
 				
+				//console.log(currentProfile, ' compilation: ', activeGlobs);
 				// force rebuild in wp5 without full recompile
 				compilation.buildQueue &&
 				compilation.buildQueue.hooks &&
