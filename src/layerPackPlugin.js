@@ -44,8 +44,9 @@ module.exports = function ( cfg, opts ) {
 	    constDef         = opts.vars.DefinePluginCfg || {},
 	    currentProfile   = process.env.__LPACK_PROFILE__ || 'default',
 	    externalRE       = is.string(opts.vars.externals) && new RegExp(opts.vars.externals),
-	    vMod             = new VirtualModulesPlugin();
-	//console.log('exports::exports:48: ', opts);
+	    vMod             = new VirtualModulesPlugin(),
+	    globDirWatcher;
+	
 	return plugin = {
 		/**
 		 * Return a sass resolver fn
@@ -71,25 +72,18 @@ module.exports = function ( cfg, opts ) {
 			    roots               = opts.allRoots,
 			    modulesPathByLength = [...opts.allModulePath]
 				    .sort(( a, b ) => b.length - a.length),
-			    contextDependencies = [],
+			    contextDependencies = {},
 			    fileDependencies    = [],
 			    availableExts       = [],
 			    activeGlobs         = { scss: {}, jsx: {} },
-			    activeIgnoredFiles,
+			    activeIgnoredFiles  = [],
 			    buildTarget         = compiler.options.target || "web",
 			    useHotReload        = !!compiler.options.devServer,
 			    isNodeBuild         = /^(async-)?node$/.test(buildTarget),
 			    startBuildTm        = Date.now();
 			
-			compiler.options.watchOptions         = compiler.options.watchOptions || {};
-			compiler.options.watchOptions.ignored = compiler.options.watchOptions.ignored || [];
-			if ( is.string(compiler.options.watchOptions.ignored) )
-				compiler.options.watchOptions.ignored = [compiler.options.watchOptions.ignored];
-			activeIgnoredFiles = compiler.options.watchOptions.ignored;
-			activeIgnoredFiles.push(roots[0] + "/MapOf.*.gen.js");
-			
-			
-			// Add the virtual module plugin
+			compiler.options.watchOptions = compiler.options.watchOptions || {};
+			// virtual module plugin
 			compiler.options.plugins.push(vMod);
 			
 			// Add some lPack build vars...
@@ -103,6 +97,7 @@ module.exports = function ( cfg, opts ) {
 			
 			// add the resolvers plugins
 			compiler.options.resolve         = compiler.options.resolve || {};
+			compiler.options.resolve.cache   = false;
 			compiler.options.resolve.plugins = compiler.options.resolve.plugins || [];
 			
 			// resolver for intra App requires
@@ -434,7 +429,7 @@ module.exports = function ( cfg, opts ) {
 				    isRelative,
 				    relativeAbsPath = path.resolve(path.join(context || "", reqPath)),
 				    tmpPath, suffix = "";
-				
+				//console.log('lPackResolve::lPackResolve:437: ', reqPath,data.lPackOriginRequest);
 				// do not re resolve
 				if ( data.lPackOriginRequest ) {
 					return cb();
@@ -476,10 +471,9 @@ module.exports = function ( cfg, opts ) {
 				// glob resolving...
 				if ( isGlob ) {
 					if ( RE.isSass.test(requireOrigin) )
-						activeGlobs.scss[reqPath] = true;
+						activeGlobs.scss[reqPath] = false;
 					else
-						activeGlobs.jsx[reqPath] = true;
-					
+						activeGlobs.jsx[reqPath] = false;
 					//if ( activeIgnoredFiles.indexOf(reqPath) === -1 )
 					//	activeIgnoredFiles.push(reqPath);
 					
@@ -499,9 +493,11 @@ module.exports = function ( cfg, opts ) {
 							//console.warn("glob", filePath, data)
 							let req = {
 								...data,
+								//internal:true,
 								path    : filePath,
 								resource: filePath
 							};
+							activeIgnoredFiles.push(filePath);
 							cb(e, req, content);
 						}
 					)
@@ -595,6 +591,7 @@ module.exports = function ( cfg, opts ) {
 					url     = tmp.shift();
 					suffix  = "#" + tmp.join("#");
 				}
+				//console.log('plugin::_sassImporter:598: ', url, requireOrigin);
 				if ( RootAliasRe.test(url) || url[0] === '$' || url[0] === '.' ) {
 					lPackResolve(
 						{
@@ -652,10 +649,6 @@ module.exports=
 						                `
 					);
 					
-					!activeIgnoredFiles.includes(roots[0] + '/.buildInfos.json.js')
-					&& activeIgnoredFiles.push(roots[0] + '/.buildInfos.json.js');
-					!activeIgnoredFiles.includes(roots[0] + '/.___layerPackIndexUtils.js')
-					&& activeIgnoredFiles.push(roots[0] + '/.___layerPackIndexUtils.js');
 					utils.addVirtualFile(
 						vMod, compiler.inputFileSystem,
 						path.normalize(roots[0] + '/.___layerPackIndexUtils.js'),
@@ -663,158 +656,122 @@ module.exports=
 					);
 					// deal with externals
 					if ( excludeExternals )
-						if ( nmf.hooks.resolve )// wp5
-						{
-							nmf.hooks.factorize.tapAsync(
-								"layer-pack", function ( data, callback ) {
-									let requireOrigin = data.contextInfo.issuer,
-									    context       = data.context || path.dirname(requireOrigin),
-									    request       = data.request,
-									    mkExt         = isBuiltinModule(data.request),
-									    isInRoot;
+						nmf.hooks.factorize.tapAsync(
+							"layer-pack", function ( data, callback ) {
+								let requireOrigin = data.contextInfo.issuer,
+								    context       = data.context || path.dirname(requireOrigin),
+								    request       = data.request,
+								    mkExt         = isBuiltinModule(data.request),
+								    isInRoot;
+								
+								//console.log('plugin::apply:82: ext', isNodeBuild);
+								if ( request === 'source-map-support' )
+									mkExt = true;
+								else if ( data.request === "$super" || !requireOrigin )// entry points ?
+								{
+									//console.log(':::631: ', this, data);
+									return callback(null, undefined);
+								}
+								
+								if ( !mkExt ) {
+									// is it external ? @todo
+									mkExt = !(
+										RootAliasRe.test(data.request) ||
+										context &&
+										/^\./.test(data.request)
+										? (isInRoot = roots.find(r => path.resolve(context + '/' + data.request).startsWith(r)))
+										: (isInRoot = roots.find(r =>
+											                         path.resolve(data.request).startsWith(r))));
 									
-									//console.log('plugin::apply:82: ext', isNodeBuild);
-									if ( request === 'source-map-support' )
-										mkExt = true;
-									else if ( data.request === "$super" || !requireOrigin )// entry points ?
+								}
+								if ( mkExt &&
+									(
+										!externalRE
+										|| externalRE.test(request)
+									)
+									&&
+									!(!isInRoot && /^\./.test(data.request))
+								) {
+									if ( !isNodeBuild || !opts.vars.hardResolveExternals ) // keep external as-is for browsers builds
 									{
-										//console.log(':::631: ', this, data);
-										return callback(null, undefined);
+										let mod = new ExternalModule(
+											data.request,
+											opts.vars.externalMode || "commonjs"
+										);
+										return callback(null, mod);
 									}
-									
-									if ( !mkExt ) {
-										// is it external ? @todo
-										mkExt = !(
-											RootAliasRe.test(data.request) ||
-											context &&
-											/^\./.test(data.request)
-											? (isInRoot = roots.find(r => path.resolve(context + '/' + data.request).startsWith(r)))
-											: (isInRoot = roots.find(r =>
-												                         path.resolve(data.request).startsWith(r))));
-										
-									}
-									if ( mkExt &&
-										(
-											!externalRE
-											|| externalRE.test(request)
-										)
-										&&
-										!(!isInRoot && /^\./.test(data.request))
-									) {
-										if ( !isNodeBuild || !opts.vars.hardResolveExternals ) // keep external as-is for browsers builds
-										{
-											let mod = new ExternalModule(
-												data.request,
-												opts.vars.externalMode || "commonjs"
-											);
-											return callback(null, mod);
-										}
-										else // hard resolve for node if possible
-											return compiler.resolverFactory.get(
-												"normal",
-												{
-													mainFields: ["main", "module"],
-													extensions: [".js"]
-												}
-											).doResolve(
-												'resolve',
-												{
-													...data,
-													path: context
-												},
-												"External resolve of " + request,
-												( err, request ) => {
-													let mod = new ExternalModule(err ||
-													                             !request
-													                             ? data.request
-													                             :
-													                             path.relative(compiler.options.output.path,
-													                                           request.path).replace(/\\/g, '/'),
-													                             opts.vars.externalMode || "commonjs");
-													return callback(null, mod);
-												});
-									}
-									else {
-										return callback(null, undefined);
-									}
-								});
-						}
-						else {
-							nmf.plugin('factory', function ( factory ) {
-								return function ( data, callback ) {
-									let requireOrigin = data.contextInfo.issuer,
-									    context       = data.context || path.dirname(requireOrigin),
-									    request       = data.request,
-									    mkExt         = isBuiltinModule(data.request),
-									    isInRoot;
-									
-									if ( data.request === "$super" || !data.contextInfo.issuer )// entry points ?
-										return factory(data, callback);
-									
-									if ( !mkExt ) {
-										// is it external ?
-										mkExt = !(
-											RootAliasRe.test(data.request) ||
-											context &&
-											RE.localPath.test(data.request)
-											? (isInRoot = roots.find(r => path.resolve(context + '/' + data.request).startsWith(r)))
-											: (isInRoot = roots.find(r => path.resolve(data.request).startsWith(r))));
-									}
-									if ( mkExt &&
-										(
-											!externalRE
-											|| externalRE.test(request)
-										)
-										&&
-										!(!isInRoot && RE.localPath.test(data.request)) // so
-										// it's
-										// relative
-										// to
-										// an
-										// internal
-									) {
-										
-										if ( !isNodeBuild || !opts.vars.hardResolveExternals ) // keep external as-is for browsers builds
-											return callback(null, new ExternalModule(
-												data.request,
-												opts.vars.externalMode || "commonjs"
-											));
-										else // hard resolve for node if possible
-											compiler.resolverFactory.get("normal",
-											                             {
-												                             mainFields: ["main", "module"],
-												                             extensions: [".js"]
-											                             }).doResolve(
-												'resolve', {
-													...data,
-													path: context
-												},
-												"External resolve of " + request, ( err,
-												                                    request ) => {
-													return callback(null, new
-													ExternalModule(err || !request ?
-													               data.request :
-													               path.relative(compiler.options.output.path,
-													                             request.path).replace(/\\/g, '/'),
-													               opts.vars.externalMode || "commonjs"));
-												});
-										
-									}
-									else {
-										return factory(data, callback);
-									}
-									
-								};
+									else // hard resolve for node if possible
+										return compiler.resolverFactory.get(
+											"normal",
+											{
+												mainFields: ["main", "module"],
+												extensions: [".js"]
+											}
+										).doResolve(
+											'resolve',
+											{
+												...data,
+												path: context
+											},
+											"External resolve of " + request,
+											( err, request ) => {
+												let mod = new ExternalModule(err ||
+												                             !request
+												                             ? data.request
+												                             :
+												                             path.relative(compiler.options.output.path,
+												                                           request.path).replace(/\\/g, '/'),
+												                             opts.vars.externalMode || "commonjs");
+												return callback(null, mod);
+											});
+								}
+								else {
+									return callback(null, undefined);
+								}
 							});
-						}
 				}
 			);
-			// debug updated file
-			//compiler.hooks.watchRun.tap('WatchRun', ( compiler ) => {
-			//	console.log('plugin:::765: updated :', compiler.modifiedFiles);
-			//	console.log('plugin:::765: deleted :', compiler.removedFiles);
-			//
-			//});
+			
+			let triggerGlobUpdates = ( compiler, changedFiles = [], removedFiles = [] ) => {
+				let globsToUpdate = {};
+				changedFiles.forEach(( filePath ) => {
+					if ( contextDependencies[filePath] )
+						contextDependencies[filePath] = contextDependencies[filePath]?.filter(
+							( globReq ) => !(globsToUpdate[globReq] = true)
+						)
+				})
+				removedFiles.forEach(( filePath ) => {
+					if ( contextDependencies[filePath] )
+						contextDependencies[filePath] = contextDependencies[filePath]?.filter(
+							( globReq ) => !(globsToUpdate[globReq] = true)
+						)
+				})
+				
+				for ( let dir in contextDependencies )
+					if ( contextDependencies.hasOwnProperty(dir) ) {
+						contextDependencies[dir] = contextDependencies[dir].filter(
+							( globReq ) => !(globsToUpdate[globReq])
+						)
+						if ( !contextDependencies[dir].length )
+							delete contextDependencies[dir];
+					}
+				for ( let globReq in globsToUpdate )
+					if ( globsToUpdate.hasOwnProperty(globReq) ) {
+						if ( activeGlobs.jsx.hasOwnProperty(globReq) )
+							activeGlobs.jsx[globReq] = true;
+						if ( activeGlobs.scss.hasOwnProperty(globReq) )
+							activeGlobs.scss[globReq] = true;
+					}
+				return globsToUpdate;
+			}
+			// mark updated globs
+			compiler.hooks.watchRun.tap('WatchRun', ( compiler ) => {
+				activeIgnoredFiles.push(roots[0] + '/.buildInfos.json.js');
+				activeIgnoredFiles.push(roots[0] + '/.___layerPackIndexUtils.js');
+				//console.log(currentProfile, ' WatchRun: ', compiler.watchFileSystem.watcher.watcherOptions.ignored);
+				triggerGlobUpdates(compiler, compiler.modifiedFiles, compiler.removedFiles);
+				//console.log(currentProfile, ' WatchRun: ', compiler.modifiedFiles, compiler.removedFiles);
+			});
 			//  do update the globs indexes files on hot reload
 			compiler.hooks.compilation.tap('layer-pack', ( compilation, params ) => {
 				let toBeRebuilt = [], anySassChange;
@@ -840,7 +797,8 @@ module.exports=
 				// the glob indexes files are not rebuilt
 				// if they were changed they will be rebuilt by the beforeAdd hook
 				for ( let reqPath in activeGlobs.jsx )
-					if ( activeGlobs.jsx.hasOwnProperty(reqPath) ) {
+					if ( activeGlobs.jsx.hasOwnProperty(reqPath) && activeGlobs.jsx[reqPath] ) {
+						activeGlobs.jsx[reqPath] = false;
 						utils.indexOf(
 							vMod,
 							compiler.inputFileSystem,
@@ -858,9 +816,11 @@ module.exports=
 							}
 						)
 					}
+				//console.log(currentProfile, ': ', activeGlobs.scss);
 				//
 				for ( let reqPath in activeGlobs.scss )
-					if ( activeGlobs.scss.hasOwnProperty(reqPath) ) {
+					if ( activeGlobs.scss.hasOwnProperty(reqPath) && activeGlobs.scss[reqPath] ) {
+						activeGlobs.scss[reqPath] = false;
 						utils.indexOfScss(
 							vMod,
 							compiler.inputFileSystem,
@@ -872,7 +832,9 @@ module.exports=
 							RootAliasRe,
 							useHotReload,
 							function ( e, filePath, content, changed ) {
+								//console.log(':::877: ', filePath, changed);
 								if ( changed ) {
+									//console.log(':::877: ', filePath);
 									anySassChange = true;
 									toBeRebuilt.push(filePath)
 								}
@@ -880,50 +842,15 @@ module.exports=
 						)
 					}
 			})
-			
 			// should deal with hot reload watched files & dirs
-			if ( compiler.hooks.afterDone ) // wp5
-				compiler.hooks.afterDone
-				        .tap('layer-pack', ( wp, cb ) => {
-					        
-					        
-					        // seems to fix wp5 endless compilation loop using docker volume + long build time
-					        (compiler.options.watch || process.argv[1].indexOf('webpack-dev-server') !== -1)
-					        && process.nextTick(
-						        tm => {
-							        compiler.watchFileSystem.watcher.watch([], roots)
-							        fileDependencies.length    = 0;
-							        contextDependencies.length = 0;
-						        }
-					        )
-					        
-					        cache = {};
-				        });
-			else // wp4
-				compiler.hooks.afterEmit
-				        .tapAsync('layer-pack', ( compilation, cb ) => {
-					        // old method
-					        //
-					        // Add file dependencies if they're not already tracked
-					        fileDependencies.forEach(( file ) => {
-						        compilation.fileDependencies &&
-						        !compilation.fileDependencies.has(file) &&
-						        compilation.fileDependencies.add(file);
-					        });
-					        
-					        fileDependencies.length = 0;
-					        
-					        // Add context dependencies if they're not already tracked
-					        contextDependencies.forEach(( context ) => {
-						        compilation.contextDependencies &&
-						        !compilation.contextDependencies.has(context) &&
-						        compilation.contextDependencies.add(context);
-					        });
-					        
-					        contextDependencies.length = 0;
-					        cache                      = {};
-					        cb();
-				        });
+			compiler.hooks.afterCompile
+			        .tap('layer-pack', ( compilation ) => {
+				        let globDirs = Object.keys(contextDependencies);
+				        activeIgnoredFiles.forEach(lpFile => compilation.fileDependencies.delete(lpFile));
+				        globDirs.forEach(dir => compilation.contextDependencies.add(dir));
+				        fileDependencies.length = 0;
+				        activeIgnoredFiles.length = 0;
+			        })
 		}
 	}
 }

@@ -121,10 +121,8 @@ So you can share, version, extend & switch your webpack conf & boilerplate via n
 
 ## Things to know
 
-- Using webpack features or plugin that depend or modify resolving may be tricky
 - Node builds include the (node_)modules relative directories locations to preserve inherited dependencies 
 - Sass imports have limitations from the sass package who doesn't tell which file do imports to resolve but the root source file that was imported in webpack, so scss files must use absolute path ( eg: App/assets/stuff.jpg, not ./assets/stuff.jpg )
-- Webpack 5 module cache.type = "filesystem" require resolve.cache=false in order to force regeneration of virtual indexes files
 - Context based webpack requires are not processed by layer-pack, they have the normal webpack behavior
  
 ## Alternative to
