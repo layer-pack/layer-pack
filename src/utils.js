@@ -81,13 +81,13 @@ const utils = {
 	 * @param projectRoot {string} @optional directory where to start searching lPack cfg
 	 * @param customConfig {object} @optional lPack config in json
 	 */
-	getAllConfigs( projectRoot = process.cwd(), customConfig ) {
+	getAllConfigs( projectRoot = process.env.__LPACK_HEAD__ || process.cwd(), customConfig ) {
 		let pkgConfig =
 			    customConfig && { layerPack: customConfig }
 			    ||
 			    getlPackConfigFrom(projectRoot),
 		    allCfg    = {};
-		
+		console.log('utils::getAllConfigs:90: ', projectRoot);
 		if ( !pkgConfig || !pkgConfig.layerPack )
 			throw new Error("Can't find any lPack config ! ( searched in " + projectRoot + "/.layers.json" + " )")
 		

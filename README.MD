@@ -13,20 +13,27 @@ Webpack plugin to make inheritable code layers, named glob imports, easy monorep
 <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat" />
 </p>
 
-## What's Layer-pack ?
+## Why Layer-pack ?
 
-Layer-pack is a webpack plugin allowing better code maintainability and flexibility by solving some of the most major problems of large JS/TS applications :
+Layer-pack is a webpack plugin allowing better code modularity, maintainability and flexibility by solving some of the most major problems of large JS/TS applications :
 
 - The first one, we often have to multiply internal imports in the project files. This usually leads to complex maintenance and (too) many import and require statements.
 - The second is that we cannot easily "extend" an existing application, we are still forced to create various interfacing systems and APIs, maintain separates build configurations and dependencies lists.
 
-Layer pack propose to solves theses problems using a more powerful import resolving concept:
+Layer pack solve these problems and many others by enhancing imports & resolving :
 
-- It "namespaces" the application files, so we can use absolute imports where we shouldn't use relative paths, 
-- It allows us to use glob patterns in import statements, so we can directly import files and a directory tree without specifying all of their names
-- It literally allows to "inherit" layer pack based packages or "app layers", including theirs build configuration and dependencies
+- It allows to use glob patterns in import & requires statements
+  - So we can import files and a directory tree without specifying all of their names. Yes, just paste files & play mode :)
+- It literally allows to "inherit" packages or "app layers", including theirs dependencies and webpack build configurations
+  - So you can easily & smartly split you're app in some "app layer" like : app.core, app.models, app.www, app.api, app.admin, app.config... 
+- It "namespaces" the application files
+  - So we can use absolute imports where we shouldn't use relative paths,
+- Additionally, it allows to "templatize" webpack build configs and define multiples "inheritable" profiles on a unique "app layer" package.
+  - This mean that a unique package can expose multiples layers or bootstraps
 
-Also, it allows to define multiple profiles "inheriting" from different packages based on layer packs and using different root source code directories
+## Check the samples [here](https://github.com/n8tz/layer-pack-samples)
+
+## Small doc [here](doc/DOC.MD)
 
 ## You... like it / it saved your day / you stole all the code / you want more?
 
@@ -35,15 +42,13 @@ Also, it allows to define multiple profiles "inheriting" from different packages
 BTC     : bc1qh43j8jh6dr8v3f675jwqq3nqymtsj8pyq0kh5a<br/>
 Paypal  : <span class="badge-paypal"><a href="https://www.paypal.com/donate/?hosted_button_id=ECHYGKY3GR7CN" title="Donate to this project using Paypal"><img src="https://img.shields.io/badge/paypal-donate-yellow.svg" alt="PayPal donate button" /></a></span>
 
-## Check the samples [here](https://github.com/n8tz/layer-pack-samples)
 
-## Small doc [here](doc/DOC.MD)
-
-## Main features :
+## Features by samples :
 
 ### Namespace you're application
 
 So you can stop using easily broken relative imports :
+
 ```jsx
 // import stuff from "../../../config"; // no more
 import stuff from "App/config"; // aw yeah
@@ -51,7 +56,7 @@ import stuff from "App/config"; // aw yeah
 
 ### Use glob patterns in imports statements
 
-Layer pack allow using glob patterns in imports statements :
+Just import them all :
 
 ```jsx
 import allModules from "App/modules/*.module.js";
@@ -59,7 +64,7 @@ import allModules from "App/modules/*.module.js";
 // import allModules from "App/modules/*/index.js";
 ```
 
-It can also convert directories & files names to JS named exports :
+Just import them all and convert directories & files names to JS named exports :
 
 ```jsx
 // or using es6 named exports
@@ -86,8 +91,6 @@ Glob imports also work in Scss :
 - Test layers independently
 - Compile in 1 step, with the source map
 - Use multiple dev servers sharing the same code layers
-
-
 
 ### Easily override inherited project
 
@@ -128,7 +131,7 @@ So you can share, version, extend & switch your webpack conf & boilerplate via n
 ## Alternative to
 
  - Splitting big projects in thousands of modules
- - Lerna, others mono-repo tool chains...
+ - Lerna, others mono-repo tool chains & defining messy npm/yarn aliases / namespaces ...
 
 ## Contributors ?
 
@@ -142,3 +145,10 @@ Become a sponsor!
 
 <span class="badge-paypal"><a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=YNJZ6NQYVPTPE" title="Donate to this project using Paypal"><img src="https://img.shields.io/badge/paypal-donate-yellow.svg" alt="PayPal donate button" /></a></span>
 [![*](https://www.google-analytics.com/collect?v=1&tid=UA-82058889-1&cid=555&t=event&ec=project&ea=view&dp=%2Fproject%2Flayer-pack&dt=readme)](#)
+
+## You... like it / it saved your day / you stole all the code / you want more?
+
+[![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](#)
+
+BTC     : bc1qh43j8jh6dr8v3f675jwqq3nqymtsj8pyq0kh5a<br/>
+Paypal  : <span class="badge-paypal"><a href="https://www.paypal.com/donate/?hosted_button_id=ECHYGKY3GR7CN" title="Donate to this project using Paypal"><img src="https://img.shields.io/badge/paypal-donate-yellow.svg" alt="PayPal donate button" /></a></span>

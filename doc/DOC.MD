@@ -10,52 +10,71 @@
 
 # How to use
 
-The simpler is to start from a sample & update its deps.
+## The quick way
 
-Samples [here](https://github.com/n8tz/layer-pack-samples)
+Choose a sample that meet you're needs [here](https://github.com/n8tz/layer-pack-samples) and play :)
 
-## Create & inherit packages
+## Mini doc
 
-Add layer-pack to packages deps
+### A complete root inheritable package example
+
+[Here a forkable inheritable package example](https://github.com/layer-pack/lpack-react), which use & provide :
+- Webpack 5, Sass, React, Express etc...
+- SSR, shared Front/back code,
+- Bootstraps & build configs for node, browsers, static websites and components
+
+### How to make & config inheritable package
+
+To be usable as an "inheritable layer", a npm/git/local module need :
+- To have layer-pack in its packages.json dev deps, obviously
 
 ```bash
-npm i -s layer-pack // on all inheritable projects with wp conf & on the head projects
+npm i -D layer-pack // on all inheritable projects with wp conf & on the head projects
 ```
 
-Then, layer-pack need a file with a configuration for each build profiles.
+Additionally, all layers containing webpack configs needs to have the webpack, webpack-cli & webpack-dev-server as dev deps.
 
-Add a ".layers.json" file near the package.json of each projects :
+- To have a ".layers.json" or ".layers.js" near its packages.json
+
+This file describe the different available build profiles & build scripts
+
+Here a commented sample :
 
 ```jsx
 {
+  // each root key is a profile
+  // the "default" profile is used if no profile is asked
+  // profiles extend the same profile id from inherited layers, 
+  // if it does'nt exist default will be used ( but it will still search for the same profile in the next inherited layers ) 
   "default": {
-    // default profile id
 
-    // local root that will be mapped on App/...
+    // local source code root that will be mapped on App/...
     "rootFolder": "App",
+
+    // optional folder(s) containing libs overrides for dev or monorepo purposes
+    // * Libs in theses paths will have precedence over the node_modules directories
+    // * They can also contain the inherited layers
+    "libsPath": ["./libs"],
+            
     // list of the inherited layers in theirs layer precedence order ( 1st layer override 2nd & so on )
     "extend": [
       "parentProject"
       // parentProject must have layerPack.default with his own extend value & be in node_modules or in "libsPath" value
     ]
   },
-  // optionally we can define multiple profile
-  // profiles extend the same profile id from inherited layers, 
-  // if it does'nt exist default will be used ( but it will still search for the same profile in the next inherited layers )  
+ 
   "api": {
     "rootFolder": "App",
-    // optional folder(s) containing libs overrides for dev or monorepo purposes
-    // * Libs in theses paths will have precedence over the node_modules directories
-    // * They can also contain the inherited layers
-    "libsPath": ["./libs"],
-    // optional webpack config
+
+            // webpack config to use with this profile
     "config": "./webpack.config.api.js",
+            
     "extend": [
       "parentProject"
     ]
   },
-  // optionally we can define profile with different wp config 
   "Comp": {
+    // webpack config to use with this profile
     "config": "./webpack.config.www.js",
     // optional profile id to search in the inherited packages
     "basedOn": "someSuperProfile_in_parents",
@@ -75,6 +94,7 @@ Add a ".layers.json" file near the package.json of each projects :
       // (node only) make external requiered modules using pre resolved relative paths when requiered from the build 
       // ex. : require('my_module') -> require('../../node_modules/my_module/index.js')
       "hardResolveExternals": true,
+      // should be mapped to webpack::config.production
       "production": true,
       "someValues": {
         // lPack apply simple tpl on the vars
@@ -90,14 +110,16 @@ Add a ".layers.json" file near the package.json of each projects :
     "extend": [
       "parentProject"
     ]
-  }
+  },
+  // Use the "default" profile def, but inherit the "someAliase" profile
+  "someAliase":"default"
 }
 ```
 
 _.layers.json can be replaced with a .layers.js exporting the profiles conf, so we can also add webpack plugins via
 the "webpackPatch" prop_
 
-## Using layer-pack in the webpack configs
+### Using layer-pack in the webpack configs
 
 Example webpack config :
 
@@ -172,9 +194,9 @@ module.exports = wpCfg;
 
 ```
 
-## Setup layers for development ( install inherited layers devDependencies )
+### Setup layers for development ( install inherited layers devDependencies )
 
-DevDependencies of dependencies are not installed, so there 2 options :
+DevDependencies of dependencies are not installed, so dev dependencies of the inherited layers must be installed, there 2 options for that :
 
 - layer-pack can install them, using the following command :
 
@@ -194,7 +216,7 @@ lpack-setup :www ci # setup with npm ci
 lpack :? # get available profiles
 ```
 
-- Or if they are in a folder listed in "libsPath", you can install them yourself ( in this case putting them in thte
+- Or if you use a monorepo structure by using the "libsPath" option, you can install them yourself ( in this case putting the app layer in the
   package.json is useless )
 
 ## CLI
@@ -225,7 +247,7 @@ When using glob with require or es6 import, the plugin generate a virtual file o
 Basing the string captured by the parenthesis, the plugin generate es6 named exports.
 
 - If the captured string contain "/" or  "\\", it will split and walk & set in JS way
-- If it contain invalid JS variable identifier it will not be available as named export (only in the default export)
+- If it contains invalid JS variable identifier it will not be available as named export (only in the default export)
 
 Ex :
 
@@ -247,9 +269,7 @@ Glob imports generate virtual files "just in time".
 
 These files do named exports & use an unique file name, so same glob import use the same files.
 
-## More about building with inherit
-
-### .buildInfos.json
+## .buildInfos.json
 
 layer-pack add a virtual file with some build info in the root folder.
 It's called ".buildInfos.json" & contain the following values :
