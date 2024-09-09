@@ -87,7 +87,7 @@ const utils = {
 			    ||
 			    getlPackConfigFrom(projectRoot),
 		    allCfg    = {};
-		console.log('utils::getAllConfigs:90: ', projectRoot);
+		//console.log('utils::getAllConfigs:90: ', projectRoot);
 		if ( !pkgConfig || !pkgConfig.layerPack )
 			throw new Error("Can't find any lPack config ! ( searched in " + projectRoot + "/.layers.json" + " )")
 		

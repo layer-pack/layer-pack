@@ -14,8 +14,7 @@ const path                 = require('path'),
       InjectPlugin         = require("webpack-inject-plugin").default,
       ENTRY_ORDER          = require("webpack-inject-plugin").ENTRY_ORDER,
       isBuiltinModule      = require('is-builtin-module'),
-      VirtualModulesPlugin = require('webpack-virtual-modules'),
-      Watchpack            = require("watchpack");
+      VirtualModulesPlugin = require('webpack-virtual-modules');
 
 const RE = {
 	winSlash     : /\\/g,
