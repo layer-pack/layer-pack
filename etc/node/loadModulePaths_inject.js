@@ -23,6 +23,7 @@ const Module = require('module').Module,
 		    from     = this.filename,
 		    fromPath = this.path,
 		    resolved;
+		id           = id && (id + "");
 		if ( /^(\.|\/|[\w\W]+\:\\)/.test(id) )
 			return __oldReq.call(this, id);
 		

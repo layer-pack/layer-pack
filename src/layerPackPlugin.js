@@ -78,10 +78,12 @@ module.exports = function ( cfg, opts ) {
 			    activeGlobs         = { scss: {}, jsx: {} },
 			    activeIgnoredFiles  = [],
 			    buildTarget         = compiler.options.target || "web",
+			    outputTarget        = compiler.options.output?.libraryTarget
+				    || compiler.options.output?.library?.type
+				    || "commonjs",
 			    useHotReload        = !!compiler.options.devServer,
 			    isNodeBuild         = /^(async-)?node$/.test(buildTarget),
 			    startBuildTm        = Date.now();
-			
 			compiler.options.watchOptions = compiler.options.watchOptions || {};
 			// virtual module plugin
 			compiler.options.plugins.push(vMod);
@@ -375,7 +377,11 @@ module.exports = function ( cfg, opts ) {
 						return "" +
 							"/** layer pack externals modules loader **/\n" +
 							fs.readFileSync(path.join(__dirname,
-							                          '../etc/node/loadModulePaths_inject.js')) +
+							                          //!outputTarget.includes("module") && /^(async-)?node$/.test(buildTarget)
+							                          //?
+							                          '../etc/node/loadModulePaths_inject.js'
+							                          //: '../etc/node/loadModulePaths_esm_inject.js'
+							)) +
 							`()( {
 							 allModulePath:${JSON.stringify(opts.allModulePath.map(p => path.normalize(path.relative(opts.projectRoot, p)).replace(/\\/g, '/')))},
 							 allModuleRoots:${JSON.stringify(opts.allModuleRoots.map(p => path.normalize(path.relative(opts.projectRoot, p + "/node_modules")).replace(/\\/g, '/')))},
@@ -393,12 +399,13 @@ module.exports = function ( cfg, opts ) {
 							})
 							},
 							${JSON.stringify(path.relative(opts.projectRoot, compiler.options.output.path).replace(/\\/g, '/'))}
-							);` +
-							(is.string(compiler.options.devtool) &&
-							 compiler.options.devtool.includes("source-map")
-							 ? "/** layer pack externals sourcemaps**/\n" +
-								 "require('source-map-support').install();\n"
-							 : "")
+							);`
+						//+
+						//(is.string(compiler.options.devtool) &&
+						// compiler.options.devtool.includes("source-map")
+						// ? "/** layer pack externals sourcemaps**/\n" +
+						//	 "require('source-map-support').install();\n"
+						// : "")
 					}, ENTRY_ORDER.First))
 			}
 			
@@ -470,13 +477,14 @@ module.exports = function ( cfg, opts ) {
 				
 				// glob resolving...
 				if ( isGlob ) {
+					reqPath = reqPath + (data.query || "");
 					if ( RE.isSass.test(requireOrigin) )
 						activeGlobs.scss[reqPath] = false;
 					else
 						activeGlobs.jsx[reqPath] = false;
 					//if ( activeIgnoredFiles.indexOf(reqPath) === -1 )
 					//	activeIgnoredFiles.push(reqPath);
-					
+					//console.log('lPackResolve::lPackResolve:479: ', data);
 					return (RE.isSass.test(requireOrigin)
 					        ? utils.indexOfScss
 					        : utils.indexOf)(
@@ -641,7 +649,7 @@ module.exports=
                 ${
 							/^(async-)?node$/.test(buildTarget)
 							? `
-                projectRoot: require("path").join(__non_webpack_require__.main.path,${JSON.stringify(path.normalize(path.relative(compiler.options.output.path, opts.projectRoot)).replace(/\\/g, '/'))}),
+                projectRoot: require("path").join(__dirname,${JSON.stringify(path.normalize(path.relative(compiler.options.output.path, opts.projectRoot)).replace(/\\/g, '/'))}),
                 vars       : ${JSON.stringify(opts.vars)},
                 allCfg     : ${JSON.stringify(opts.allCfg)},
                 allModId   : ${JSON.stringify(opts.allModId)}` : ""}
@@ -665,9 +673,10 @@ module.exports=
 								    isInRoot;
 								
 								//console.log('plugin::apply:82: ext', isNodeBuild);
-								if ( request === 'source-map-support' )
-									mkExt = true;
-								else if ( data.request === "$super" || !requireOrigin )// entry points ?
+								//if ( request === 'source-map-support' )
+								//	mkExt = true;
+								//else
+								if ( data.request === "$super" || !requireOrigin )// entry points ?
 								{
 									//console.log(':::631: ', this, data);
 									return callback(null, undefined);
@@ -694,36 +703,41 @@ module.exports=
 								) {
 									if ( !isNodeBuild || !opts.vars.hardResolveExternals ) // keep external as-is for browsers builds
 									{
+										//console.log(':::706: ', data.request, data.dependencyType);
 										let mod = new ExternalModule(
 											data.request,
-											opts.vars.externalMode || "commonjs"
+											outputTarget || "commonjs"
 										);
 										return callback(null, mod);
 									}
 									else // hard resolve for node if possible
-										return compiler.resolverFactory.get(
+									{
+										//console.log(':::727: ', data.request);
+										let resolver = compiler.resolverFactory.get(
 											"normal",
 											{
 												mainFields: ["main", "module"],
-												extensions: [".js"]
+												extensions: compiler.options.resolve?.extensions || [".js"]
 											}
-										).doResolve(
-											'resolve',
-											{
-												...data,
-												path: context
-											},
-											"External resolve of " + request,
-											( err, request ) => {
+										);
+										return resolver.resolve(
+											data.contextInfo,
+											data.context,
+											data.request,
+											{},
+											//"External resolve of " + request,
+											( err, request, result ) => {
+												//console.log(':::729: ', request, result);
 												let mod = new ExternalModule(err ||
 												                             !request
 												                             ? data.request
 												                             :
 												                             path.relative(compiler.options.output.path,
-												                                           request.path).replace(/\\/g, '/'),
-												                             opts.vars.externalMode || "commonjs");
+												                                           request).replace(/\\/g, '/'),
+												                             outputTarget || "commonjs");
 												return callback(null, mod);
 											});
+									}
 								}
 								else {
 									return callback(null, undefined);
@@ -850,7 +864,7 @@ module.exports=
 				        let globDirs = Object.keys(contextDependencies);
 				        activeIgnoredFiles.forEach(lpFile => compilation.fileDependencies.delete(lpFile));
 				        globDirs.forEach(dir => compilation.contextDependencies.add(dir));
-				        fileDependencies.length = 0;
+				        fileDependencies.length   = 0;
 				        activeIgnoredFiles.length = 0;
 			        })
 		}

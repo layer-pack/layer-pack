@@ -13,6 +13,7 @@ const utils         = require("./utils"),
       lPackPlugin   = require("./layerPackPlugin"),
       ModPathLoader = require("../etc/node/loadModulePaths"),
       merge         = require('webpack-merge');
+const fs = require("fs");
 
 let allConfigs, allPluginInstances = {}, allCfgInstances = {};
 
@@ -58,13 +59,18 @@ module.exports = {
 	 */
 	getSuperWebpackCfg( profile = process.env.__LPACK_PROFILE__ || "default", head ) {
 		let cfg = this.getConfig(profile),
-		    wpCfg;
+		    wpCfg, wpModsPath;
 		
 		if ( allCfgInstances[profile] )
 			return allCfgInstances[profile];
 		
-		ModPathLoader.loadWpPaths(cfg.allModulePath,[path.normalize(cfg.allWebpackRoot[0] + "/node_modules")]);
-
+		if ( !fs.existsSync(cfg.allWebpackRoot[0] + "/.layer_modules/node_modules") ) {
+			wpModsPath = path.normalize(cfg.allWebpackRoot[0] + "/node_modules")
+		}else{
+			wpModsPath = path.normalize(cfg.allWebpackRoot[0] + "/.layer_modules/node_modules")
+		}
+		ModPathLoader.loadWpPaths(cfg.allModulePath,[wpModsPath]);
+		
 		try {
 			if ( !head && cfg.allCfg[0].config && cfg.allWebpackCfg[1] )
 				wpCfg = require(cfg.allWebpackCfg[1]);

@@ -73,6 +73,12 @@ import AllActionsByStoreName from "App/store/(*)/actions.js";
 import {MyCompByFileName} from "App/ui/components/(*).jsx"; // ( big import list to maintain ) no more ! :)
 // or
 import {myFolder} from "App/ui/components/(**/*).jsx"; // ( walk & set myFolder/MyComp in myFolder.MyComp )
+
+// or
+// walk & set myFolder/MyComp in myFolder.MyComp using Loadable Components / webpack chuncks:
+import {myFolder} from "App/ui/components/(**/*).jsx?using=ReactLoadable"; 
+
+// also available : LazyReact, SuspenseReact ( lazy with suspense )
 ```
 
 Glob imports also work in Scss :
@@ -124,14 +130,15 @@ So you can share, version, extend & switch your webpack conf & boilerplate via n
 
 ## Things to know
 
-- Node builds include the (node_)modules relative directories locations to preserve inherited dependencies 
-- Sass imports have limitations from the sass package who doesn't tell which file do imports to resolve but the root source file that was imported in webpack, so scss files must use absolute path ( eg: App/assets/stuff.jpg, not ./assets/stuff.jpg )
+- Node builds include the (node_)modules relative directories locations to preserve inherited dependencies ( if they are not included in the builds )
+- Sass imports have limitations from the sass package: it doesn't tell the files path that call imports, so scss files must import using absolute paths ( eg: App/assets/stuff.jpg, not ./assets/stuff.jpg )
 - Context based webpack requires are not processed by layer-pack, they have the normal webpack behavior
+- New versions of Yarn mess too much with the modules structure, resolving & management, it can't be used with layer-pack anymore  
  
 ## Alternative to
 
  - Splitting big projects in thousands of modules
- - Lerna, others mono-repo tool chains & defining messy npm/yarn aliases / namespaces ...
+ - Lerna, others mono-repo tool chains & defining messy yarn workspaces ...
 
 ## Contributors ?
 
