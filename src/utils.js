@@ -17,7 +17,7 @@ const path              = require("path"),
       { jsVarTest }     = require('./utils.values.js'),
       glob2Js           = {
 	      default  : require('./glob2Js/default.js'),
-	      lazyReact: require('./glob2Js/lazyReact'),
+	      lazyReact: require('./glob2Js/LazyReact'),
 	      SuspenseReact: require('./glob2Js/SuspenseReact'),
 	      ReactLoadable: require('./glob2Js/ReactLoadable')
       };
