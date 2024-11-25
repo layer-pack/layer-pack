@@ -145,7 +145,8 @@ module.exports = function ( cfg, opts ) {
 									let addrs                           = [],
 									    rootModPath,
 									    [, packageName, packageSubPath] = request.request.match(RE.packageName),
-									    key                             = request.path + "!|!" + request.request;
+									    key                             = request.path + "!|!" + request.request,
+									    requestedMod                    = request.request.match(/^(\@[\w\d-_]+[\\\/][\w\d-_]+|[\w\d-_]+)?/i)[0];
 									
 									if ( resolveCache[key] ) {
 										//console.log('Use cache ', key);
@@ -205,14 +206,19 @@ module.exports = function ( cfg, opts ) {
 												return resolver.join(p, "node_modules")
 											});
 										rootModPath = modulesPathByLength.find(r => addrs[0].startsWith(r))
-										if ( rootModPath )
+										if ( rootModPath ) {
 											addrs = addrs.filter(
 												addr => addr.startsWith(rootModPath)
 											);
-										else
-											addrs = [];
+											addrs.pop();//rm origin mods root
+										}
+										else // so this should be a linked / external mod
+										{
+											// if the requested mod is a not direct deps this should be peerdeps which are in the project deps
+											if ( !request.descriptionFileData?.dependencies?.[requestedMod] )
+												addrs = [];
+										}
 										
-										addrs.pop();//rm origin mods root
 										
 										addrs.push(
 											...opts.allModuleRoots.filter(// prefer layer where its defined in deps
@@ -220,17 +226,25 @@ module.exports = function ( cfg, opts ) {
 												                              opts.allPackageCfg[i].dependencies
 												                              && opts.allPackageCfg[i].dependencies[packageName]
 											                              )
-											).map(p => {
-												return resolver.join(p, "node_modules")
-											}),
+											).reduce((list,p) => {
+												list.push(
+													path.join(p, ".layer_modules","node_modules"),
+													path.join(p, "node_modules")
+												);
+												return list;
+											},[]),
 											...opts.allModuleRoots.filter(// if not defined try shared deps ( not formally defined in deps )
 											                              ( p, i ) => !(
 												                              opts.allPackageCfg[i].dependencies
 												                              && opts.allPackageCfg[i].dependencies[packageName]
 											                              )
-											).map(p => {
-												return resolver.join(p, "node_modules")
-											}),
+											).reduce((list,p) => {
+												list.push(
+													path.join(p, ".layer_modules","node_modules"),
+													path.join(p, "node_modules")
+												);
+												return list;
+											},[]),
 											...getPaths(opts.allLayerRoot[0]) // add mods from head layer parents dir
 												.paths.map(p => {
 													return resolver.join(p, "node_modules")
