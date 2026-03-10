@@ -8,6 +8,18 @@
 
 'use strict';
 
+/**
+ * @file etc/cli/lpack-dev-server.js
+ *
+ * CLI entry point for `lpack-dev-server`. Identical to `lpack` except it passes the
+ * `serve` subcommand to webpack-cli, which starts webpack-dev-server.
+ *
+ * Usage:
+ *   lpack-dev-server              # dev server with "default" profile
+ *   lpack-dev-server :www         # dev server with "www" profile
+ *   lpack-dev-server :?           # list available profiles
+ */
+
 const path    = require('path'),
       utils   = require('./utils'),
       resolve = require('resolve'),

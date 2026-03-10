@@ -1,9 +1,32 @@
+/**
+ * @file utils.json.js
+ *
+ * Strips `//` single-line and `/* *\/` multi-line comments from a JSON string,
+ * allowing `.layers.json` files to contain comments for documentation purposes.
+ *
+ * When `whitespace: true` (the default), stripped comment characters are replaced with
+ * spaces to preserve original character positions in error messages. When `false`,
+ * comments are removed entirely.
+ */
+
+/** Symbol used as a state-machine token for single-line comment mode. */
 const singleComment = Symbol('singleComment');
+/** Symbol used as a state-machine token for multi-line comment mode. */
 const multiComment = Symbol('multiComment');
 
+/** Replace a comment region with an empty string (compact mode). */
 const stripWithoutWhitespace = () => '';
+/** Replace a comment region with spaces, preserving column positions (default mode). */
 const stripWithWhitespace = (string, start, end) => string.slice(start, end).replace(/\S/g, ' ');
 
+/**
+ * Returns true if the quote character at `quotePosition` is preceded by an odd number
+ * of backslashes, meaning it is escaped and should not toggle string-mode.
+ *
+ * @param {string} jsonString
+ * @param {number} quotePosition
+ * @returns {boolean}
+ */
 const isEscaped = (jsonString, quotePosition) => {
 	let index = quotePosition - 1;
 	let backslashCount = 0;

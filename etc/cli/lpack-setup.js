@@ -8,6 +8,34 @@
 
 'use strict';
 
+/**
+ * @file etc/cli/lpack-setup.js
+ *
+ * CLI entry point for `lpack-setup`. Installs `devDependencies` for every inherited
+ * layer package that is not already fully set up.
+ *
+ * Problem: npm does not install `devDependencies` of dependencies. When a layer package
+ * is in `node_modules`, its devDeps (webpack plugins, loaders, etc.) are absent even
+ * though the webpack config in that layer requires them.
+ *
+ * Solution:
+ *  - For packages installed in `node_modules` (read-only symlink or copy): installs
+ *    devDeps into a `.layer_modules/` sub-directory inside the package, so npm's own
+ *    `npm install` in the head project doesn't wipe them. Temporarily hides the
+ *    package's `node_modules` during setup to prevent npm from touching it.
+ *  - For locally-linked packages (not inside a `node_modules/` path): runs `npm install`
+ *    directly in the layer root.
+ *
+ * Usage:
+ *   lpack-setup              # install devDeps for "default" profile layers
+ *   lpack-setup :www         # install for "www" profile layers
+ *   lpack-setup :www ci      # use "npm ci" instead of "npm install"
+ *   lpack-setup :?           # list available profiles
+ *
+ * The `__IS_LPACK_SETUP__` env variable prevents recursive setups if a layer's
+ * own postinstall script calls lpack-setup again.
+ */
+
 const path      = require('path'),
       utils     = require('./utils'),
       fs        = require('fs'),
@@ -69,9 +97,9 @@ for ( let profileToSetup of profilesToSetup ) {
 			if ( setupsCompleted.includes(root) )
 				return;
 			setupsCompleted.push(root);
-			
-			if (!/\/node_modules\/[^\/]+$/.test(realpathSync(root)))
-			{
+
+			if (!/\/node_modules\/[^\/]+$/.test(realpathSync(root))) {
+				// Locally-linked layer (e.g. via libsPath or npm link) — run npm directly.
 				console.info('Setup linked layer "', confs[profileToSetup].allModId[i], '" ( ', path.relative(process.cwd(), root), " )");
 				spawnSync(
 					"npm" + (isWin ? ".cmd" : ""), [script],
@@ -81,16 +109,20 @@ for ( let profileToSetup of profilesToSetup ) {
 						env  : { ...process.env, '__LPACK_PROFILE__': profile, '__IS_LPACK_SETUP__': true }
 					}
 				);
-			}else {
-				
+			}
+			else {
+				// Package installed in node_modules. Install devDeps into .layer_modules/
+				// so a subsequent `npm install` in the head project doesn't remove them.
 				let lModPath = root + "/.layer_modules";
 				if ( !fs.existsSync(lModPath) ) {
 					fs.mkdirSync(lModPath);
 				}
-				if ( !fs.existsSync(lModPath + '/package.json') ) {// setup in .layer_modules avoid npm to rm deps on install other packages...
+				if ( !fs.existsSync(lModPath + '/package.json') ) {
+					// Copy package.json into .layer_modules/ so npm has something to install from.
 					fs.copyFileSync(root + '/package.json', lModPath + '/package.json');
 				}
 				if ( fs.existsSync(root + "/node_modules") ) {
+					// Temporarily hide the existing node_modules so npm doesn't touch it.
 					fs.renameSync(root + "/node_modules", root + "/node_modules.tmp");
 					haveNM = true;
 				}

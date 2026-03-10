@@ -6,6 +6,23 @@
  * https://opensource.org/licenses/MIT.
  */
 
+/**
+ * @file utils.js
+ *
+ * Configuration loading, inheritance-chain traversal, and virtual-file generation.
+ *
+ * The two most important responsibilities:
+ *
+ *  - `getAllConfigs` / `getConfigByProfiles` — walk the `.layers.json` inheritance tree
+ *    and produce a flat, merged configuration object for a given profile. Every `allXxx`
+ *    array in the result is ordered head-first (index 0 = head project, last = deepest
+ *    ancestor), so consuming code can simply iterate in order and "first match wins".
+ *
+ *  - `indexOf` / `indexOfScss` — given a glob import string such as
+ *    `App/components/(**\/*.jsx)`, scan all layer roots, collect matching files, and write
+ *    a virtual JS/SCSS module via `webpack-virtual-modules` that re-exports them all.
+ */
+
 const path              = require("path"),
       fs                = require('fs'),
       is                = require('is'),
@@ -23,6 +40,14 @@ const path              = require("path"),
       };
 
 
+/**
+ * Returns true if `file` is a directory on the given filesystem, false otherwise.
+ * Swallows stat errors (e.g. path does not exist) and returns false.
+ *
+ * @param {object} fs   - A filesystem object exposing `statSync` (webpack's or Node's)
+ * @param {string} file - Absolute path to check
+ * @returns {boolean}
+ */
 function checkIfDir( fs, file ) {
 	try {
 		return fs.statSync(file).isDirectory()
@@ -31,6 +56,13 @@ function checkIfDir( fs, file ) {
 	}
 }
 
+/**
+ * Resolve symlinks via `fs.realpathSync`, falling back to a plain `path.normalize`
+ * when the path does not exist yet (e.g. during first-time setup).
+ *
+ * @param {string} p - Path to resolve
+ * @returns {string}
+ */
 function realpathSync( p ) {
 	try {
 		return fs.realpathSync(path.normalize(p))
@@ -39,6 +71,15 @@ function realpathSync( p ) {
 	}
 }
 
+/**
+ * Load the layer-pack configuration from a package directory.
+ * Tries `.layers.js` first (dynamic config), then `.layers.json` (static config).
+ * Merges the result with the package's `package.json` so callers have a single object
+ * with both `layerPack` (layer config) and standard package fields (`dependencies`, etc.).
+ *
+ * @param {string} dir - Absolute path to the package root
+ * @returns {object|false} - Merged package + layer config, or false if neither file exists
+ */
 function getlPackConfigFrom( dir ) {
 	let cfg, pkgCfg;
 	try {
@@ -66,6 +107,18 @@ function getlPackConfigFrom( dir ) {
 	return pkgCfg;
 }
 
+/**
+ * Recursively apply mustache-style `<% %>` template rendering to all string values
+ * in a plain object (or to a bare string). Non-string primitives and arrays are
+ * returned unchanged. Only plain objects (`{}.__proto__`) are recursed into —
+ * class instances are left as-is.
+ *
+ * Available template variables: `packagePath`, `projectPath`, `packageConfig`.
+ *
+ * @param {*}      value - The value to process (string, plain object, or other)
+ * @param {object} data  - Template variables
+ * @returns {*}          - The value with all strings rendered
+ */
 function jsonTplApply( value, data ) {
 	if ( is.string(value) ) {
 		return mustache.render(value, data, undefined, ['<%', '%>'])
@@ -83,10 +136,17 @@ function jsonTplApply( value, data ) {
 
 const utils = {
 	/**
-	 * Return all configs for the available profiles
+	 * Load and return resolved configurations for every profile defined in the head
+	 * project's `.layers.json` (or `.layers.js`).
 	 *
-	 * @param projectRoot {string} @optional directory where to start searching lPack cfg
-	 * @param customConfig {object} @optional lPack config in json
+	 * Each profile key in the returned map is a fully resolved config object as
+	 * returned by `getConfigByProfiles`. Profile alias strings (e.g. `"dev": "default"`)
+	 * are transparently dereferenced before resolving.
+	 *
+	 * @param {string} [projectRoot] - Directory to search for `.layers.json`.
+	 *   Defaults to `__LPACK_HEAD__` env var or `process.cwd()`.
+	 * @param {object} [customConfig] - Optional in-memory `.layers.json` override.
+	 * @returns {{ [profileId: string]: object }} - Map of profileId → resolved config
 	 */
 	getAllConfigs( projectRoot = process.env.__LPACK_HEAD__ || process.cwd(), customConfig ) {
 		let pkgConfig =
@@ -112,14 +172,36 @@ const utils = {
 		return allCfg;
 	},
 	/**
-	 * Recurse over the inherited package to map all the value for a specified profile id
-	 * todo: rewrite
-	 * @param projectRoot
-	 * @param profileConfig
-	 * @param profileId
-	 * @returns {{projectRoot: *, allModId: Array, allModulePath: Array, allRoots: *,
-	 *     localAlias, allWebpackCfg: Array, allExtPath: Array, allCfg: Array, vars,
-	 *     allModuleRoots: Array}}
+	 * Build a fully-resolved configuration for a single profile by walking the entire
+	 * layer inheritance chain.
+	 *
+	 * The algorithm has two phases:
+	 *
+	 *  **Phase 1 — `allExtPath` (IIFE):** Recursively walk the `extend` list of every
+	 *  layer, collecting absolute paths of all inherited packages in DFS order. Duplicate
+	 *  packages are de-duplicated keeping the *last* occurrence (deepest in the tree wins
+	 *  position, but shallowest definition wins values in Phase 2 because head is prepended
+	 *  last). Profile aliases (`basedOn`) are resolved at each layer.
+	 *
+	 *  **Phase 2 — `allRoots` (IIFE):** Iterate the de-duplicated layer paths in order and
+	 *  build all the `all*` arrays. Head-project values are inserted at index 0 (first), so
+	 *  consuming code can always treat index 0 as "highest priority". `vars` are merged
+	 *  with parent values first and head values last (head wins).
+	 *
+	 * @param {string} projectRoot    - Absolute path to the head project root
+	 * @param {object} profileConfig  - The raw profile entry from `.layers.json`
+	 * @param {string} profileId      - The profile key (e.g. `"default"`, `"api"`)
+	 * @param {object} packageConfig  - The head project's merged package+layer config
+	 * @returns {{
+	 *   allWebpackCfg: string[],  allWebpackRoot: string[],
+	 *   allModulePath: string[],  allRoots: string[],
+	 *   allLayerRoot: string[],   allModuleRoots: string[],
+	 *   allExtPath: string[],     allCfg: object[],
+	 *   allPackageCfg: object[],  allModId: string[],
+	 *   allTemplates: object,     allScripts: object,
+	 *   localAlias: object,       vars: object,
+	 *   projectRoot: string
+	 * }}
 	 */
 	getConfigByProfiles( projectRoot, profileConfig, profileId, packageConfig ) {
 		let localAlias     = {},
@@ -136,8 +218,14 @@ const utils = {
 		    vars           = {},
 		    rootDir        = profileConfig.rootFolder || './App',
 		    /**
-		     * Find & return all  inherited pkg paths
-		     * @type {Array}
+		     * Phase 1: collect all inherited layer paths via DFS over the `extend` lists.
+		     *
+		     * `walk` is called recursively for every entry in each layer's `extend` array.
+		     * The same package may appear multiple times (diamond inheritance); the
+		     * de-duplication step below keeps the last occurrence in traversal order so that
+		     * the deepest common ancestor resolves correctly.
+		     *
+		     * @type {string[]} - Absolute paths of inherited layers, head-first after dedup
 		     */
 		    allExtPath     = (() => {
 			    let layerPathList        = [],
@@ -238,9 +326,9 @@ const utils = {
 				    
 			    })
 			    
-			    /**
-			     * dedupe inherited ( last is first )
-			     */
+			    // De-duplicate: keep only the *last* occurrence of each layerId.
+			    // Because DFS visits shallow layers after deep ones, the last occurrence
+			    // is the shallowest (closest to the head), giving correct precedence.
 			    for ( let i = 0; i < layerIdList.length; i++ ) {
 				    if ( layerIdList.lastIndexOf(layerIdList[i]) == i ) {
 					    allModId.push(layerIdList[i]);
@@ -250,7 +338,11 @@ const utils = {
 			    
 			    return dedupedLayerPathList;
 		    })(),
-		    // deduce all the roots & others values
+		    /**
+		     * Phase 2: iterate the de-duplicated layer list and build all `all*` arrays.
+		     * Head-project entries are pushed first (index 0), then parent layers in order.
+		     * `vars` are merged parent-first so head-project values overwrite ancestors.
+		     */
 		    allRoots       = (function () {
 			    let roots            = [projectRoot + '/' + rootDir],
 			        libPath          = [],
@@ -427,7 +519,24 @@ const utils = {
 		};
 	},
 	
-	// find a $super file in the available roots
+	/**
+	 * Resolve a file path against the layer roots starting at index `i`, trying each
+	 * root in order and each possible extension in order. Calls `cb(null, filePath)`
+	 * on the first match, or `cb(true)` when all combinations are exhausted.
+	 *
+	 * The search order is: all roots for extension[0], then all roots for extension[1],
+	 * etc. This ensures a parent layer's `.js` file does not shadow a head-project `.ts`
+	 * file for the same logical path.
+	 *
+	 * @param {object}   fs               - Webpack's input file system
+	 * @param {string[]} roots            - Layer root directories, head-first
+	 * @param {string}   file             - Path relative to a root (e.g. `/components/Button`)
+	 * @param {number}   i                - Current root index to check
+	 * @param {string[]} possible_ext     - Extensions to try (e.g. `['', '.js', '/index.js']`)
+	 * @param {string[]} fileDependencies - Accumulates checked paths for webpack's watch list
+	 * @param {Function} cb               - `(err, absolutePath, relativePathFromRoot) => void`
+	 * @param {number}   [_curExt=0]      - Current extension index (internal recursion)
+	 */
 	findParentPath( fs, roots, file, i, possible_ext, fileDependencies, cb, _curExt = 0 ) {
 		let fn = path.normalize(roots[i] + file + possible_ext[_curExt]);
 		//console.warn("check !!! ", fn, possible_ext[_curExt]);
@@ -458,10 +567,22 @@ const utils = {
 			
 		})
 	},
+	/**
+	 * Entry point for `$super` resolution. Given the absolute path of the currently
+	 * compiling file, determines which layer root it belongs to, then delegates to
+	 * `findParentPath` starting from the *next* layer (i + 1) to find the same logical
+	 * file one step down the inheritance chain.
+	 *
+	 * @param {object}   fs               - Webpack's input file system
+	 * @param {string[]} roots            - Layer root directories, head-first
+	 * @param {string}   file             - Absolute path of the issuing file
+	 * @param {string[]} possible_ext     - Extensions to try
+	 * @param {string[]} fileDependencies - Accumulates checked paths for webpack's watch list
+	 * @param {Function} cb               - `(err, absolutePath, relativePathFromRoot) => void`
+	 */
 	findParent( fs, roots, file, possible_ext, fileDependencies, cb ) {
 		let i = -1, tmp;
 		file  = path.normalize(file);
-		//console.warn("Find parent !!! ", path.normalize(file), roots);
 		while ( ++i < roots.length ) {
 			tmp = file.substr(0, roots[i].length);
 			if ( roots[i] == tmp ) {// found
@@ -471,8 +592,35 @@ const utils = {
 		cb && cb(true);
 	},
 	/**
-	 * Create a virtual file accessible by webpack that map a given glob query like
-	 * "App/somewhere/**.js"
+	 * Generate (or update) a virtual JS module that re-exports all files matched by a
+	 * glob import pattern such as `"App/components/(**\/*.jsx)"`.
+	 *
+	 * Steps:
+	 *  1. Derive the virtual file name from the glob string (deterministic, unique).
+	 *  2. For each layer root, run `fast-glob` to find matching files.
+	 *  3. Register each matched directory in `contextDependencies` so HMR can detect
+	 *     when files are added or removed.
+	 *  4. Build a JS module string using the appropriate `glob2Js` codec (default,
+	 *     LazyReact, SuspenseReact, ReactLoadable — selected via `?using=` query param).
+	 *  5. Write the module via `addVirtualFile`; the callback receives `changed=true`
+	 *     only when the content actually changed (avoids unnecessary rebuilds).
+	 *
+	 * Files in earlier roots (closer to head) override those in later roots:
+	 * `files[uPath]` is only set the first time a given `uPath` is seen.
+	 *
+	 * Parenthesised capture groups in the glob pattern become named ES6 exports.
+	 * Slashes in the captured string create nested objects (`media/Player` → `media.Player`).
+	 *
+	 * @param {object}   vMod               - webpack-virtual-modules instance
+	 * @param {object}   vfs                - Webpack input file system
+	 * @param {string[]} roots              - Layer root directories, head-first
+	 * @param {string}   input              - Raw glob import string (may include `?using=codec`)
+	 * @param {object}   contextDependencies - dir → globUid[] map for HMR tracking
+	 * @param {string[]} fileDependencies   - Paths checked during resolution (for watch)
+	 * @param {string}   RootAlias          - Configured root alias (e.g. `"App"`)
+	 * @param {RegExp}   RootAliasRe        - Pre-compiled regex matching the root alias
+	 * @param {boolean}  useHMR             - Whether webpack-dev-server HMR is active
+	 * @param {Function} cb                 - `(err, virtualFilePath, content, changed) => void`
 	 */
 	indexOf( vMod, vfs, roots, input, contextDependencies, fileDependencies,
 	         RootAlias,
@@ -621,8 +769,23 @@ const utils = {
 	
 	
 	/**
-	 * Create a virtual file accessible by webpack that map a given glob query like
-	 * "App/somewhere/**.scss"
+	 * Generate (or update) a virtual SCSS file that `@import`s all files matched by a
+	 * glob pattern such as `"App/ui/**\/*.scss"`.
+	 *
+	 * Simpler than `indexOf`: no named exports, no codec selection — just a list of
+	 * `@import "..."` statements, one per matched file, deduplicated across layer roots
+	 * (head-project files shadow parent files at the same logical path).
+	 *
+	 * @param {object}   vMod               - webpack-virtual-modules instance
+	 * @param {object}   vfs                - Webpack input file system
+	 * @param {string[]} roots              - Layer root directories, head-first
+	 * @param {string}   input              - Raw glob import string
+	 * @param {object}   contextDependencies - dir → globUid[] map for HMR tracking
+	 * @param {string[]} fileDependencies   - Paths checked during resolution (for watch)
+	 * @param {string}   RootAlias          - Configured root alias (e.g. `"App"`)
+	 * @param {RegExp}   RootAliasRe        - Pre-compiled regex matching the root alias
+	 * @param {boolean}  useHMR             - Whether webpack-dev-server HMR is active
+	 * @param {Function} cb                 - `(err, virtualFilePath, content, changed) => void`
 	 */
 	indexOfScss( vMod, vfs, roots, input, contextDependencies, fileDependencies,
 	             RootAlias,
@@ -704,10 +867,15 @@ const utils = {
 		//cb && cb(null, virtualFile, code);
 	},
 	/**
-	 * Create a compilable virtual file
-	 * @param vfs
-	 * @param fileName
-	 * @param content
+	 * Write a virtual file into webpack's in-memory file system via webpack-virtual-modules.
+	 * Only calls `vMod.writeModule` (and invokes the callback with `changed=true`) when
+	 * the content has actually changed — skipping unnecessary rebuilds.
+	 *
+	 * @param {object}   vMod     - webpack-virtual-modules instance
+	 * @param {object}   vfs      - Webpack input file system (used to read current content)
+	 * @param {string}   fileName - Absolute virtual file path
+	 * @param {string}   content  - New file content
+	 * @param {Function} [cb]     - Optional `(err, fileName, content, changed) => void`
 	 */
 	addVirtualFile( vMod, vfs, fileName, content, cb ) {
 		let oldContent, newContent = content + '';

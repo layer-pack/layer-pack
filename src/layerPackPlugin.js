@@ -6,6 +6,20 @@
  * https://opensource.org/licenses/MIT.
  */
 
+/**
+ * @file layerPackPlugin.js
+ *
+ * Core webpack plugin factory for layer-pack. Wires up all build-time resolution:
+ *
+ *  - `App/...` namespace aliases resolved across all inherited layer roots (head wins)
+ *  - `$super` imports — same relative path resolved one layer down the chain
+ *  - Glob imports — `App/foo/(**\/*.jsx)` generates virtual JS/SCSS index files on the fly
+ *  - Cross-layer `node_modules` resolution (deps-of-deps across the inheritance chain)
+ *  - Webpack loader resolution across layer `devDependencies`
+ *  - Externals handling for Node builds (`vars.externals`, `vars.hardResolveExternals`)
+ *  - HMR watch integration: rebuilds glob virtual files when their matched directories change
+ */
+
 const path                 = require('path'),
       is                   = require('is'),
       fs                   = require('fs'),
@@ -16,33 +30,53 @@ const path                 = require('path'),
       isBuiltinModule      = require('is-builtin-module'),
       VirtualModulesPlugin = require('webpack-virtual-modules');
 
+/** Shared regular expressions used throughout the plugin. */
 const RE = {
+	/** Normalise Windows backslashes to forward slashes. */
 	winSlash     : /\\/g,
+	/** Detect relative import paths (`./` or `../`). */
 	localPath    : /^\./,
+	/** Detect a `?` or `#` query/hash suffix in a SCSS import URL. */
 	sassSuffix   : /[\?\#][^\/\\]+$/,
+	/** Capture base path and suffix separately from a SCSS import URL. */
 	getSassSuffix: /^(.*)([\?\#][^\/\\]+$)/,
+	/** Match the bare `$super` keyword (not `$super/some/path`). */
 	isSuper      : /^\$super$/,
+	/** Identify SCSS/CSS source files. */
 	isSass       : /\.s?css$/,
+	/** Extract the npm package name (including scoped `@org/pkg`) from an import string. */
 	packageName  : /^(\@[^\\\/]+[\\\/][^\\\/]+|[^\\\/]+)(.*)$/i
 };
 
+/**
+ * Create the layer-pack webpack plugin for a given profile configuration.
+ *
+ * @param {object} cfg    - Optional raw .layers.json override (unused internally; forwarded)
+ * @param {object} opts   - Resolved profile config from `utils.getConfigByProfiles()`:
+ *                          allRoots, allModulePath, allModuleRoots, allWebpackCfg,
+ *                          allPackageCfg, vars, projectRoot, etc.
+ * @returns {{ apply, sassImporter, _sassImporter }}
+ */
 module.exports = function ( cfg, opts ) {
 	let plugin;
-	
-	// find da good webpack ( the one where the wp cfg is set )
+
+	// Resolve webpack and enhanced-resolve from the directory that owns the active webpack
+	// config. This ensures we use the correct webpack version when configs live in parent
+	// layer packages rather than the head project.
 	let wp               = resolve.sync('webpack', { basedir: path.dirname(opts.allWebpackCfg[0] || ".") }),
 	    wpEr             = resolve.sync('enhanced-resolve', { basedir: path.dirname(opts.allWebpackCfg[0] || ".") }),
 	    webpack          = require(wp),
 	    ExternalModule   = require(path.join(path.dirname(wp), 'ExternalModule')),
 	    getPaths         = require(path.join(path.dirname(wpEr), 'getPaths')),
 	    forEachBail      = require(path.join(path.dirname(wpEr), 'forEachBail')),
-	    
+
 	    projectPkg       = fs.existsSync(path.normalize(opts.allModuleRoots[0] + "/package.json")) &&
 		    JSON.parse(fs.readFileSync(path.normalize(opts.allModuleRoots[0] + "/package.json"))),
-	    
+
 	    excludeExternals = opts.vars.externals,
 	    constDef         = opts.vars.DefinePluginCfg || {},
 	    currentProfile   = process.env.__LPACK_PROFILE__ || 'default',
+	    /** When `vars.externals` is a regex string, compile it once for reuse. */
 	    externalRE       = is.string(opts.vars.externals) && new RegExp(opts.vars.externals),
 	    vMod             = new VirtualModulesPlugin(),
 	    globDirWatcher;
@@ -61,21 +95,38 @@ module.exports = function ( cfg, opts ) {
 				                                             : null)
 		},
 		/**
-		 * The main plugin fn
-		 * @param compiler
+		 * Webpack plugin entry point. Called by webpack with the compiler instance.
+		 * Registers all resolver hooks, virtual-module infrastructure, and HMR watchers.
+		 *
+		 * @param {import('webpack').Compiler} compiler
 		 */
 		apply: function ( compiler ) {
 			let cache               = {},
 			    plugin              = this,
 			    RootAlias           = opts.vars.rootAlias || "App",
+			    /** Pre-compiled regex to quickly test whether a path starts with the root alias. */
 			    RootAliasRe         = new RegExp("^" + RootAlias, ''),
 			    roots               = opts.allRoots,
+			    /** Module paths sorted longest-first so more specific paths are matched first. */
 			    modulesPathByLength = [...opts.allModulePath]
 				    .sort(( a, b ) => b.length - a.length),
+			    /**
+			     * Maps each watched directory to the glob request UIDs that depend on it.
+			     * Used to know which virtual glob files must be regenerated on file-system changes.
+			     * Shape: { [dirPath]: string[] }
+			     */
 			    contextDependencies = {},
+			    /** Paths of individual files that were stat-checked during resolution (for watch). */
 			    fileDependencies    = [],
+			    /** All extensions webpack will attempt, including `/index` variants. */
 			    availableExts       = [],
+			    /**
+			     * Tracks active glob requests, keyed by the raw glob import string.
+			     * Value is `false` (up-to-date) or `true` (needs regeneration).
+			     * Shape: { scss: { [globReq]: bool }, jsx: { [globReq]: bool } }
+			     */
 			    activeGlobs         = { scss: {}, jsx: {} },
+			    /** Virtual file paths that webpack should NOT add to its own watch list. */
 			    activeIgnoredFiles  = [],
 			    buildTarget         = compiler.options.target || "web",
 			    outputTarget        = compiler.options.output?.libraryTarget
@@ -85,10 +136,13 @@ module.exports = function ( cfg, opts ) {
 			    isNodeBuild         = /^(async-)?node$/.test(buildTarget),
 			    startBuildTm        = Date.now();
 			compiler.options.watchOptions = compiler.options.watchOptions || {};
-			// virtual module plugin
+
+			// Register the virtual-modules plugin so we can write files to webpack's
+			// in-memory file system at build time (glob indexes, .buildInfos.json, etc.)
 			compiler.options.plugins.push(vMod);
-			
-			// Add some lPack build vars...
+
+			// Expose build-time constants to application code via webpack.DefinePlugin.
+			// __LPACK_PROFILE__ lets runtime code know which profile was used to build.
 			compiler.options.plugins.push(
 				new webpack.DefinePlugin(
 					{
@@ -97,12 +151,16 @@ module.exports = function ( cfg, opts ) {
 						...constDef
 					}));
 			
-			// add the resolvers plugins
+			// Disable enhanced-resolve's internal cache: layer-pack manages its own
+			// resolution cache (resolveCache below) to correctly handle $super context.
 			compiler.options.resolve         = compiler.options.resolve || {};
 			compiler.options.resolve.cache   = false;
 			compiler.options.resolve.plugins = compiler.options.resolve.plugins || [];
-			
-			// resolver for intra App requires
+
+			// --- Resolver 1: intra-App / $super / glob imports ---
+			// Hooks into `parsed-resolve` (after the request is parsed but before normal
+			// module lookup) and redirects `App/...`, `$super`, and glob patterns to
+			// layer-pack's own resolution logic (`lPackResolve`).
 			compiler.options.resolve.plugins.push(
 				{
 					target: "after-described-resolve",
@@ -112,7 +170,6 @@ module.exports = function ( cfg, opts ) {
 						resolver
 							.getHook(this.source)
 							.tapAsync("layer-pack", ( request, resolveContext, callback ) => {
-								//console.log('after-described-resolve', request.request);
 								lPackResolve(
 									request,
 									( err, req, data ) => {
@@ -122,13 +179,36 @@ module.exports = function ( cfg, opts ) {
 					}
 				}
 			);
+
+			/**
+			 * Resolution result cache. Key: `"<requiring-dir>!|!<request>"`.
+			 * Stores `{ err, res }` after the first resolution so identical requests
+			 * are never walked twice within the same build.
+			 */
 			let resolveCache    = {},
+			    /**
+			     * In-flight queue for simultaneous identical requests.
+			     * While the first resolution is in progress, subsequent callers for the
+			     * same key are pushed here and flushed when the first result arrives.
+			     */
 			    resolvingQueues = {};
-			// resolver for deps & deps of deps
-			// here is the big complex pbm: make work node_modules dir & inherited modules dirs
-			// main pbm is deps of deps may be in parents dir or in other layers modules dirs
-			// In some cases this can cause duplicates of compatible imports versions
-			// there probably some optims & cache options
+
+			// --- Resolver 2: cross-layer node_modules ---
+			// The fundamental challenge: a module required from inside a layer may have
+			// its dependencies installed in *any* layer's node_modules directory — not
+			// just the one closest to the requiring file. This resolver builds a
+			// priority-ordered list of candidate node_modules directories and walks them
+			// with forEachBail (first directory that contains the package wins).
+			//
+			// Priority order for files inside a layer root (`isInternal === true`):
+			//   1. Custom lib dirs (libsPath) — local overrides take precedence
+			//   2. Layer node_modules where the package is explicitly listed in `dependencies`
+			//   3. Layer node_modules where the package is NOT explicitly listed (shared deps)
+			//   4. Parent directories of the head layer root (OS-level resolution fallback)
+			//
+			// For files outside layer roots (third-party deps requiring their own sub-deps):
+			//   Use standard hierarchical node_modules but capped at the owning layer's
+			//   node_modules root, then fall through to the layer chain.
 			compiler.options.resolve.plugins.push(
 				{
 					target: "module",
@@ -299,7 +379,10 @@ module.exports = function ( cfg, opts ) {
 					}
 				}
 			);
-			// resolvers for the loaders
+			// --- Resolver 3: webpack loaders ---
+			// Webpack loaders are resolved separately from regular modules. This resolver
+			// mirrors Resolver 2 but targets `devDependencies` (loaders are dev-only) and
+			// always includes the webpack config's own node_modules as the final fallback.
 			compiler.options.resolveLoader         = compiler.options.resolveLoader || {};
 			compiler.options.resolveLoader.plugins = compiler.options.resolveLoader.plugins || [];
 			compiler.options.resolveLoader.plugins.push(
@@ -384,7 +467,10 @@ module.exports = function ( cfg, opts ) {
 				}
 			);
 			
-			// Add required code & info to resolve bundled mods (may fail & require install sub deps manually)
+			// For Node builds with externals enabled, inject the loadModulePaths bootstrap
+			// into the bundle entry point. At runtime this patches Module._nodeModulePaths
+			// so that `require()` calls from the bundle can find dependencies spread across
+			// multiple layer node_modules directories.
 			if ( isNodeBuild && excludeExternals ) {
 				compiler.options.plugins.push(
 					new InjectPlugin(function () {
@@ -423,15 +509,20 @@ module.exports = function ( cfg, opts ) {
 					}, ENTRY_ORDER.First))
 			}
 			
-			// required for $super resolving
+			// $super resolution is context-sensitive: the same `$super` import in two
+			// different files must resolve to two different parent-layer files. Webpack's
+			// default resolver cache is keyed only on the request string; enabling
+			// cacheWithContext adds the issuer path to the cache key.
 			compiler.options.resolve.cacheWithContext = true;
-			
-			// possibly useless
+
+			// Make all layer node_modules directories available to webpack-loader resolution.
 			compiler.options.resolveLoader         = compiler.options.resolveLoader || {};
 			compiler.options.resolveLoader.modules = compiler.options.resolveLoader.modules || [];
 			compiler.options.resolveLoader.modules.unshift(...opts.allModulePath);
-			
-			// detect resolvable ext
+
+			// Build the full list of extensions webpack will try when an import has no
+			// explicit extension. We also add `/index<ext>` variants so that directory
+			// imports resolve correctly across layers.
 			if ( compiler.options.resolve.extensions ) {
 				availableExts.push(...compiler.options.resolve.extensions);
 			}
@@ -441,50 +532,64 @@ module.exports = function ( cfg, opts ) {
 			availableExts.unshift('');
 			
 			/**
-			 * The main resolver / glob mngr
+			 * Central resolver called by the `parsed-resolve` hook for every import.
+			 * Handles three distinct cases:
+			 *
+			 *  1. **Glob** — import string contains `*`: delegates to `utils.indexOf` or
+			 *     `utils.indexOfScss` to generate/update a virtual index file.
+			 *  2. **$super** — exact string `$super`: finds the matching file one layer
+			 *     below the current issuer in the inheritance chain.
+			 *  3. **Root alias** — starts with `App/` (or configured rootAlias): resolves
+			 *     against all layer roots in order (head project wins).
+			 *
+			 * Relative imports whose resolved absolute path falls inside a layer root are
+			 * transparently rewritten to root-alias form so they benefit from inheritance.
+			 *
+			 * @param {object}   data  - enhanced-resolve request object
+			 * @param {Function} cb    - callback(err, resolvedRequest)
+			 * @param {Function} proxy - unused; kept for API symmetry with sassImporter
 			 */
 			function lPackResolve( data, cb, proxy ) {
 				let requireOrigin   = data.context && data.context.issuer,
-				    context         = requireOrigin && path.dirname(requireOrigin),// || data.path,
+				    context         = requireOrigin && path.dirname(requireOrigin),
 				    reqPath         = data.request,
 				    isRelative,
 				    relativeAbsPath = path.resolve(path.join(context || "", reqPath)),
 				    tmpPath, suffix = "";
-				//console.log('lPackResolve::lPackResolve:437: ', reqPath,data.lPackOriginRequest);
-				// do not re resolve
+
+				// Guard: this request was already rewritten by lPackResolve — let webpack
+				// continue with the resolved path without entering an infinite loop.
 				if ( data.lPackOriginRequest ) {
 					return cb();
 				}
-				
-				// sass may send windows paths
+
+				// Sass sends Windows-style backslash paths on Windows; normalise early.
 				reqPath = reqPath.replace(RE.winSlash, '/');
-				
-				// sass may send suffix with the uri
+
+				// Sass appends `?` or `#` suffixes (e.g. `?#iefix`); strip them before
+				// resolving, then re-attach after so the loader receives them intact.
 				if ( RE.sassSuffix.test(reqPath) ) {
 					let tmp = reqPath.match(RE.getSassSuffix);
 					suffix  = tmp[2];
 					reqPath = tmp[1];
 				}
-				
-				// keep original request
+
+				// Stamp the request so recursive resolutions are skipped above.
 				data.lPackOriginRequest = reqPath;
-				isRelative              = context
+
+				// Detect relative imports whose resolved path lives inside a layer root.
+				// Example: `import './Button'` from `App/components/Card.jsx` resolves to
+				// `<root>/App/components/Button` — rewrite to `App/components/Button` so
+				// the layer inheritance lookup runs correctly.
+				isRelative = context
 					&& RE.localPath.test(reqPath)
 					&& !!(tmpPath = roots.find(r => relativeAbsPath.startsWith(r)));
-				//console.log('lPackResolve::lPackResolve:417: ', reqPath, context, isRelative,
-				//            !!context
-				//	            ,!!RE.localPath.test(reqPath)
-				//	            ,!!(tmpPath = roots.find(r => relativeAbsPath.startsWith(r)))
-				//            )
-				//;
-				// if this is a relative require find & add the right root path
+
 				if ( isRelative ) {
-					//console.warn('lPackResolve::lPackResolve:417: !!!!!', reqPath);
 					reqPath = (RootAlias + relativeAbsPath.substr(tmpPath.length))
 						.replace(RE.winSlash, '/');
-					//console.log('lPackResolve::lPackResolve:417: ', reqPath);
 				}
-				
+
 				let isSuper = RE.isSuper.test(reqPath),
 				    isGlob  = reqPath.indexOf('*') !== -1,
 				    isRoot  = RootAliasRe.test(reqPath);
@@ -587,7 +692,10 @@ module.exports = function ( cfg, opts ) {
 				}
 			}
 			
-			// sass resolver
+			// --- Sass importer ---
+			// The node-sass / dart-sass importer API is different from webpack's resolver API.
+			// This adapter translates SCSS `@import` calls into lPackResolve requests so that
+			// glob patterns and `$super` work inside stylesheets.
 			this._sassImporter = function ( url, requireOrigin, cb, next ) {
 				let suffix = "";
 				url        = url.replace(RE.winSlash, "/");
@@ -641,11 +749,18 @@ module.exports = function ( cfg, opts ) {
 				else return next ? next(url, requireOrigin, cb) : cb();
 			};
 			
-			// wp hook
+			// --- normalModuleFactory hook ---
+			// Called once per compilation before modules are resolved. We use it to:
+			//   1. Write the `.buildInfos.json` virtual file with project/build metadata
+			//   2. Write the `walknSetExport` runtime helper used by glob virtual files
+			//   3. Register the externals handler when `vars.externals` is enabled
 			compiler.hooks.normalModuleFactory.tap(
 				"layer-pack",
 				function ( nmf ) {
-					
+
+					// Inject build metadata as a virtual JSON module importable from App code.
+					// In node builds, includes runtime path so projectRoot stays correct after
+					// the bundle is moved to its output directory.
 					utils.addVirtualFile(
 						vMod, compiler.inputFileSystem,
 						path.normalize(roots[0] + '/.buildInfos.json.js'),
@@ -671,12 +786,20 @@ module.exports=
 						                `
 					);
 					
+					// Inject the `walknSetExport` helper into the virtual file system.
+					// Glob index files reference this helper to build nested export objects
+					// (e.g. `admin/Dashboard` becomes `_exports.admin.Dashboard`).
 					utils.addVirtualFile(
 						vMod, compiler.inputFileSystem,
 						path.normalize(roots[0] + '/.___layerPackIndexUtils.js'),
 						fs.readFileSync(path.join(__dirname, '../etc/utils/indexUtils.js'))
 					);
-					// deal with externals
+
+					// Externals handler: when `vars.externals` is truthy, any import that
+					// does NOT resolve to a file inside the layer roots is marked external.
+					// For browser builds the import is kept as-is; for node builds with
+					// `vars.hardResolveExternals`, the import is pre-resolved to a relative
+					// path so the bundle works even when moved to a different directory.
 					if ( excludeExternals )
 						nmf.hooks.factorize.tapAsync(
 							"layer-pack", function ( data, callback ) {
@@ -760,6 +883,20 @@ module.exports=
 				}
 			);
 			
+			/**
+			 * Determine which glob virtual files need to be regenerated based on which
+			 * files were changed or removed since the last build.
+			 *
+			 * Each directory that participates in a glob match is tracked in
+			 * `contextDependencies`. When a file in that directory changes, every glob
+			 * that covers it is marked dirty (`activeGlobs[type][req] = true`) so the
+			 * next `compilation` hook will regenerate only the affected virtual files.
+			 *
+			 * @param {import('webpack').Compiler} compiler
+			 * @param {Set<string>} changedFiles
+			 * @param {Set<string>} removedFiles
+			 * @returns {{ [globReq: string]: true }} - set of glob requests to regenerate
+			 */
 			let triggerGlobUpdates = ( compiler, changedFiles = [], removedFiles = [] ) => {
 				let globsToUpdate = {};
 				changedFiles.forEach(( filePath ) => {
@@ -774,7 +911,8 @@ module.exports=
 							( globReq ) => !(globsToUpdate[globReq] = true)
 						)
 				})
-				
+
+				// Remove empty directory entries to keep the map tidy.
 				for ( let dir in contextDependencies )
 					if ( contextDependencies.hasOwnProperty(dir) ) {
 						contextDependencies[dir] = contextDependencies[dir].filter(
@@ -783,6 +921,7 @@ module.exports=
 						if ( !contextDependencies[dir].length )
 							delete contextDependencies[dir];
 					}
+				// Flip the dirty flag on affected glob slots.
 				for ( let globReq in globsToUpdate )
 					if ( globsToUpdate.hasOwnProperty(globReq) ) {
 						if ( activeGlobs.jsx.hasOwnProperty(globReq) )
@@ -792,7 +931,9 @@ module.exports=
 					}
 				return globsToUpdate;
 			}
-			// mark updated globs
+
+			// On each watch run, mark virtual files we own as ignored so webpack doesn't
+			// add them to its own watch list, then compute which glob indexes are stale.
 			compiler.hooks.watchRun.tap('WatchRun', ( compiler ) => {
 				activeIgnoredFiles.push(roots[0] + '/.buildInfos.json.js');
 				activeIgnoredFiles.push(roots[0] + '/.___layerPackIndexUtils.js');
@@ -801,12 +942,15 @@ module.exports=
 				//console.log(currentProfile, ' WatchRun: ', compiler.modifiedFiles, compiler.removedFiles);
 				//cd ../../rocinante/rocinante.core/&&cp src/*.* node_modules/layer-pack/src
 			});
-			//  do update the globs indexes files on hot reload
+			// On each compilation, regenerate any stale glob virtual files and force-rebuild
+			// the modules that import them. The `beforeAdd` hook allows us to set
+			// `_forceBuild = true` on a specific module without triggering a full rebuild.
 			compiler.hooks.compilation.tap('layer-pack', ( compilation, params ) => {
 				let toBeRebuilt = [], anySassChange;
-				
-				//console.log(currentProfile, ' compilation: ', activeGlobs);
-				// force rebuild in wp5 without full recompile
+
+				// Intercept the module build queue: if a module's resource path is in our
+				// toBeRebuilt list, force webpack to reprocess it even if it hasn't changed
+				// on disk (the virtual file contents changed in memory).
 				compilation.buildQueue &&
 				compilation.buildQueue.hooks &&
 				compilation.buildQueue.hooks.beforeAdd
@@ -872,12 +1016,16 @@ module.exports=
 						)
 					}
 			})
-			// should deal with hot reload watched files & dirs
+			// After compilation: register glob root directories as webpack context
+			// dependencies so the watcher triggers a rebuild when files are added or
+			// removed. Also remove layer-pack's own virtual files from webpack's file
+			// dependency list so changes to them don't cause spurious rebuilds.
 			compiler.hooks.afterCompile
 			        .tap('layer-pack', ( compilation ) => {
 				        let globDirs = Object.keys(contextDependencies);
 				        activeIgnoredFiles.forEach(lpFile => compilation.fileDependencies.delete(lpFile));
 				        globDirs.forEach(dir => compilation.contextDependencies.add(dir));
+				        // Clear per-compilation tracking arrays for the next build cycle.
 				        fileDependencies.length   = 0;
 				        activeIgnoredFiles.length = 0;
 			        })

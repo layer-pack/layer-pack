@@ -8,6 +8,21 @@
 
 'use strict';
 
+/**
+ * @file etc/cli/lpack-run.js
+ *
+ * CLI entry point for `lpack-run`. Runs a Node script that is defined in the `scripts`
+ * map of a profile's `.layers.json` with layer-pack's module resolution active.
+ *
+ * Scripts are inherited across the layer chain — the first layer (head project first)
+ * that defines the requested script name wins.
+ *
+ * Usage:
+ *   lpack-run run              # run the "run" script for the "default" profile
+ *   lpack-run :api migrate     # run the "migrate" script for the "api" profile
+ *   lpack-run :?               # list available profiles
+ */
+
 const path    = require('path'),
       utils   = require('./utils'),
       resolve = require('resolve'),

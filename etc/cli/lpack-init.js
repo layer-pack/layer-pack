@@ -8,6 +8,25 @@
 
 'use strict';
 
+/**
+ * @file etc/cli/lpack-init.js
+ *
+ * CLI entry point for `lpack-init`. Scaffolds a new project from a template defined
+ * in an inherited layer package.
+ *
+ * Steps:
+ *  1. Create the project directory and run `npm init -y`
+ *  2. Install the specified origin package (`npm i <originPackage>`)
+ *  3. Load that package's layer config and locate the requested template directory
+ *  4. Copy every file from the template, rendering mustache `{% %}` placeholders
+ *     against project vars (projectName, projectId, originPackage, etc.)
+ *  5. Run `npm install` in the new project to install all dependencies
+ *
+ * Usage:
+ *   lpack-init <projectName> <originPackage>::<profileId>:<templateId>
+ *   lpack-init my-app lpack-react
+ *   lpack-init my-app lpack-react::default:default
+ */
 
 var path             = require('path'),
 	mustache         = require('mustache'),

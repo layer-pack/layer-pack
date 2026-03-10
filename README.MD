@@ -1,161 +1,188 @@
+<p align="center"><img width="192" src="https://github.com/layer-pack/layer-pack/raw/master/doc/assets/logo.svg?sanitize=true" /></p>
 
-<p align="center"><img  width="192" src ="https://github.com/layer-pack/layer-pack/raw/master/doc/assets/logo.svg?sanitize=true" /></p>
-<br/>
+<h2 align="center">layer-pack</h2>
+
 <p align="center">
-Webpack plugin to make inheritable code layers, named glob imports, easy monorepo / multi packages app & shared webpack configs
-</p>
-<h1></h1>
-<p align="center">
-<a href="https://www.npmjs.com/package/layer-pack">
-<img src="https://img.shields.io/npm/v/layer-pack.svg" alt="NPM" /></a>
-<a href="https://travis-ci.org/n8tz/layer-pack-samples">
-<img src="https://travis-ci.org/n8tz/layer-pack-samples.svg?branch=master" alt="Build Status" /></a>
-<img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat" />
+  <strong>Inheritable code layers, glob imports, and shared webpack configs — for serious JS/TS applications.</strong>
 </p>
 
-## Why Layer-pack ?
+<p align="center">
+  <a href="https://www.npmjs.com/package/layer-pack"><img src="https://img.shields.io/npm/v/layer-pack.svg" alt="NPM" /></a>
+  <a href="https://travis-ci.org/n8tz/layer-pack-samples"><img src="https://travis-ci.org/n8tz/layer-pack-samples.svg?branch=master" alt="Build Status" /></a>
+  <img src="https://img.shields.io/badge/webpack-5-blue" />
+  <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat" />
+</p>
 
-Layer-pack is a webpack plugin allowing better code modularity, maintainability and flexibility by solving some of the most major problems of large JS/TS applications :
+---
 
-- The first one, we often have to multiply internal imports in the project files. This usually leads to complex maintenance and (too) many import and require statements.
-- The second is that we cannot easily "extend" an existing application, we are still forced to create various interfacing systems and APIs, maintain separates build configurations and dependencies lists.
+## The problem
 
-Layer pack solve these problems and many others by enhancing imports & resolving :
+Large JavaScript applications accumulate friction over time:
 
-- It allows to use glob patterns in import & requires statements
-  - So we can import files and a directory tree without specifying all of their names. Yes, just paste files & play mode :)
-- It literally allows to "inherit" packages or "app layers", including theirs dependencies and webpack build configurations
-  - So you can easily & smartly split you're app in some "app layer" like : app.core, app.models, app.www, app.api, app.admin, app.config... 
-- It "namespaces" the application files
-  - So we can use absolute imports where we shouldn't use relative paths,
-- Additionally, it allows to "templatize" webpack build configs and define multiples "inheritable" profiles on a unique "app layer" package.
-  - This mean that a unique package can expose multiples layers or bootstraps
+- **Relative import hell** — `../../../../config/api` breaks on every refactor
+- **Rigid project boundaries** — sharing code between projects means publishing packages or copy-pasting
+- **Duplicated build tooling** — every project re-implements the same webpack config with minor variations
+- **All-or-nothing monorepos** — workspaces solve dependency hoisting but don't help with code inheritance or build composition
 
-## Check the samples [here](https://github.com/n8tz/layer-pack-samples)
+layer-pack solves all of these at the webpack resolution level — no runtime overhead, no new runtimes, just a smarter resolver.
 
-## Small doc [here](doc/DOC.MD)
+---
 
-## You... like it / it saved your day / you stole all the code / you want more?
+## What it does
 
-[![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](#)
+### Namespace your application
 
-BTC     : bc1qh43j8jh6dr8v3f675jwqq3nqymtsj8pyq0kh5a<br/>
-Paypal  : <span class="badge-paypal"><a href="https://www.paypal.com/donate/?hosted_button_id=ECHYGKY3GR7CN" title="Donate to this project using Paypal"><img src="https://img.shields.io/badge/paypal-donate-yellow.svg" alt="PayPal donate button" /></a></span>
+Trade fragile relative paths for stable absolute imports:
 
+```js
+// before
+import config from "../../../config/api";
 
-## Features by samples :
-
-### Namespace you're application
-
-So you can stop using easily broken relative imports :
-
-```jsx
-// import stuff from "../../../config"; // no more
-import stuff from "App/config"; // aw yeah
+// after
+import config from "App/config/api";
 ```
 
-### Use glob patterns in imports statements
+### Import entire directory trees with glob patterns
 
-Just import them all :
+Stop maintaining import lists by hand:
 
-```jsx
+```js
+// import every module in a directory
 import allModules from "App/modules/*.module.js";
-// or
-// import allModules from "App/modules/*/index.js";
+
+// named exports from file names
+import { Header, Footer, Sidebar } from "App/ui/components/(*).jsx";
+
+// deep tree — nested objects from directory structure
+import { admin } from "App/ui/components/(**/*).jsx";
+// admin.Dashboard, admin.UserList, admin.Settings — automatically
+
+// lazy-loaded React chunks, zero config
+import { admin } from "App/ui/components/(**/*).jsx?using=LazyReact";
+// also: ReactLoadable, SuspenseReact
 ```
 
-Just import them all and convert directories & files names to JS named exports :
-
-```jsx
-// or using es6 named exports
-import AllActionsByStoreName from "App/store/(*)/actions.js";
-// or
-import {MyCompByFileName} from "App/ui/components/(*).jsx"; // ( big import list to maintain ) no more ! :)
-// or
-import {myFolder} from "App/ui/components/(**/*).jsx"; // ( walk & set myFolder/MyComp in myFolder.MyComp )
-
-// or
-// walk & set myFolder/MyComp in myFolder.MyComp using Loadable Components / webpack chuncks:
-import {myFolder} from "App/ui/components/(**/*).jsx?using=ReactLoadable"; 
-
-// also available : LazyReact, SuspenseReact ( lazy with suspense )
-```
-
-Glob imports also work in Scss :
+Glob imports work in SCSS too:
 
 ```scss
-
-@import "App/ui/**/*.scss"; // 1 import to rulz them all
-
+@import "App/ui/**/*.scss"; /* one line pulls in the whole design system */
 ```
 
-### Split you're projects into multiple inheritable npm packages 
+### Inherit code layers across packages
 
-- inherit & share most of the code between projects
-- Include or not layers like dev tools, admin, etc
-- Switch between monorepo and npm dependencies structure
-- Test layers independently
-- Compile in 1 step, with the source map
-- Use multiple dev servers sharing the same code layers
+Split your application into composable layers — each an ordinary npm package:
 
-### Easily override inherited project
+```
+my-app (head project)
+ └─ extends: my-app.admin
+     └─ extends: my-app.core
+         └─ extends: lpack-react   ← shared React/Webpack boilerplate
+```
 
-By enhancing / replacing any file
+Each layer contributes:
+- Source files (resolved in inheritance order — head project always wins)
+- Webpack configuration
+- Build profiles and variables
+- Dev dependencies
 
-```jsx
-import $super from "$super";// require the 1st file with the same path name in the inherited packages
+### Override inherited files surgically
 
-// Add some stuff or HOCs fn
-export default class MyOverrided extend $super{
-//...
+Extend or replace any file from a parent layer without touching the original:
+
+```js
+// App/components/Button.jsx — in your head project
+import $super from "$super"; // resolves to the same file in the parent layer
+
+export default class Button extends $super {
+  // add what you need, keep what you don't
 }
 ```
 
-```scss
-@import "$super";
+Works in SCSS too:
 
-// do some css additions
-.theSameWithA{
-    backgroud : red;
+```scss
+@import "$super"; /* inherit parent styles, then override */
+
+.btn { border-radius: 0; }
+```
+
+### Compose build profiles across the inheritance chain
+
+A single `.layers.json` defines named profiles that cascade through your layer stack:
+
+```json
+{
+  "default": {
+    "rootFolder": "App",
+    "extend": ["lpack-react"]
+  },
+  "api": {
+    "basedOn": "default",
+    "config": "./webpack.config.api.js",
+    "vars": { "production": true, "target": "node" }
+  },
+  "www": {
+    "basedOn": "default",
+    "config": "./webpack.config.www.js",
+    "vars": { "production": true, "target": "browser" }
+  }
 }
 ```
 
-### Inherit, use & extend multiple webpack config from dependencies packages
+```bash
+lpack :api    # builds the API bundle
+lpack :www    # builds the frontend bundle
+lpack :?      # lists all available profiles
+```
 
-So you can share, version, extend & switch your webpack conf & boilerplate via npm
+---
 
-## Check the samples [here](https://github.com/n8tz/layer-pack-samples)
+## How it compares
 
-## Small doc [here](doc/DOC.MD)
+| | layer-pack | Nx / Turborepo | Module Federation | Path aliases | Yarn workspaces |
+|---|---|---|---|---|---|
+| Glob imports | **Yes** | No | No | No | No |
+| File-level inheritance (`$super`) | **Yes** | No | No | No | No |
+| Shared webpack config inheritance | **Yes** | Partial | No | No | No |
+| Works with npm packages | **Yes** | Monorepo only | Runtime only | No | Limited |
+| Multi-profile builds | **Yes** | Task pipelines | No | No | No |
+| Build-time (no runtime overhead) | **Yes** | Yes | No (runtime) | Yes | Yes |
+| Namespace aliases | **Yes** | Partial | No | Yes | No |
 
-## Things to know
+**vs. Nx / Turborepo** — These are excellent task runners and caching layers for monorepos. They don't solve the import namespace problem, glob imports, or webpack config inheritance. layer-pack is complementary — use both if you run a monorepo.
 
-- Node builds include the (node_)modules relative directories locations to preserve inherited dependencies ( if they are not included in the builds )
-- Sass imports have limitations from the sass package: it doesn't tell the files path that call imports, so scss files must import using absolute paths ( eg: App/assets/stuff.jpg, not ./assets/stuff.jpg )
-- Context based webpack requires are not processed by layer-pack, they have the normal webpack behavior
-- New versions of Yarn mess too much with the modules structure, resolving & management, it can't be used with layer-pack anymore  
- 
-## Alternative to
+**vs. Webpack Module Federation** — Module Federation shares code between running applications at runtime. layer-pack composes code at build time across layers, with zero runtime cost. They solve different problems.
 
- - Splitting big projects in thousands of modules
- - Lerna, others mono-repo tool chains & defining messy yarn workspaces ...
+**vs. path aliases (tsconfig paths, babel-plugin-module-resolver)** — Aliases give you named import roots. layer-pack gives you that plus inheritance, glob patterns, `$super` overrides, and shared build configs. Aliases are a subset.
 
-## Contributors ?
+**vs. Yarn / npm workspaces** — Workspaces manage dependency hoisting in a monorepo. They have nothing to say about how code is imported, shared, or built. layer-pack operates at a different level entirely.
+
+---
+
+## Quick start
+
+```bash
+npm install --save-dev layer-pack webpack webpack-cli
+```
+
+Pick a starter from the [samples repository](https://github.com/n8tz/layer-pack-samples) or fork [lpack-react](https://github.com/layer-pack/lpack-react) for a full React + SSR + Express boilerplate.
+
+Full documentation is in [doc/DOC.MD](doc/DOC.MD).
+
+---
+
+## Known limitations
+
+- **Yarn Berry (PnP)** — Yarn's Plug'n'Play mode restructures the module graph in ways that are incompatible with layer-pack's resolution. Use npm or classic Yarn.
+- **SCSS relative imports** — Due to a limitation in the Sass API, SCSS files must use absolute layer-rooted paths (`App/assets/image.png`) rather than relative paths (`./image.png`).
+- **Context-based requires** — Dynamic `require()` calls with variable paths are handled by webpack's native logic, not layer-pack.
+
+---
+
+## Support
+
+BTC: `bc1qh43j8jh6dr8v3f675jwqq3nqymtsj8pyq0kh5a`
+
+<a href="https://www.paypal.com/donate/?hosted_button_id=ECHYGKY3GR7CN"><img src="https://img.shields.io/badge/paypal-donate-yellow.svg" alt="PayPal" /></a>
 
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](#)
-
-<!-- BACKERS/ -->
-
-<h3>Sponsors</h3>
-
-Become a sponsor!
-
-<span class="badge-paypal"><a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=YNJZ6NQYVPTPE" title="Donate to this project using Paypal"><img src="https://img.shields.io/badge/paypal-donate-yellow.svg" alt="PayPal donate button" /></a></span>
-[![*](https://www.google-analytics.com/collect?v=1&tid=UA-82058889-1&cid=555&t=event&ec=project&ea=view&dp=%2Fproject%2Flayer-pack&dt=readme)](#)
-
-## You... like it / it saved your day / you stole all the code / you want more?
-
-[![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](#)
-
-BTC     : bc1qh43j8jh6dr8v3f675jwqq3nqymtsj8pyq0kh5a<br/>
-Paypal  : <span class="badge-paypal"><a href="https://www.paypal.com/donate/?hosted_button_id=ECHYGKY3GR7CN" title="Donate to this project using Paypal"><img src="https://img.shields.io/badge/paypal-donate-yellow.svg" alt="PayPal donate button" /></a></span>
