@@ -342,7 +342,7 @@
           </tr>
           <tr>
             <td><code>__LPACK_VARS_OVERRIDE__</code></td>
-            <td>JSON string of vars overrides (set via CLI flags)</td>
+            <td>JSON string of vars overrides (set manually or by profile <code>commands.vars</code>)</td>
           </tr>
         </tbody>
       </table>
@@ -391,7 +391,7 @@ import routes from 'App/routes/(*.js)';
 import pages from 'App/pages/(**/*.jsx)';
 
 // Lazy React: wraps each import in React.lazy() for code splitting
-import pages from 'App/pages/(**/*.jsx)?using=LazyReact';
+import pages from 'App/pages/(**/*.jsx)?using=lazyReact';
 
 // Suspense React: wraps each in React.lazy() with Suspense boundaries
 import pages from 'App/pages/(**/*.jsx)?using=SuspenseReact';
@@ -473,17 +473,10 @@ export default function Button(props) {
 
       <p>In this example, the head project's <code>App/components/Button.jsx</code> overrides the parent layer's version (because head-project files have the highest priority in namespace resolution). But it can still import the parent's original via <code>$super</code>.</p>
 
-      <h3>$super with Explicit Paths</h3>
-
-      <p>You can also use <code>$super</code> as a prefix to import a specific file from the parent layer:</p>
-
-      <div class="code-block">
-        <div class="code-header">
-          <div class="dots"><span></span><span></span><span></span></div>
-          <span class="filename">Using $super with path</span>
-        </div>
-        <pre><code class="language-javascript">// Import a specific file from the parent layer's namespace
-import { theme } from '$super/App/config/theme';</code></pre>
+      <div class="callout callout-info">
+        <strong>Note:</strong> <code>$super</code> only works as a bare import — it resolves to the same file path one layer down.
+        You cannot use it as a prefix (e.g. <code>$super/App/config/theme</code> will not work).
+        To access a specific parent file, override it at the same path and use bare <code>$super</code> inside.
       </div>
 
       <h3>Use Cases</h3>
@@ -606,6 +599,18 @@ npx lpack-run ./scripts/migrate.js
 
 # Run with a specific profile
 npx lpack-run :api ./dist/api/App.server.js</code></pre>
+      </div>
+
+      <h3>lpack-init</h3>
+
+      <p>Scaffold a new layer-pack project from a template:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">terminal</span>
+        </div>
+        <pre><code class="language-bash">npx lpack-init</code></pre>
       </div>
 
       <!-- Plugin API -->
