@@ -1,0 +1,8 @@
+{
+  "name": "core-layer",
+  "version": "1.0.0",
+  "dependencies": {
+    "shared-lib": "1.0.0",
+    "react": "17.0.0"
+  }
+}

@@ -16,6 +16,7 @@
     "lpack-setup": "etc/cli/lpack-setup"
   },
   "scripts": {
+    "test": "node --test test/*.test.js",
     "lpack": "node etc/cli/lpack.js",
     "lpack-dev-server": "node etc/cli/lpack-dev-server.js",
     "lpack-init": "node etc/cli/lpack-init.js",

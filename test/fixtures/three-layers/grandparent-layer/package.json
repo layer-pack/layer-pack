@@ -1,0 +1,1 @@
+{ "name": "grandparent-layer", "version": "1.0.0", "dependencies": { "deep-lib": "1.0.0" } }

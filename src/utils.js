@@ -274,6 +274,17 @@ const utils = {
 						    }
 					    }
 				    }
+				    let resolvedWhere = path.resolve(where);
+				    if ( seen[resolvedWhere] ) {
+					    // Already on current DFS path — circular extends
+					    throw new Error(
+						    "layer-pack : Circular extends detected!\n" +
+						    "Layer '" + layerId + "' at " + resolvedWhere + "\n" +
+						    "Cycle: " + Object.keys(seen).join(' -> ') + ' -> ' + resolvedWhere
+					    );
+				    }
+				    seen[resolvedWhere] = true;
+				    
 				    let
 					    cfg         = getlPackConfigFrom(where),
 					    realProfile = cProfile;
@@ -282,7 +293,7 @@ const utils = {
 					    throw new Error("layer-pack : Can't found config of " + layerId + " defined in " + mRoot);
 				    }
 				    
-				    layerPathList.push(path.resolve(where));
+				    layerPathList.push(resolvedWhere);
 				    layerIdList.push(layerId);
 				    
 				    while ( cfg && cfg.layerPack && is.string(cfg.layerPack[realProfile]) ) {// profile alias
@@ -323,6 +334,7 @@ const utils = {
 					    if ( !cfg.layerPack[realProfile] )
 						    throw new Error("layer-pack : Can't inherit a module without the requested profile\nAt :" + layerId + " defined in " + mRoot + "\nRequested profile :" + cProfile);
 				    }
+				    delete seen[resolvedWhere]; // unwind DFS path (allows diamond inheritance)
 				    
 			    })
 			    
@@ -418,7 +430,7 @@ const utils = {
 							    ...Object
 								    .keys(profile.localAlias)
 								    .reduce(
-									    ( aliases, alias ) => (aliases[alias] = path.join(where, cfg.aliases[alias]), aliases),
+									    ( aliases, alias ) => (aliases[alias] = path.join(where, profile.localAlias[alias]), aliases),
 									    {}
 								    )
 						    };
@@ -557,7 +569,7 @@ const utils = {
 				if ( i + 1 < roots.length ) {
 					this.findParentPath(fs, roots, file, i + 1, possible_ext, fileDependencies, cb, _curExt);
 				}
-				else if ( possible_ext.length >= _curExt ) {
+				else if ( possible_ext.length > _curExt + 1 ) {
 					this.findParentPath(fs, roots, file, 0, possible_ext, fileDependencies, cb, _curExt + 1)
 				}
 				else {
@@ -581,12 +593,16 @@ const utils = {
 	 * @param {Function} cb               - `(err, absolutePath, relativePathFromRoot) => void`
 	 */
 	findParent( fs, roots, file, possible_ext, fileDependencies, cb ) {
-		let i = -1, tmp;
+		let i = -1;
 		file  = path.normalize(file);
 		while ( ++i < roots.length ) {
-			tmp = file.substr(0, roots[i].length);
-			if ( roots[i] == tmp ) {// found
-				return (i != roots.length - 1) && this.findParentPath(fs, roots, file.substr(tmp.length), i + 1, possible_ext, fileDependencies, cb, 0);
+			if ( file.startsWith(roots[i]) && (file.length === roots[i].length || file[roots[i].length] === '/' || file[roots[i].length] === path.sep) ) {// found
+				if ( i === roots.length - 1 ) {
+					// File is in the deepest layer — no parent exists
+					cb && cb(true);
+					return;
+				}
+				return this.findParentPath(fs, roots, file.substr(roots[i].length), i + 1, possible_ext, fileDependencies, cb, 0);
 			}
 		}
 		cb && cb(true);

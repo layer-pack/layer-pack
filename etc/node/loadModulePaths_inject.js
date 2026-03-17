@@ -96,11 +96,19 @@ const Module = require('module').Module,
 				paths   = __oldNMP(fromPath).filter(
 					dir => modPath.find(path => (dir.startsWith(path)))
 				);
-				rootMod = paths.pop(); // keep the owning layer's root as last resort
+				rootMod = paths.pop(); // rm owning layer's root — re-added after explicit deps
+				// 1. Layers where the package is explicitly in dependencies
 				paths.push(
 					...allRoots.filter(
 						( p, i ) => allRootDeps[i].includes(packageName)
-					),
+					)
+				);
+				// 2. Re-insert owning layer's node_modules for transitive deps
+				if ( rootMod ) {
+					paths.push(rootMod);
+				}
+				// 3. Shared deps (not formally defined in deps)
+				paths.push(
 					...allRoots.filter(
 						( p, i ) => !allRootDeps[i].includes(packageName)
 					)

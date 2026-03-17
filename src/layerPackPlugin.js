@@ -261,17 +261,25 @@ module.exports = function ( cfg, opts ) {
 												                              opts.allPackageCfg[i].dependencies
 												                              && opts.allPackageCfg[i].dependencies[packageName]
 											                              )
-											).map(p => {
-												return resolver.join(p, "node_modules")
-											}),
+											).reduce((list,p) => {
+												list.push(
+													path.join(p, ".layer_modules","node_modules"),
+													path.join(p, "node_modules")
+												);
+												return list;
+											},[]),
 											...opts.allModuleRoots.filter(
 												( p, i ) => !(
 													opts.allPackageCfg[i].dependencies
 													&& opts.allPackageCfg[i].dependencies[packageName]
 												)
-											).map(p => {
-												return resolver.join(p, "node_modules")
-											}),
+											).reduce((list,p) => {
+												list.push(
+													path.join(p, ".layer_modules","node_modules"),
+													path.join(p, "node_modules")
+												);
+												return list;
+											},[]),
 											...getPaths(opts.allLayerRoot[0]) // add mods from head layer parents dir
 												.paths.map(p => {
 													return resolver.join(p, "node_modules")
@@ -290,7 +298,7 @@ module.exports = function ( cfg, opts ) {
 											addrs = addrs.filter(
 												addr => addr.startsWith(rootModPath)
 											);
-											addrs.pop();//rm origin mods root
+											addrs.pop();//rm origin mods root — re-added after explicit deps below
 										}
 										else // so this should be a linked / external mod
 										{
@@ -300,6 +308,8 @@ module.exports = function ( cfg, opts ) {
 										}
 										
 										
+										// 1. Layers where the package is explicitly in dependencies
+										//    (head layer first — child's "react" wins over parent's)
 										addrs.push(
 											...opts.allModuleRoots.filter(// prefer layer where its defined in deps
 											                              ( p, i ) => (
@@ -312,7 +322,17 @@ module.exports = function ( cfg, opts ) {
 													path.join(p, "node_modules")
 												);
 												return list;
-											},[]),
+											},[])
+										);
+										// 2. Re-insert owning layer's node_modules after explicit deps
+										//    so transitive deps (not in any layer's dependencies) resolve
+										//    from the layer where the requesting library lives, rather than
+										//    picking up a wrong version hoisted from a child devDependency.
+										if ( rootModPath ) {
+											addrs.push(rootModPath);
+										}
+										// 3. Shared deps + OS-level fallback
+										addrs.push(
 											...opts.allModuleRoots.filter(// if not defined try shared deps ( not formally defined in deps )
 											                              ( p, i ) => !(
 												                              opts.allPackageCfg[i].dependencies

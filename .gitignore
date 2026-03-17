@@ -27,6 +27,6 @@ $RECYCLE.BIN/
 
 # App specific
 .tmp
-node_modules
+/node_modules
 .idea
 .npmignore

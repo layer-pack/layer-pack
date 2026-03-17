@@ -1,0 +1,8 @@
+{
+  "name": "parent-layer",
+  "version": "1.0.0",
+  "dependencies": {
+    "lib-a": "1.0.0",
+    "react": "17.0.0"
+  }
+}

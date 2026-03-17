@@ -1,0 +1,18 @@
+{
+  "default": {
+    "rootFolder": "App"
+  },
+  "api": {
+    "basedOn": "default",
+    "vars": {
+      "serverMode": true
+    }
+  },
+  "www": {
+    "basedOn": "default",
+    "vars": {
+      "serverMode": false,
+      "devPort": 3000
+    }
+  }
+}

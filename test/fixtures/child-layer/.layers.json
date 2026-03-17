@@ -1,0 +1,6 @@
+{
+  "default": {
+    "rootFolder": "App",
+    "extend": ["parent-layer"]
+  }
+}

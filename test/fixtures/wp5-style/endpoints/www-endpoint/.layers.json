@@ -1,0 +1,13 @@
+{
+  "default": {
+    "rootFolder": "App",
+    "extend": ["core-layer"],
+    "libsPath": ["../../layers"]
+  },
+  "www": {
+    "basedOn": "default",
+    "vars": {
+      "devPort": 8080
+    }
+  }
+}
