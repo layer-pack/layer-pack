@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>layer-pack — Inheritable, Composable Webpack Layers</title>
+  <meta name="description" content="layer-pack is a Webpack 5 plugin enabling layer inheritance, glob imports, namespace aliases, $super imports, and multi-profile builds for composable frontend architecture.">
+  <meta property="og:title" content="layer-pack — Inheritable, Composable Webpack Layers">
+  <meta property="og:description" content="Stop copying webpack configs. Start inheriting them. layer-pack lets you compose reusable build layers like OOP inheritance.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://layer-pack.github.io/layer-pack/">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='15' y='55' width='70' height='14' rx='3' fill='%231e3a5f'/><rect x='22' y='36' width='56' height='14' rx='3' fill='%232a4f7a'/><rect x='29' y='17' width='42' height='14' rx='3' fill='%2300bcd4'/></svg>">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">
+        <img src="assets/logo-only.svg" alt="layer-pack" style="height:32px;width:auto;">
+        layer-pack <span class="version-badge">v3.0.9</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html" class="active">Home</a></li>
+        <li><a href="getting-started.html">Getting Started</a></li>
+        <li><a href="documentation.html">Documentation</a></li>
+        <li><a href="tutorials.html">Tutorials</a></li>
+      </ul>
+      <a href="https://github.com/layer-pack/layer-pack" class="nav-github" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        GitHub
+      </a>
+      <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-content">
+      <h1>Build Inheritable, Composable Webpack Layers</h1>
+      <p class="subtitle">Stop copying webpack configs. Start inheriting them. layer-pack lets you compose reusable build layers like OOP inheritance &mdash; for your entire frontend stack.</p>
+      <div class="hero-ctas">
+        <a href="getting-started.html" class="btn btn-primary">Get Started</a>
+        <a href="https://github.com/layer-pack/layer-pack" class="btn btn-outline" target="_blank" rel="noopener">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          View on GitHub
+        </a>
+      </div>
+
+      <div class="hero-terminal">
+        <div class="terminal-bar">
+          <div class="dots">
+            <span></span><span></span><span></span>
+          </div>
+          <span class="title">terminal</span>
+        </div>
+        <div class="terminal-body">
+          <div><span class="prompt">$</span> <span class="cmd">npm install layer-pack webpack webpack-cli --save-dev</span></div>
+          <div class="output">added 42 packages in 3.2s</div>
+          <div><span class="prompt">$</span> <span class="cmd">npx lpack :www</span></div>
+          <div class="output">layer-pack v3.0.9 &mdash; profile: www</div>
+          <div class="output">  Layers: my-app &rarr; lpack-react &rarr; base-layer</div>
+          <div class="output">  Compiled successfully in 2.4s</div>
+          <div><span class="prompt">$</span> <span class="cursor"></span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="section" id="features">
+    <div class="section-inner">
+      <div class="section-header fade-in">
+        <h2>Powerful Features for Composable Builds</h2>
+        <p>Everything you need to create reusable, inheritable frontend architectures.</p>
+      </div>
+      <div class="features-grid">
+
+        <div class="feature-card fade-in">
+          <div class="feature-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00bcd4" stroke-width="2"><rect x="2" y="13" width="20" height="8" rx="2"/><rect x="5" y="5" width="14" height="8" rx="2"/></svg>
+          </div>
+          <h3>Layer Inheritance</h3>
+          <p>Extend parent layers like classes. Override what you need, inherit the rest. Shared webpack configs, source roots, and dependencies flow through the chain.</p>
+        </div>
+
+        <div class="feature-card fade-in">
+          <div class="feature-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00bcd4" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M8 8l6 6M14 8l-6 6"/></svg>
+          </div>
+          <h3>Glob Imports</h3>
+          <p>Import entire directory trees with a single line. <code>import comps from 'App/ui/(**/*.jsx)'</code> generates a virtual module that auto-exports everything matching the pattern.</p>
+        </div>
+
+        <div class="feature-card fade-in">
+          <div class="feature-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00bcd4" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+          </div>
+          <h3>$super Imports</h3>
+          <p>Override a parent component and still access the original. <code>import parent from '$super'</code> resolves to the parent layer's version &mdash; like calling super() in OOP.</p>
+        </div>
+
+        <div class="feature-card fade-in">
+          <div class="feature-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00bcd4" stroke-width="2"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+          </div>
+          <h3>Multi-Profile Builds</h3>
+          <p>One project, many outputs. Define <code>api</code>, <code>www</code>, <code>static</code> profiles in <code>.layers.json</code> &mdash; each with its own webpack config, vars, and layer chain.</p>
+        </div>
+
+        <div class="feature-card fade-in">
+          <div class="feature-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00bcd4" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          </div>
+          <h3>Namespace Resolution</h3>
+          <p>Import from <code>App/components/Foo</code> and layer-pack resolves it through all layer roots in priority order. Head project wins, parent layers provide fallbacks.</p>
+        </div>
+
+        <div class="feature-card fade-in">
+          <div class="feature-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00bcd4" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </div>
+          <h3>Zero-Config React</h3>
+          <p>Use <code>lpack-react</code> for a production-ready stack: React 18, Webpack 5, Sass, Express SSR, HMR &mdash; all inheritable and overridable through layer-pack.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Quick Example -->
+  <section class="section section-alt" id="quick-example">
+    <div class="section-inner">
+      <div class="section-header fade-in">
+        <h2>Up and Running in Minutes</h2>
+        <p>Create a <code>.layers.json</code>, write your entry file, and build.</p>
+      </div>
+
+      <div class="example-grid fade-in">
+        <div>
+          <div class="code-block">
+            <div class="code-header">
+              <div class="dots"><span></span><span></span><span></span></div>
+              <span class="filename">.layers.json</span>
+            </div>
+            <pre><code class="language-json">{
+  "default": {
+    "rootFolder": "App",
+    "extend": ["lpack-react"],
+    "config": "./webpack.config.js",
+    "vars": {
+      "rootAlias": "App",
+      "devPort": 3000,
+      "project": "my-app"
+    }
+  },
+  "api": {
+    "basedOn": "default",
+    "config": "./webpack.config.api.js",
+    "vars": {
+      "targetDir": "dist/api"
+    }
+  }
+}</code></pre>
+          </div>
+        </div>
+
+        <div>
+          <div class="code-block">
+            <div class="code-header">
+              <div class="dots"><span></span><span></span><span></span></div>
+              <span class="filename">webpack.config.js</span>
+            </div>
+            <pre><code class="language-javascript">const layerPack = require('layer-pack');
+const lPackCfg  = layerPack.getConfig();
+
+module.exports = [
+  {
+    entry  : { App: lPackCfg.vars.rootAlias },
+    output : {
+      path: layerPack.getHeadRoot() + '/dist/'
+    },
+    plugins: [ layerPack.plugin() ],
+    module : {
+      rules: [{
+        test: /\.jsx?$/,
+        exclude: layerPack.isFileExcluded(),
+        use: 'babel-loader'
+      }]
+    }
+  }
+];</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="fade-in" style="text-align: center; margin-top: 1rem;">
+        <div class="code-block" style="max-width: 500px; margin: 0 auto;">
+          <div class="code-header">
+            <div class="dots"><span></span><span></span><span></span></div>
+            <span class="filename">terminal</span>
+          </div>
+          <pre><code class="language-bash"># Build the default profile
+npx lpack
+
+# Build the API profile
+npx lpack :api
+
+# Start dev server with HMR
+npx lpack-dev-server</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Architecture Diagram -->
+  <section class="section" id="architecture">
+    <div class="section-inner">
+      <div class="section-header fade-in">
+        <h2>How Layer Inheritance Works</h2>
+        <p>Layers form an inheritance chain. Each layer can extend parent layers, inheriting their configs, source roots, and dependencies. The head project always wins.</p>
+      </div>
+
+      <div class="architecture fade-in" style="text-align:center;">
+        <img src="assets/layer-inheritance.svg" alt="How Layer Inheritance Works" style="max-width:100%;height:auto;border-radius:16px;">
+      </div>
+    </div>
+  </section>
+
+  <!-- Use Cases -->
+  <section class="section section-alt" id="use-cases">
+    <div class="section-inner">
+      <div class="section-header fade-in">
+        <h2>Who Is layer-pack For?</h2>
+        <p>layer-pack solves real problems for teams and projects of all sizes.</p>
+      </div>
+
+      <div class="use-cases-grid fade-in">
+        <div class="use-case-item">
+          <div class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+          </div>
+          <div>
+            <h4>Shared Frontend Infrastructure</h4>
+            <p>Teams maintaining multiple apps can publish a base layer with shared webpack configs, babel presets, linting rules, and common components. Each app inherits and overrides only what it needs.</p>
+          </div>
+        </div>
+
+        <div class="use-case-item">
+          <div class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          </div>
+          <div>
+            <h4>Monorepo Multi-App Setups</h4>
+            <p>Monorepos with multiple frontends can share a common build layer. Each app lives in its own package, extends the shared layer, and builds independently with its own profiles.</p>
+          </div>
+        </div>
+
+        <div class="use-case-item">
+          <div class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+          </div>
+          <div>
+            <h4>Library Authors &amp; Boilerplates</h4>
+            <p>Publish a complete, opinionated build layer as an npm package. Consumers inherit your entire stack &mdash; webpack config, loaders, presets &mdash; and can override any piece without ejecting.</p>
+          </div>
+        </div>
+
+        <div class="use-case-item">
+          <div class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+          </div>
+          <div>
+            <h4>Multiple Build Targets</h4>
+            <p>Projects that need to produce a web frontend, an API server, and an SSR build from a shared codebase. Each target is a separate profile with its own webpack config and vars.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="section" style="text-align: center;">
+    <div class="section-inner fade-in">
+      <h2 style="margin-top: 0;">Ready to Get Started?</h2>
+      <p class="text-muted" style="font-size: var(--size-lg); max-width: 500px; margin: 0 auto 1.5rem;">Install layer-pack and build your first inheritable layer in minutes.</p>
+      <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+        <a href="getting-started.html" class="btn btn-primary">Read the Guide</a>
+        <a href="documentation.html" class="btn" style="background: var(--color-bg-alt); color: var(--color-primary); border: 2px solid var(--color-border);">Browse Documentation</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div>
+        <strong style="color: #fff;">layer-pack</strong> &mdash; MIT License &copy; 2023 Nathanael Braun
+      </div>
+      <ul class="footer-links">
+        <li><a href="https://github.com/layer-pack/layer-pack" target="_blank" rel="noopener">GitHub</a></li>
+        <li><a href="https://www.npmjs.com/package/layer-pack" target="_blank" rel="noopener">npm</a></li>
+        <li><a href="documentation.html">Docs</a></li>
+      </ul>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-json.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-bash.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

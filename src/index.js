@@ -28,14 +28,14 @@
  * `__LPACK_PROFILE__` environment variable (set by the `lpack` CLI) or `"default"`.
  */
 
-const utils         = require("./utils"),
-      Module        = require('module').Module,
-      path          = require('path'),
-      dMerge        = require('deep-extend'),
-      lPackPlugin   = require("./layerPackPlugin"),
-      ModPathLoader = require("../etc/node/loadModulePaths"),
-      merge         = require('webpack-merge');
-const fs = require("fs");
+const utils              = require("./utils"),
+      Module             = require('module').Module,
+      path               = require('path'),
+      dMerge             = require('deep-extend'),
+      lPackPlugin        = require("./layerPackPlugin"),
+      ModPathLoader      = require("../etc/node/loadModulePaths"),
+      { resolveModulePath } = require("./resolveUtils"),
+      merge              = require('webpack-merge');
 
 let allConfigs, allPluginInstances = {}, allCfgInstances = {};
 
@@ -95,14 +95,7 @@ module.exports = {
 		if ( allCfgInstances[profile] )
 			return allCfgInstances[profile];
 
-		// Prefer .layer_modules/node_modules if present (set up by lpack-setup for
-		// packages inside node_modules), otherwise fall back to the standard node_modules.
-		if ( !fs.existsSync(cfg.allWebpackRoot[0] + "/.layer_modules/node_modules") ) {
-			wpModsPath = path.normalize(cfg.allWebpackRoot[0] + "/node_modules")
-		}
-		else {
-			wpModsPath = path.normalize(cfg.allWebpackRoot[0] + "/.layer_modules/node_modules")
-		}
+		wpModsPath = resolveModulePath(cfg.allWebpackRoot[0]);
 		ModPathLoader.loadWpPaths(cfg.allModulePath, [wpModsPath]);
 		
 		try {

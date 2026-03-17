@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Documentation — layer-pack</title>
+  <meta name="description" content="Complete documentation for layer-pack: .layers.json format, layer inheritance, glob imports, $super imports, multi-profile builds, CLI, and plugin API.">
+  <meta property="og:title" content="Documentation — layer-pack">
+  <meta property="og:description" content="Complete reference for the layer-pack webpack plugin.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='15' y='55' width='70' height='14' rx='3' fill='%231e3a5f'/><rect x='22' y='36' width='56' height='14' rx='3' fill='%232a4f7a'/><rect x='29' y='17' width='42' height='14' rx='3' fill='%2300bcd4'/></svg>">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">
+        <img src="assets/logo-only.svg" alt="layer-pack" style="height:32px;width:auto;">
+        layer-pack <span class="version-badge">v3.0.9</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="getting-started.html">Getting Started</a></li>
+        <li><a href="documentation.html">Documentation</a></li>
+        <li><a href="tutorials.html">Tutorials</a></li>
+      </ul>
+      <a href="https://github.com/layer-pack/layer-pack" class="nav-github" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        GitHub
+      </a>
+      <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <div class="page-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <h4>Configuration</h4>
+        <ul>
+          <li><a href="#layers-json">.layers.json Format</a></li>
+          <li><a href="#layer-inheritance">Layer Inheritance</a></li>
+          <li><a href="#multi-profile">Multi-Profile Builds</a></li>
+        </ul>
+      </div>
+      <div class="sidebar-section">
+        <h4>Features</h4>
+        <ul>
+          <li><a href="#glob-imports">Glob Imports</a></li>
+          <li><a href="#super-imports">$super Imports</a></li>
+          <li><a href="#namespace-resolution">Namespace Resolution</a></li>
+        </ul>
+      </div>
+      <div class="sidebar-section">
+        <h4>Reference</h4>
+        <ul>
+          <li><a href="#cli-reference">CLI Reference</a></li>
+          <li><a href="#plugin-api">Plugin API</a></li>
+          <li><a href="#webpack-integration">Webpack Integration</a></li>
+          <li><a href="#lpack-react">lpack-react</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Content -->
+    <main class="content">
+      <h1>Documentation</h1>
+      <p>Complete reference for layer-pack configuration, features, and API.</p>
+
+      <!-- .layers.json Format -->
+      <h2 id="layers-json">.layers.json Format</h2>
+
+      <p>The <code>.layers.json</code> file (or <code>.layers.js</code> for dynamic config) is the heart of every layer-pack project. It sits in the root of each layer (npm package or project) and defines profiles, inheritance chains, source roots, and build variables.</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">.layers.json</span>
+        </div>
+        <pre><code class="language-json">{
+  "default": {
+    "rootFolder": "App",
+    "libsPath": ["./libs"],
+    "extend": ["some-parent-layer"],
+    "config": "./webpack.config.js",
+    "vars": {
+      "rootAlias": "App",
+      "devPort": 3000,
+      "project": "my-app",
+      "production": false,
+      "targetDir": "dist/default"
+    },
+    "scripts": {
+      "start": "node dist/api/App.server.js"
+    },
+    "templates": {
+      "indexHtml": "./App/index.html.tpl"
+    }
+  },
+  "api": {
+    "basedOn": "default",
+    "config": "./webpack.config.api.js",
+    "vars": {
+      "externals": true,
+      "targetDir": "dist/api"
+    }
+  },
+  "dev": "default"
+}</code></pre>
+      </div>
+
+      <h3>Profile Fields Reference</h3>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Field</th>
+            <th>Type</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>rootFolder</code></td>
+            <td>string</td>
+            <td>Relative path to the source root directory (default: <code>"./App"</code>). This directory is exposed as the namespace root for imports like <code>App/components/Foo</code>.</td>
+          </tr>
+          <tr>
+            <td><code>extend</code></td>
+            <td>string[]</td>
+            <td>Ordered list of parent layers to inherit from. Each entry is an npm package name or a relative/absolute path to a directory containing its own <code>.layers.json</code>.</td>
+          </tr>
+          <tr>
+            <td><code>basedOn</code></td>
+            <td>string</td>
+            <td>Name of another profile in the <em>same</em> file to inherit from. All settings from the base profile are inherited; this profile's settings override them.</td>
+          </tr>
+          <tr>
+            <td><code>libsPath</code></td>
+            <td>string[]</td>
+            <td>Additional directories to search when resolving <code>extend</code> entries. Useful for monorepos where layers live in a local <code>./libs</code> directory rather than <code>node_modules</code>.</td>
+          </tr>
+          <tr>
+            <td><code>config</code></td>
+            <td>string</td>
+            <td>Relative path to the webpack config file for this profile. If omitted, the config is inherited from the first parent layer that provides one.</td>
+          </tr>
+          <tr>
+            <td><code>vars</code></td>
+            <td>object</td>
+            <td>Template variables. These are merged across the layer chain (parent first, head wins). Available in webpack configs via <code>layerPack.getConfig().vars</code> and in config files via <code>&lt;% varName %&gt;</code> mustache syntax.</td>
+          </tr>
+          <tr>
+            <td><code>scripts</code></td>
+            <td>object</td>
+            <td>Named scripts that can be referenced by consuming layers. Inherited and overridable like vars.</td>
+          </tr>
+          <tr>
+            <td><code>templates</code></td>
+            <td>object</td>
+            <td>Named template file paths. Inherited and overridable. Templates support mustache-style <code>&lt;% %&gt;</code> variable substitution with vars.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-info">
+        <strong>Profile Aliases</strong>
+        A profile value can be a plain string instead of an object, creating an alias. In the example above, <code>"dev": "default"</code> means building with <code>lpack :dev</code> is equivalent to <code>lpack :default</code>.
+      </div>
+
+      <h3>Variable Template Syntax</h3>
+      <p>Values in <code>.layers.json</code> support mustache-style template variables using <code>&lt;% %&gt;</code> delimiters (not the standard <code>{{ }}</code> to avoid conflicts with JSON):</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">.layers.json (with template vars)</span>
+        </div>
+        <pre><code class="language-json">{
+  "default": {
+    "rootFolder": "App",
+    "vars": {
+      "project": "my-app",
+      "outputPath": "&lt;% projectPath %&gt;/dist"
+    }
+  }
+}</code></pre>
+      </div>
+
+      <p>Available built-in template variables:</p>
+      <ul>
+        <li><code>&lt;% projectPath %&gt;</code> &mdash; Absolute path to the head project root</li>
+        <li><code>&lt;% packagePath %&gt;</code> &mdash; Absolute path to the current layer's package root</li>
+        <li><code>&lt;% packageConfig %&gt;</code> &mdash; The layer's package.json contents</li>
+      </ul>
+
+      <!-- Layer Inheritance -->
+      <h2 id="layer-inheritance">Layer Inheritance</h2>
+
+      <p>Layer inheritance is the core concept of layer-pack. It works similarly to class inheritance in object-oriented programming: a child layer extends one or more parent layers, inheriting their source files, webpack configs, and build variables while being able to override any part.</p>
+
+      <h3>How the Extend Chain Works</h3>
+
+      <p>When layer-pack resolves a profile, it performs a depth-first traversal of the <code>extend</code> lists across all layers:</p>
+
+      <ol>
+        <li>Start at the head project's <code>.layers.json</code></li>
+        <li>For each entry in <code>extend</code>, locate the layer (npm package or local path)</li>
+        <li>Load that layer's <code>.layers.json</code> and resolve the matching profile (using <code>basedOn</code> if needed)</li>
+        <li>Recursively walk that layer's <code>extend</code> list</li>
+        <li>De-duplicate: if the same layer appears multiple times, keep the last occurrence (deepest position)</li>
+        <li>Build all <code>all*</code> arrays with head project at index 0 (highest priority)</li>
+      </ol>
+
+      <h3>Resolution Order</h3>
+
+      <p>The resulting configuration has several <code>all*</code> arrays, all ordered head-first:</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Array</th>
+            <th>Contents</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>allRoots</code></td>
+            <td>Absolute paths to all layer <code>rootFolder</code> directories. Used for namespace resolution &mdash; first match wins.</td>
+          </tr>
+          <tr>
+            <td><code>allModulePath</code></td>
+            <td>All <code>node_modules</code> paths across the layer chain. Ensures dependencies from parent layers resolve correctly.</td>
+          </tr>
+          <tr>
+            <td><code>allWebpackCfg</code></td>
+            <td>Paths to all webpack config files in the chain. The head project's config (if any) is at index 0.</td>
+          </tr>
+          <tr>
+            <td><code>allModuleRoots</code></td>
+            <td>Absolute paths to all layer package roots.</td>
+          </tr>
+          <tr>
+            <td><code>allCfg</code></td>
+            <td>Raw <code>.layers.json</code> profile objects for each layer in the chain.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Vars Merging</h3>
+      <p>Variables are merged with <code>deep-extend</code>: parent layer values are applied first, then each child layer's values override. The head project always has the final say:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">Merge order (conceptual)</span>
+        </div>
+        <pre><code class="language-javascript">// Final vars = deepMerge(
+//   deepest-ancestor.vars,
+//   ...
+//   parent-layer.vars,
+//   head-project.vars     // wins
+// )</code></pre>
+      </div>
+
+      <!-- Multi-Profile Builds -->
+      <h2 id="multi-profile">Multi-Profile Builds</h2>
+
+      <p>Profiles let a single project produce multiple distinct builds from the same codebase. Each profile can have its own webpack config, layer chain, and variables.</p>
+
+      <h3>Profile Selection</h3>
+      <p>The active profile is determined by:</p>
+      <ol>
+        <li>The CLI argument: <code>lpack :profileName</code></li>
+        <li>The <code>__LPACK_PROFILE__</code> environment variable</li>
+        <li>Falls back to <code>"default"</code></li>
+      </ol>
+
+      <h3>basedOn Inheritance</h3>
+      <p>The <code>basedOn</code> field provides profile-level inheritance within the same <code>.layers.json</code>. All fields from the base profile are inherited; the current profile's fields override:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">.layers.json</span>
+        </div>
+        <pre><code class="language-json">{
+  "default": {
+    "rootFolder": "App",
+    "extend": ["lpack-react"],
+    "vars": {
+      "rootAlias": "App",
+      "devPort": 3000
+    }
+  },
+  "www": {
+    "basedOn": "default",
+    "vars": {
+      "production": true,
+      "targetDir": "dist/www"
+    }
+  },
+  "api": {
+    "basedOn": "default",
+    "config": "./webpack.config.api.js",
+    "vars": {
+      "externals": true,
+      "targetDir": "dist/api"
+    }
+  }
+}</code></pre>
+      </div>
+
+      <p>Resulting vars for <code>www</code>: <code>{ rootAlias: "App", devPort: 3000, production: true, targetDir: "dist/www" }</code></p>
+
+      <h3>Cross-Layer Profile Resolution</h3>
+      <p>When extending a parent layer, layer-pack looks for the same profile name in the parent's <code>.layers.json</code>. If the parent does not define that profile, it falls back to the profile specified by <code>basedOn</code>, then to <code>"default"</code>.</p>
+
+      <h3>Environment Variables</h3>
+      <p>The <code>lpack</code> CLI sets these environment variables before spawning webpack:</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Variable</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>__LPACK_PROFILE__</code></td>
+            <td>The active profile name (e.g., <code>"www"</code>, <code>"api"</code>)</td>
+          </tr>
+          <tr>
+            <td><code>__LPACK_HEAD__</code></td>
+            <td>Absolute path to the head project root</td>
+          </tr>
+          <tr>
+            <td><code>__LPACK_VARS_OVERRIDE__</code></td>
+            <td>JSON string of vars overrides (set via CLI flags)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Glob Imports -->
+      <h2 id="glob-imports">Glob Imports</h2>
+
+      <p>Glob imports let you import entire directory trees with a single import statement. layer-pack intercepts the import at build time, scans all layer roots for matching files, and generates a virtual JavaScript (or SCSS) module that re-exports everything.</p>
+
+      <h3>Basic Syntax</h3>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">App/index.js</span>
+        </div>
+        <pre><code class="language-javascript">// Import all .jsx files under App/components/ (recursively)
+import components from 'App/components/(**/*.jsx)';
+
+// Import all .js files in App/routes/ (one level only)
+import routes from 'App/routes/(*.js)';
+
+// The imported value is an object keyed by capture group match
+// e.g., { "Header/Header": HeaderComponent, "Footer/Footer": FooterComponent }</code></pre>
+      </div>
+
+      <h3>How It Works</h3>
+      <ol>
+        <li>The plugin detects the glob pattern (parenthesized portion) in the import path</li>
+        <li>It scans all layer roots for files matching <code>App/components/**/*.jsx</code></li>
+        <li>Files from the head project take priority over parent layers (same relative path = override)</li>
+        <li>A virtual JavaScript module is generated that imports and re-exports all matched files</li>
+        <li>The virtual module is injected via <code>webpack-virtual-modules</code></li>
+        <li>During watch mode, changes to matched directories trigger regeneration of the virtual module</li>
+      </ol>
+
+      <h3>Codecs (Import Strategies)</h3>
+      <p>By default, glob imports use eager, synchronous imports. You can change this with the <code>?using=</code> query parameter:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">Glob import codecs</span>
+        </div>
+        <pre><code class="language-javascript">// Default: eager synchronous imports
+import pages from 'App/pages/(**/*.jsx)';
+
+// Lazy React: wraps each import in React.lazy() for code splitting
+import pages from 'App/pages/(**/*.jsx)?using=LazyReact';
+
+// Suspense React: wraps each in React.lazy() with Suspense boundaries
+import pages from 'App/pages/(**/*.jsx)?using=SuspenseReact';
+
+// React Loadable: wraps each in react-loadable for SSR-compatible code splitting
+import pages from 'App/pages/(**/*.jsx)?using=ReactLoadable';</code></pre>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Codec</th>
+            <th>Behavior</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>default</code></td>
+            <td>Synchronous eager imports. All modules are bundled and available immediately.</td>
+          </tr>
+          <tr>
+            <td><code>LazyReact</code></td>
+            <td>Each matched file is wrapped in <code>React.lazy(() =&gt; import(...))</code> for automatic code splitting.</td>
+          </tr>
+          <tr>
+            <td><code>SuspenseReact</code></td>
+            <td>Like LazyReact, but also wraps each component in a <code>&lt;Suspense&gt;</code> boundary with a fallback.</td>
+          </tr>
+          <tr>
+            <td><code>ReactLoadable</code></td>
+            <td>Uses <code>react-loadable</code> for SSR-compatible dynamic imports with loading states.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>SCSS Glob Imports</h3>
+      <p>Glob imports also work for SCSS files. When the import path has a <code>.scss</code> extension, layer-pack generates a virtual SCSS file with <code>@import</code> statements:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">App/styles/main.scss</span>
+        </div>
+        <pre><code class="language-bash">// Import all component styles
+@import 'App/components/(**/*.scss)';</code></pre>
+      </div>
+
+      <!-- $super Imports -->
+      <h2 id="super-imports">$super Imports</h2>
+
+      <p>The <code>$super</code> keyword lets you access the parent layer's version of the current file, much like calling <code>super()</code> in a class. This is the mechanism for overriding components while still being able to use the original.</p>
+
+      <h3>How $super Works</h3>
+
+      <p>When layer-pack encounters <code>import something from '$super'</code>, it:</p>
+      <ol>
+        <li>Determines which layer the <em>current</em> file belongs to</li>
+        <li>Looks for the same relative path in the <em>next</em> layer down the chain</li>
+        <li>Resolves the import to that parent layer's file</li>
+      </ol>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">your-project/App/components/Button.jsx (head project)</span>
+        </div>
+        <pre><code class="language-javascript">// Import the parent layer's Button component
+import ParentButton from '$super';
+
+// Extend it with additional functionality
+export default function Button(props) {
+  return (
+    &lt;div className="custom-wrapper"&gt;
+      &lt;ParentButton {...props} variant="enhanced" /&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+      </div>
+
+      <p>In this example, the head project's <code>App/components/Button.jsx</code> overrides the parent layer's version (because head-project files have the highest priority in namespace resolution). But it can still import the parent's original via <code>$super</code>.</p>
+
+      <h3>$super with Explicit Paths</h3>
+
+      <p>You can also use <code>$super</code> as a prefix to import a specific file from the parent layer:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">Using $super with path</span>
+        </div>
+        <pre><code class="language-javascript">// Import a specific file from the parent layer's namespace
+import { theme } from '$super/App/config/theme';</code></pre>
+      </div>
+
+      <h3>Use Cases</h3>
+      <ul>
+        <li><strong>Component wrapping:</strong> Override a UI component to add analytics, styling, or behavior, while rendering the parent's original</li>
+        <li><strong>Configuration extension:</strong> Import the parent layer's config and merge in additional settings</li>
+        <li><strong>Middleware injection:</strong> Wrap parent middleware with logging, auth, or other cross-cutting concerns</li>
+        <li><strong>Gradual migration:</strong> Override components one by one, delegating to the parent version for functionality you have not migrated yet</li>
+      </ul>
+
+      <!-- Namespace Resolution -->
+      <h2 id="namespace-resolution">Namespace Resolution</h2>
+
+      <p>When you import from <code>App/components/Foo</code>, layer-pack resolves this through all layer roots in priority order. It checks each layer's <code>rootFolder</code> directory for the file, and the first match wins.</p>
+
+      <h3>Resolution Algorithm</h3>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">Resolution example</span>
+        </div>
+        <pre><code class="language-javascript">// Given import: "App/components/Header"
+// And layer chain: [your-project, lpack-react, base-layer]
+//
+// layer-pack checks in order:
+//   1. your-project/App/components/Header.jsx   ← found? use it
+//   2. lpack-react/App/components/Header.jsx    ← found? use it
+//   3. base-layer/App/components/Header.jsx     ← found? use it
+//   4. Not found → webpack error
+//
+// Head project always wins. Parent layers provide fallbacks.</code></pre>
+      </div>
+
+      <h3>How Aliases Are Created</h3>
+      <p>The plugin hooks into webpack's <code>enhanced-resolve</code> to intercept module resolution. When a request starts with a known namespace (like <code>App</code>, matching the <code>rootAlias</code> var), the plugin rewrites the request to check each layer root directory in order.</p>
+
+      <p>This means you do not need to configure webpack aliases manually. layer-pack handles all namespace resolution dynamically based on the <code>allRoots</code> array.</p>
+
+      <h3>Cross-Layer File Precedence</h3>
+      <p>The precedence rule is simple: <strong>head project wins</strong>. If the head project provides <code>App/components/Header.jsx</code>, it shadows the same file from all parent layers. Parent layers provide fallback implementations that the head project can optionally override.</p>
+
+      <!-- CLI Reference -->
+      <h2 id="cli-reference">CLI Reference</h2>
+
+      <h3>lpack</h3>
+      <p>Build the project using webpack with layer-aware module resolution.</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">terminal</span>
+        </div>
+        <pre><code class="language-bash"># Build with the default profile
+npx lpack
+
+# Build with a named profile
+npx lpack :www
+
+# Build with watch mode
+npx lpack :www --watch
+
+# Production build
+npx lpack :www --mode production
+
+# Pass additional webpack flags
+npx lpack :www --env goal=production</code></pre>
+      </div>
+
+      <p>The <code>lpack</code> command:</p>
+      <ol>
+        <li>Parses the <code>:profile</code> argument and sets <code>__LPACK_PROFILE__</code></li>
+        <li>Sets <code>__LPACK_HEAD__</code> to the current working directory</li>
+        <li>Spawns webpack using the layer-pack proxy config (<code>etc/wp/webpack.config.js</code>)</li>
+        <li>The proxy config calls <code>layerPack.getSuperWebpackCfg()</code> to load the correct config from the layer chain</li>
+      </ol>
+
+      <h3>lpack-dev-server</h3>
+      <p>Start webpack-dev-server with HMR support and layer-aware resolution:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">terminal</span>
+        </div>
+        <pre><code class="language-bash"># Start dev server for default profile
+npx lpack-dev-server
+
+# Start dev server for a specific profile
+npx lpack-dev-server :www
+
+# Custom port
+npx lpack-dev-server :www --port 8080</code></pre>
+      </div>
+
+      <h3>lpack-setup</h3>
+      <p>Walk the entire layer inheritance chain and install missing dependencies from parent layers:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">terminal</span>
+        </div>
+        <pre><code class="language-bash"># Install all inherited dependencies
+npx lpack-setup</code></pre>
+      </div>
+
+      <p>This command is essential after adding a new <code>extend</code> entry. Parent layers may depend on babel presets, webpack loaders, or other packages that your project does not have yet.</p>
+
+      <h3>lpack-run</h3>
+      <p>Run a Node.js script with layer-pack's module resolution paths active. This ensures <code>require('App/...')</code> works at runtime:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">terminal</span>
+        </div>
+        <pre><code class="language-bash"># Run a Node script with layer-aware resolution
+npx lpack-run ./scripts/migrate.js
+
+# Run with a specific profile
+npx lpack-run :api ./dist/api/App.server.js</code></pre>
+      </div>
+
+      <!-- Plugin API -->
+      <h2 id="plugin-api">Plugin API</h2>
+
+      <p>The layer-pack Node.js API is used in webpack configuration files to integrate layer-pack with your build:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">webpack.config.js</span>
+        </div>
+        <pre><code class="language-javascript">const layerPack = require('layer-pack');</code></pre>
+      </div>
+
+      <h3>layerPack.getConfig(profile?)</h3>
+      <p>Returns the fully resolved configuration object for a profile. Defaults to the active profile (<code>__LPACK_PROFILE__</code> env var) or <code>"default"</code>.</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">API usage</span>
+        </div>
+        <pre><code class="language-javascript">const cfg = layerPack.getConfig();
+
+// Access merged vars
+console.log(cfg.vars.rootAlias);   // "App"
+console.log(cfg.vars.devPort);     // 3000
+console.log(cfg.vars.targetDir);   // "dist/www"
+
+// Access layer chain info
+console.log(cfg.allRoots);         // ["/path/to/project/App", "/path/to/parent/App"]
+console.log(cfg.allModulePath);    // All node_modules paths
+console.log(cfg.allWebpackCfg);    // All webpack config paths</code></pre>
+      </div>
+
+      <h3>layerPack.getAllConfigs(dir?, reset?)</h3>
+      <p>Returns a map of all profile configurations. Each key is a profile ID, each value is a resolved config object.</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">API usage</span>
+        </div>
+        <pre><code class="language-javascript">const allCfg = layerPack.getAllConfigs();
+// { default: {...}, www: {...}, api: {...} }</code></pre>
+      </div>
+
+      <h3>layerPack.plugin(cfg?, profile?)</h3>
+      <p>Creates and returns the webpack plugin instance for a profile. This is a singleton &mdash; calling it multiple times with the same profile returns the same instance.</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">API usage</span>
+        </div>
+        <pre><code class="language-javascript">module.exports = [
+  {
+    plugins: [
+      layerPack.plugin()  // Uses the active profile
+    ]
+  }
+];</code></pre>
+      </div>
+
+      <h3>layerPack.getSuperWebpackCfg(profile?, head?)</h3>
+      <p>Load and return the resolved webpack configuration array from the layer chain. If <code>head</code> is false (default), it loads the parent layer's config (skipping the head project's config). This is used by the CLI proxy to provide the base config that head projects can extend.</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">API usage</span>
+        </div>
+        <pre><code class="language-javascript">// Typically used by the CLI proxy, not directly
+const wpCfg = layerPack.getSuperWebpackCfg('www');
+// Returns the webpack config array for the www profile</code></pre>
+      </div>
+
+      <h3>layerPack.isFileExcluded(profile?)</h3>
+      <p>Returns a function suitable for webpack's <code>module.rules[].exclude</code> option. The function returns <code>true</code> for any file path outside the layer chain's root directories, preventing unnecessary transpilation of third-party code:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">API usage</span>
+        </div>
+        <pre><code class="language-javascript">module.exports = [{
+  module: {
+    rules: [{
+      test: /\.jsx?$/,
+      exclude: layerPack.isFileExcluded(),
+      use: 'babel-loader'
+    }]
+  }
+}];</code></pre>
+      </div>
+
+      <h3>layerPack.getHeadRoot(profile?)</h3>
+      <p>Returns the absolute path to the head project's root directory:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">API usage</span>
+        </div>
+        <pre><code class="language-javascript">const headRoot = layerPack.getHeadRoot();
+// "/home/user/projects/my-app"
+
+module.exports = [{
+  output: {
+    path: headRoot + '/dist/'
+  }
+}];</code></pre>
+      </div>
+
+      <!-- Webpack Integration -->
+      <h2 id="webpack-integration">Webpack Integration</h2>
+
+      <h3>How the Plugin Hooks into Webpack</h3>
+      <p>The layer-pack plugin integrates with webpack at several levels:</p>
+
+      <ul>
+        <li><strong>Resolver hooks (enhanced-resolve):</strong> Intercepts module resolution to handle namespace aliases (<code>App/...</code>), <code>$super</code> imports, and glob patterns. The plugin taps into the <code>resolve</code> step to rewrite import paths before webpack's default resolution.</li>
+        <li><strong>Virtual modules (webpack-virtual-modules):</strong> Glob imports generate virtual JavaScript or SCSS files that are injected into the compilation via the <code>webpack-virtual-modules</code> plugin. These files exist only in memory.</li>
+        <li><strong>Loader resolution:</strong> Ensures webpack loaders (babel-loader, sass-loader, etc.) are resolved correctly even when they are installed in parent layer packages, not the head project.</li>
+        <li><strong>Externals handling:</strong> When <code>vars.externals</code> is set, the plugin configures webpack externals for Node.js builds (API servers), excluding node_modules from the bundle.</li>
+        <li><strong>DefinePlugin integration:</strong> The <code>vars.DefinePluginCfg</code> object is passed to webpack's <code>DefinePlugin</code> for compile-time constants.</li>
+        <li><strong>Watch mode:</strong> During development, the plugin monitors glob-matched directories and regenerates virtual modules when files are added or removed.</li>
+      </ul>
+
+      <h3>Custom Webpack Config with Inherited Base</h3>
+      <p>A common pattern is to provide a custom webpack config that extends the inherited one. Since the <code>lpack</code> CLI uses the proxy config to load the parent's webpack config, your project's config can import and extend it:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">webpack.config.js (head project)</span>
+        </div>
+        <pre><code class="language-javascript">const layerPack = require('layer-pack');
+const lPackCfg  = layerPack.getConfig();
+
+// When the head project has its own config, the CLI proxy
+// loads the parent layer's config via getSuperWebpackCfg().
+// Your config is then loaded on top.
+module.exports = [
+  {
+    entry: { App: lPackCfg.vars.rootAlias },
+    output: {
+      path: layerPack.getHeadRoot() + '/dist/',
+      filename: '[name].js'
+    },
+    plugins: [ layerPack.plugin() ],
+    module: {
+      rules: [
+        {
+          test: /\.jsx?$/,
+          exclude: layerPack.isFileExcluded(),
+          use: 'babel-loader'
+        },
+        {
+          test: /\.s?css$/,
+          use: ['style-loader', 'css-loader', 'sass-loader']
+        }
+      ]
+    }
+  }
+];</code></pre>
+      </div>
+
+      <h3>Vars in Webpack Configs</h3>
+      <p>All merged vars from the layer chain are available via <code>layerPack.getConfig().vars</code>. Common patterns:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">Using vars in webpack config</span>
+        </div>
+        <pre><code class="language-javascript">const layerPack = require('layer-pack');
+const cfg = layerPack.getConfig();
+
+module.exports = [{
+  mode: cfg.vars.production ? 'production' : 'development',
+  output: {
+    path: layerPack.getHeadRoot() + '/' + cfg.vars.targetDir,
+    publicPath: cfg.vars.publicPath || '/'
+  },
+  devServer: {
+    port: cfg.vars.devPort || 3000
+  }
+}];</code></pre>
+      </div>
+
+      <!-- lpack-react -->
+      <h2 id="lpack-react">lpack-react</h2>
+
+      <p><code>lpack-react</code> is a ready-made inheritable layer that provides a complete, production-ready frontend stack. Instead of configuring webpack, babel, sass, and express from scratch, you extend <code>lpack-react</code> and get everything pre-configured.</p>
+
+      <h3>What lpack-react Provides</h3>
+      <ul>
+        <li><strong>React 18</strong> with JSX/TSX support via babel</li>
+        <li><strong>Webpack 5</strong> configuration with optimized defaults</li>
+        <li><strong>Sass/SCSS</strong> support with CSS modules</li>
+        <li><strong>Express server</strong> for SSR (server-side rendering)</li>
+        <li><strong>Hot Module Replacement</strong> for fast development</li>
+        <li><strong>Babel presets</strong> for modern JavaScript and React</li>
+        <li><strong>Asset handling</strong> (images, fonts, etc.)</li>
+      </ul>
+
+      <h3>Quick Setup</h3>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">terminal</span>
+        </div>
+        <pre><code class="language-bash">npm install lpack-react --save-dev
+npx lpack-setup</code></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">.layers.json</span>
+        </div>
+        <pre><code class="language-json">{
+  "default": {
+    "rootFolder": "App",
+    "extend": ["lpack-react"],
+    "vars": {
+      "rootAlias": "App",
+      "project": "my-react-app",
+      "devPort": 3000,
+      "targetDir": "dist/www"
+    }
+  }
+}</code></pre>
+      </div>
+
+      <h3>Available Vars</h3>
+      <p>lpack-react exposes several vars that you can override in your project:</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Variable</th>
+            <th>Default</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>rootAlias</code></td>
+            <td><code>"App"</code></td>
+            <td>The import namespace alias for the source root</td>
+          </tr>
+          <tr>
+            <td><code>devPort</code></td>
+            <td><code>3000</code></td>
+            <td>Port for the webpack dev server</td>
+          </tr>
+          <tr>
+            <td><code>targetDir</code></td>
+            <td><code>"dist"</code></td>
+            <td>Output directory for built files</td>
+          </tr>
+          <tr>
+            <td><code>production</code></td>
+            <td><code>false</code></td>
+            <td>Enable production mode optimizations</td>
+          </tr>
+          <tr>
+            <td><code>externals</code></td>
+            <td><code>false</code></td>
+            <td>Externalize node_modules (for server builds)</td>
+          </tr>
+          <tr>
+            <td><code>project</code></td>
+            <td>&mdash;</td>
+            <td>Project name used in output and page title</td>
+          </tr>
+          <tr>
+            <td><code>webpackPatch</code></td>
+            <td>&mdash;</td>
+            <td>Object merged into every webpack config via webpack-merge</td>
+          </tr>
+          <tr>
+            <td><code>DefinePluginCfg</code></td>
+            <td>&mdash;</td>
+            <td>Object passed to webpack DefinePlugin for compile-time constants</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Page Nav -->
+      <div class="page-nav">
+        <a href="getting-started.html">
+          <span class="label">Previous</span>
+          <span class="title">Getting Started</span>
+        </a>
+        <a href="tutorials.html" class="next">
+          <span class="label">Next</span>
+          <span class="title">Tutorials</span>
+        </a>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div>
+        <strong style="color: #fff;">layer-pack</strong> &mdash; MIT License &copy; 2023 Nathanael Braun
+      </div>
+      <ul class="footer-links">
+        <li><a href="https://github.com/layer-pack/layer-pack" target="_blank" rel="noopener">GitHub</a></li>
+        <li><a href="https://www.npmjs.com/package/layer-pack" target="_blank" rel="noopener">npm</a></li>
+        <li><a href="documentation.html">Docs</a></li>
+      </ul>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-json.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-bash.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

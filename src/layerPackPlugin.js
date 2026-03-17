@@ -28,7 +28,8 @@ const path                 = require('path'),
       InjectPlugin         = require("webpack-inject-plugin").default,
       ENTRY_ORDER          = require("webpack-inject-plugin").ENTRY_ORDER,
       isBuiltinModule      = require('is-builtin-module'),
-      VirtualModulesPlugin = require('webpack-virtual-modules');
+      VirtualModulesPlugin = require('webpack-virtual-modules'),
+      { filterLayerPaths, dedupe } = require('./resolveUtils');
 
 /** Shared regular expressions used throughout the plugin. */
 const RE = {
@@ -78,9 +79,8 @@ module.exports = function ( cfg, opts ) {
 	    currentProfile   = process.env.__LPACK_PROFILE__ || 'default',
 	    /** When `vars.externals` is a regex string, compile it once for reuse. */
 	    externalRE       = is.string(opts.vars.externals) && new RegExp(opts.vars.externals),
-	    vMod             = new VirtualModulesPlugin(),
-	    globDirWatcher;
-	
+	    vMod             = new VirtualModulesPlugin();
+
 	return plugin = {
 		/**
 		 * Return a sass resolver fn
@@ -256,36 +256,13 @@ module.exports = function ( cfg, opts ) {
 											...opts.allModulePath.filter(// custom lib dir
 											                             ( p, i ) => !opts.allModuleRoots.find(mp => (path.join(mp, "node_modules") === p))
 											),
-											...opts.allModuleRoots.filter(// priorize defined deps to avoid "shared" deps
-											                              ( p, i ) => (
-												                              opts.allPackageCfg[i].dependencies
-												                              && opts.allPackageCfg[i].dependencies[packageName]
-											                              )
-											).reduce((list,p) => {
-												list.push(
-													path.join(p, ".layer_modules","node_modules"),
-													path.join(p, "node_modules")
-												);
-												return list;
-											},[]),
-											...opts.allModuleRoots.filter(
-												( p, i ) => !(
-													opts.allPackageCfg[i].dependencies
-													&& opts.allPackageCfg[i].dependencies[packageName]
-												)
-											).reduce((list,p) => {
-												list.push(
-													path.join(p, ".layer_modules","node_modules"),
-													path.join(p, "node_modules")
-												);
-												return list;
-											},[]),
+											...filterLayerPaths(opts.allModuleRoots, opts.allPackageCfg, packageName, true),
+											...filterLayerPaths(opts.allModuleRoots, opts.allPackageCfg, packageName, false),
 											...getPaths(opts.allLayerRoot[0]) // add mods from head layer parents dir
 												.paths.map(p => {
 													return resolver.join(p, "node_modules")
 												})
 										);
-										//console.log(':::183: ', packageName, request.request, addrs);
 									}
 									else {
 										// get all possible sub node_modules until the current layer's node_modules
@@ -311,18 +288,7 @@ module.exports = function ( cfg, opts ) {
 										// 1. Layers where the package is explicitly in dependencies
 										//    (head layer first — child's "react" wins over parent's)
 										addrs.push(
-											...opts.allModuleRoots.filter(// prefer layer where its defined in deps
-											                              ( p, i ) => (
-												                              opts.allPackageCfg[i].dependencies
-												                              && opts.allPackageCfg[i].dependencies[packageName]
-											                              )
-											).reduce((list,p) => {
-												list.push(
-													path.join(p, ".layer_modules","node_modules"),
-													path.join(p, "node_modules")
-												);
-												return list;
-											},[])
+											...filterLayerPaths(opts.allModuleRoots, opts.allPackageCfg, packageName, true)
 										);
 										// 2. Re-insert owning layer's node_modules after explicit deps
 										//    so transitive deps (not in any layer's dependencies) resolve
@@ -333,25 +299,14 @@ module.exports = function ( cfg, opts ) {
 										}
 										// 3. Shared deps + OS-level fallback
 										addrs.push(
-											...opts.allModuleRoots.filter(// if not defined try shared deps ( not formally defined in deps )
-											                              ( p, i ) => !(
-												                              opts.allPackageCfg[i].dependencies
-												                              && opts.allPackageCfg[i].dependencies[packageName]
-											                              )
-											).reduce((list,p) => {
-												list.push(
-													path.join(p, ".layer_modules","node_modules"),
-													path.join(p, "node_modules")
-												);
-												return list;
-											},[]),
+											...filterLayerPaths(opts.allModuleRoots, opts.allPackageCfg, packageName, false),
 											...getPaths(opts.allLayerRoot[0]) // add mods from head layer parents dir
 												.paths.map(p => {
 													return resolver.join(p, "node_modules")
 												})
 										)
 									}
-									addrs = addrs.filter(( path, i ) => addrs.indexOf(path) === i);
+									addrs = dedupe(addrs);
 									
 									forEachBail(
 										addrs,
@@ -391,7 +346,6 @@ module.exports = function ( cfg, opts ) {
 											while ( resolvingQueues[key].length )
 												resolvingQueues[key].pop()(err, res);
 											delete resolvingQueues[key];
-											//callback
 										}
 									);
 								}
@@ -441,10 +395,7 @@ module.exports = function ( cfg, opts ) {
 										).map(p => {
 											return resolver.join(p, "node_modules")
 										})
-										//...getPaths(roots[0]) // add mods from head layer parents dir
-										//	.paths.map(p => {
-										//		return resolver.join(p, "node_modules")
-										//	})
+
 									)
 									addrs.push(path.normalize(opts.allWebpackRoot[0] + '/node_modules'));//origin
 									
@@ -860,8 +811,7 @@ module.exports=
 								) {
 									if ( !isNodeBuild || !opts.vars.hardResolveExternals ) // keep external as-is for browsers builds
 									{
-										//console.log(':::706: ', data.request, data.dependencyType);
-										let mod = new ExternalModule(
+												let mod = new ExternalModule(
 											data.request,
 											outputTarget || "commonjs"
 										);
@@ -869,8 +819,7 @@ module.exports=
 									}
 									else // hard resolve for node if possible
 									{
-										//console.log(':::727: ', data.request);
-										let resolver = compiler.resolverFactory.get(
+											let resolver = compiler.resolverFactory.get(
 											"normal",
 											{
 												mainFields: ["main", "module"],
@@ -884,8 +833,7 @@ module.exports=
 											{},
 											//"External resolve of " + request,
 											( err, request, result ) => {
-												//console.log(':::729: ', request, result);
-												let mod = new ExternalModule(err ||
+														let mod = new ExternalModule(err ||
 												                             !request
 												                             ? data.request
 												                             :
@@ -957,31 +905,35 @@ module.exports=
 			compiler.hooks.watchRun.tap('WatchRun', ( compiler ) => {
 				activeIgnoredFiles.push(roots[0] + '/.buildInfos.json.js');
 				activeIgnoredFiles.push(roots[0] + '/.___layerPackIndexUtils.js');
-				//console.log(currentProfile, ' WatchRun: ', compiler.watchFileSystem.watcher.watcherOptions.ignored);
 				triggerGlobUpdates(compiler, compiler.modifiedFiles, compiler.removedFiles);
-				//console.log(currentProfile, ' WatchRun: ', compiler.modifiedFiles, compiler.removedFiles);
-				//cd ../../rocinante/rocinante.core/&&cp src/*.* node_modules/layer-pack/src
 			});
 			// On each compilation, regenerate any stale glob virtual files and force-rebuild
 			// the modules that import them. The `beforeAdd` hook allows us to set
 			// `_forceBuild = true` on a specific module without triggering a full rebuild.
 			compiler.hooks.compilation.tap('layer-pack', ( compilation, params ) => {
-				let toBeRebuilt = [], anySassChange;
+				let toBeRebuilt = new Set(), anySassChange;
 
 				// Intercept the module build queue: if a module's resource path is in our
 				// toBeRebuilt list, force webpack to reprocess it even if it hasn't changed
 				// on disk (the virtual file contents changed in memory).
+				//
+				// For JS globs, webpack's dependency graph cascades the force-rebuild
+				// from the virtual file to its importers (selective).
+				//
+				// For SCSS globs, sass resolves @import inline via { contents } —
+				// webpack has no module dependency between the .scss file and the
+				// virtual glob file. We must force-rebuild ALL .scss modules when
+				// any SCSS glob changes (anySassChange flag).
 				compilation.buildQueue &&
 				compilation.buildQueue.hooks &&
 				compilation.buildQueue.hooks.beforeAdd
 				           .tapAsync('layer-pack',
 				                     ( module, cb ) => {
-					                     if ( toBeRebuilt.includes(module.resource) ) {
-						                     //console.info("Index was Updated ", module.resource, module._forceBuild)
-						                     toBeRebuilt.splice(toBeRebuilt.indexOf(module.resource), 1);
+					                     if ( toBeRebuilt.has(module.resource) ) {
+						                     toBeRebuilt.delete(module.resource);
 						                     module._forceBuild = true;
 					                     }
-					                     else if ( /\.scss/.test(module.resource) && anySassChange ) {
+					                     else if ( anySassChange && /\.s?css$/.test(module.resource) ) {
 						                     module._forceBuild = true;
 					                     }
 					                     cb()
@@ -1005,13 +957,11 @@ module.exports=
 							useHotReload,
 							function ( e, filePath, content, changed ) {
 								if ( changed ) {
-									toBeRebuilt.push(filePath)
+									toBeRebuilt.add(filePath)
 								}
 							}
 						)
 					}
-				//console.log(currentProfile, ': ', activeGlobs.scss);
-				//
 				for ( let reqPath in activeGlobs.scss )
 					if ( activeGlobs.scss.hasOwnProperty(reqPath) && activeGlobs.scss[reqPath] ) {
 						activeGlobs.scss[reqPath] = false;
@@ -1026,11 +976,9 @@ module.exports=
 							RootAliasRe,
 							useHotReload,
 							function ( e, filePath, content, changed ) {
-								//console.log(':::877: ', filePath, changed);
 								if ( changed ) {
-									//console.log(':::877: ', filePath);
 									anySassChange = true;
-									toBeRebuilt.push(filePath)
+									toBeRebuilt.add(filePath)
 								}
 							}
 						)

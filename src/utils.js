@@ -32,6 +32,7 @@ const path              = require("path"),
       stripJsonComments = require('./utils.json'),
       glob              = require('fast-glob'),
       { jsVarTest }     = require('./utils.values.js'),
+      { addContextDep, resolveModulePath } = require('./resolveUtils'),
       glob2Js           = {
 	      default  : require('./glob2Js/default.js'),
 	      lazyReact: require('./glob2Js/LazyReact'),
@@ -154,7 +155,6 @@ const utils = {
 			    ||
 			    getlPackConfigFrom(projectRoot),
 		    allCfg    = {};
-		//console.log('utils::getAllConfigs:90: ', projectRoot);
 		if ( !pkgConfig || !pkgConfig.layerPack )
 			throw new Error("Can't find any lPack config ! ( searched in " + projectRoot + "/.layers.json" + " )")
 		
@@ -374,11 +374,7 @@ const utils = {
 						    && libPath.push(p);
 					    }
 				    )
-			    if ( !fs.existsSync(projectRoot + '/.layer_modules') ) {
-				    
-				    allModulePath.push(path.normalize(projectRoot + '/node_modules'));
-			    }
-			    else allModulePath.push(path.normalize(projectRoot + '/.layer_modules/node_modules'));
+			    allModulePath.push(resolveModulePath(projectRoot));
 			    
 			    allModuleRoots.push(projectRoot);
 			    
@@ -407,10 +403,7 @@ const utils = {
 					        modPath,
 					        realProfile = cProfile;
 					    
-					    if ( !fs.existsSync(where + '/.layer_modules') ) {// setup in .layer_modules avoid npm to rm deps on install other packages...
-						    modPath = path.normalize(where + "/node_modules");
-					    }
-					    else modPath = path.normalize(where + "/.layer_modules/node_modules");
+					    modPath = resolveModulePath(where);
 					    
 					    allModuleRoots.push(where);
 					    
@@ -660,7 +653,6 @@ const utils = {
 		    exportedModules = {},
 		    filesToAdd      = [],
 		    loaderOpt       = querystring.parse(input.split('?')[1]);
-		//console.log('utils::indexOf:492: ', lazyLoaderOpt);
 		input               = input.split('?')[0].replace(/\/$/, '').replace(RootAliasRe, '').substr(1); // rm App/
 		subPath             = path.dirname(input.substr(0, input.indexOf('*')) + "a");
 		globToRe            =
@@ -673,6 +665,9 @@ const utils = {
 			subPath = subPath.substr(1);
 		input = input.replace(/[\(\)]/g, '');
 		
+		let globRegex       = new RegExp("^\\/" + globToRe + "$");
+		let normalizedInput = path.normalize(input);
+		let normalizedDirs  = path.normalize(input.replace(/\/[^\/]+$/ig, ''));
 		
 		code += "let req, _exports = {}, walknSetExport=require('" + RootAlias + "/.___layerPackIndexUtils').walknSetExport;";
 		// generate require.context code so wp will detect changes
@@ -685,26 +680,20 @@ const utils = {
 					
 					if ( checkIfDir(fs, path.normalize(globRoot)) ) {
 						
-						if ( !contextDependencies[globRoot]?.includes(globUid) )
-							contextDependencies[globRoot]
-							? contextDependencies[globRoot].push(globUid)
-							: contextDependencies[globRoot] = [globUid];
+						addContextDep(contextDependencies, globRoot, globUid);
 						
 						glob.sync([_root + '/' + path.normalize(input.replace(/\/[^\/]+$/ig, ''))], { onlyDirectories: true })
 						    .forEach(
 							    dir => {
-								    if ( !contextDependencies[dir]?.includes(globUid) )
-									    contextDependencies[dir]
-									    ? contextDependencies[dir].push(globUid)
-									    : contextDependencies[dir] = [globUid];
+								    addContextDep(contextDependencies, dir, globUid);
 							    }
 						    )
 						//contextDependencies.push(path.normalize(_root + "/" + subPath))
 						
-						glob.sync([_root + '/' + path.normalize(input)])// wp fs cause new files to be ignored sometimes
+						glob.sync([_root + '/' + normalizedInput])// wp fs cause new files to be ignored sometimes
 						    .forEach(
 							    file => {
-								    let name  = file.substr(path.normalize(_root + "/" + subPath).length).match(new RegExp("^\\/" + globToRe + "$")),
+								    let name  = file.substr(path.normalize(_root + "/" + subPath).length).match(globRegex),
 								        uPath = RootAlias + file.substr(_root.length),
 								        key   = "_" + uPath.replace(/[^\w]/ig, "_"),
 								        wPath = path.dirname(file);
@@ -728,10 +717,7 @@ const utils = {
 						}
 						while ( !checkIfDir(fs, path.normalize(globRoot)) );
 						
-						if ( !contextDependencies[globRoot]?.includes(globUid) )
-							contextDependencies[globRoot]
-							? contextDependencies[globRoot].push(globUid)
-							: contextDependencies[globRoot] = [globUid];
+						addContextDep(contextDependencies, globRoot, globUid);
 					}
 				} catch ( e ) {
 				
@@ -824,28 +810,25 @@ const utils = {
 		
 		input   = input.replace(/\/$/, '').replace(RootAliasRe, '').substr(1); // rm App/
 		subPath = path.dirname(input.substr(0, input.indexOf('*')) + "a");
-		
+
+		let normalizedScssInput = path.normalize(input);
+		let normalizedScssDirs  = path.normalize(input.replace(/\/[^\/]+$/ig, ''));
+
 		roots.forEach(
 			( _root, lvl ) => {
 				try {
 					let globRoot = _root + "/" + subPath;
-					
+
 					if ( checkIfDir(fs, path.normalize(_root + "/" + subPath)) ) {
-						
-						if ( !contextDependencies[globRoot]?.includes(globUid) )
-							contextDependencies[globRoot]
-							? contextDependencies[globRoot].push(globUid)
-							: contextDependencies[globRoot] = [globUid];
-						glob.sync([_root + '/' + path.normalize(input.replace(/\/[^\/]+$/ig, ''))], { onlyDirectories: true })
+
+						addContextDep(contextDependencies, globRoot, globUid);
+						glob.sync([_root + '/' + normalizedScssDirs], { onlyDirectories: true })
 						    .forEach(
 							    dir => {
-								    if ( !contextDependencies[dir]?.includes(globUid) )
-									    contextDependencies[dir]
-									    ? contextDependencies[dir].push(globUid)
-									    : contextDependencies[dir] = [globUid];
+								    addContextDep(contextDependencies, dir, globUid);
 							    }
 						    )
-						glob.sync([_root + '/' + path.normalize(input)])
+						glob.sync([_root + '/' + normalizedScssInput])
 						    .forEach(
 							    file => {
 								    files[RootAlias + file.substr(_root.length)] = true
@@ -859,10 +842,7 @@ const utils = {
 						}
 						while ( !checkIfDir(fs, path.normalize(globRoot)) );
 						
-						if ( !contextDependencies[globRoot]?.includes(globUid) )
-							contextDependencies[globRoot]
-							? contextDependencies[globRoot].push(globUid)
-							: contextDependencies[globRoot] = [globUid];
+						addContextDep(contextDependencies, globRoot, globUid);
 					}
 				} catch ( e ) {
 				
@@ -906,57 +886,7 @@ const utils = {
 		cb && cb(null, fileName, content + '', false);
 		
 	}
-	//,
-	//addTempFile( vMod, vfs, fileName, content, cb ) {
-	//	let oldContent;
-	//	try {
-	//
-	//		try {
-	//			oldContent = fs.readFileSync(fileName) + '';
-	//		} catch ( e ) {
-	//
-	//		}
-	//
-	//		if ( oldContent !== content + '' ) {
-	//
-	//			//vfs.purge(fileName);
-	//			//VirtualModulePlugin.populateFilesystem(
-	//			//	{
-	//			//		fs        : vfs,
-	//			//		modulePath: fileName,
-	//			//		contents  : content,
-	//			//		ctime     : Date.now(),
-	//			//		utime     : Date.now()
-	//			//	});
-	//			//let finalInputFileSystem = vMod._compiler.inputFileSystem;
-	//			//while ( finalInputFileSystem && finalInputFileSystem._inputFileSystem ) {
-	//			//	finalInputFileSystem = finalInputFileSystem._inputFileSystem;
-	//			//}
-	//			fs.writeFileSync(fileName, content + '');
-	//			//if ( oldContent ) debugger;
-	//
-	//			//vfs._writeVirtualFile(fileName,{
-	//			//	ctime     : Date.now(),
-	//			//	utime     : Date.now()},content+'')
-	//			console.log('utils::addTempFile:560: ', fileName);
-	//			//setTimeout(
-	//			//	() => {
-	//			//vMod.writeModule(fileName, content + '');
-	//			//		vMod._compiler.hooks.invalid.call(fileName, Date.now())
-	//			//	}
-	//			//)
-	//
-	//			//if ( vMod._compiler.modifiedFiles ) {
-	//			//	console.log('utils::addVirtualFile:584: ', fileName);
-	//			//	vMod._compiler.modifiedFiles.add(fileName)
-	//			//}
-	//			return cb && cb(null, fileName, content + '', true);
-	//		}
-	//		cb && cb(null, fileName, content + '', false);
-	//	} catch ( e ) {
-	//		console.log('utils::addVirtualFile:593: ', e);
-	//	}
-	//}
+
 };
 
 module.exports = utils;

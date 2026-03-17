@@ -240,14 +240,10 @@ describe('Bug 6: internal resolution includes .layer_modules', () => {
         const internalBlock = content.substring(internalStart, internalEnd);
 
         // The fix: .map(p => resolver.join(p, "node_modules")) replaced with
-        // .reduce() that pushes both .layer_modules/node_modules and node_modules
+        // filterLayerPaths() which includes both .layer_modules/node_modules and node_modules
         assert(
-            internalBlock.includes('.layer_modules'),
-            'Internal resolution should include .layer_modules paths'
-        );
-        assert(
-            internalBlock.includes('.reduce('),
-            'Internal resolution should use .reduce() for deps sections'
+            internalBlock.includes('filterLayerPaths'),
+            'Internal resolution should use filterLayerPaths (includes .layer_modules)'
         );
     });
 });

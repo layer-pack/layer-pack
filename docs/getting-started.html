@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Getting Started — layer-pack</title>
+  <meta name="description" content="Learn how to install and configure layer-pack, create your first .layers.json, and build inheritable webpack layers.">
+  <meta property="og:title" content="Getting Started — layer-pack">
+  <meta property="og:description" content="Step-by-step guide to setting up layer-pack for composable webpack builds.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='15' y='55' width='70' height='14' rx='3' fill='%231e3a5f'/><rect x='22' y='36' width='56' height='14' rx='3' fill='%232a4f7a'/><rect x='29' y='17' width='42' height='14' rx='3' fill='%2300bcd4'/></svg>">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">
+        <img src="assets/logo-only.svg" alt="layer-pack" style="height:32px;width:auto;">
+        layer-pack <span class="version-badge">v3.0.9</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="getting-started.html">Getting Started</a></li>
+        <li><a href="documentation.html">Documentation</a></li>
+        <li><a href="tutorials.html">Tutorials</a></li>
+      </ul>
+      <a href="https://github.com/layer-pack/layer-pack" class="nav-github" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        GitHub
+      </a>
+      <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <div class="page-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <h4>On This Page</h4>
+        <ul>
+          <li><a href="#installation">Installation</a></li>
+          <li><a href="#create-layers-json">Create .layers.json</a></li>
+          <li><a href="#create-your-app">Create Your App</a></li>
+          <li><a href="#webpack-config">Webpack Configuration</a></li>
+          <li><a href="#build">Build Your Project</a></li>
+          <li><a href="#inheriting-a-layer">Inheriting a Layer</a></li>
+          <li><a href="#multiple-profiles">Multiple Profiles</a></li>
+          <li><a href="#cli-reference">CLI Reference</a></li>
+          <li><a href="#next-steps">Next Steps</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Content -->
+    <main class="content">
+      <h1>Getting Started</h1>
+      <p>This guide walks you through installing layer-pack, creating your first <code>.layers.json</code> configuration, and building a project with inheritable webpack layers.</p>
+
+      <div class="callout callout-info">
+        <strong>Prerequisites</strong>
+        Node.js 14+ is required. layer-pack works with Webpack 5 and webpack-cli 5.
+      </div>
+
+      <!-- Step 1: Installation -->
+      <h2 id="installation">Installation</h2>
+      <p>Install layer-pack alongside webpack and webpack-cli as development dependencies:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">terminal</span>
+        </div>
+        <pre><code class="language-bash">npm install layer-pack webpack webpack-cli --save-dev</code></pre>
+      </div>
+
+      <p>This gives you access to the <code>lpack</code> CLI commands and the <code>layer-pack</code> Node.js API for your webpack configs.</p>
+
+      <!-- Step 2: Create .layers.json -->
+      <h2 id="create-layers-json">Create .layers.json</h2>
+      <p>Create a <code>.layers.json</code> file in your project root. This file defines your project's layer configuration, including the source root folder, build profiles, and template variables:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">.layers.json</span>
+        </div>
+        <pre><code class="language-json">{
+  "default": {
+    "rootFolder": "App",
+    "config": "./webpack.config.js",
+    "vars": {
+      "rootAlias": "App",
+      "project": "my-project"
+    }
+  }
+}</code></pre>
+      </div>
+
+      <p>Key fields:</p>
+      <ul>
+        <li><strong><code>rootFolder</code></strong> &mdash; The directory containing your source code. This becomes the namespace root for imports like <code>App/components/Foo</code>.</li>
+        <li><strong><code>config</code></strong> &mdash; Path to your webpack configuration file, relative to the project root.</li>
+        <li><strong><code>vars</code></strong> &mdash; Template variables available in webpack configs. These are merged with parent layers (your values win).</li>
+      </ul>
+
+      <!-- Step 3: Create Your App -->
+      <h2 id="create-your-app">Create Your App</h2>
+      <p>Create the source root directory specified by <code>rootFolder</code> and add an entry file:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">terminal</span>
+        </div>
+        <pre><code class="language-bash">mkdir -p App</code></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">App/index.js</span>
+        </div>
+        <pre><code class="language-javascript">// Your app entry point
+// layer-pack resolves "App/..." imports through all layer roots
+import { greeting } from 'App/utils/hello';
+
+console.log(greeting('world'));</code></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">App/utils/hello.js</span>
+        </div>
+        <pre><code class="language-javascript">export function greeting(name) {
+  return `Hello, ${name}! Built with layer-pack.`;
+}</code></pre>
+      </div>
+
+      <p>Notice how we import using <code>App/utils/hello</code> &mdash; layer-pack's namespace resolution will look for this file in all layer roots, starting from the head project.</p>
+
+      <!-- Step 4: Webpack Config -->
+      <h2 id="webpack-config">Webpack Configuration</h2>
+      <p>Create a <code>webpack.config.js</code> that uses the layer-pack API. The key integration points are the plugin, the config vars, the file exclusion helper, and the head root path:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">webpack.config.js</span>
+        </div>
+        <pre><code class="language-javascript">const layerPack = require('layer-pack');
+const lPackCfg  = layerPack.getConfig();
+
+module.exports = [
+  {
+    mode: 'development',
+
+    // Use the rootAlias var as the entry point name
+    entry: {
+      App: lPackCfg.vars.rootAlias
+    },
+
+    output: {
+      path: layerPack.getHeadRoot() + '/dist/',
+      filename: '[name].js'
+    },
+
+    // The layer-pack plugin hooks into webpack's resolver
+    // to handle namespace aliases, $super, and glob imports
+    plugins: [
+      layerPack.plugin()
+    ],
+
+    module: {
+      rules: [
+        {
+          test: /\.jsx?$/,
+          // isFileExcluded() returns a function that excludes files
+          // outside the layer inheritance chain from transpilation
+          exclude: layerPack.isFileExcluded(),
+          use: 'babel-loader'
+        }
+      ]
+    },
+
+    resolve: {
+      extensions: ['.js', '.jsx', '.json']
+    }
+  }
+];</code></pre>
+      </div>
+
+      <div class="callout callout-tip">
+        <strong>Tip</strong>
+        The webpack config must export an <strong>array</strong> of configuration objects. This is required for multi-profile and multi-target builds. Even if you only have one target, wrap it in an array.
+      </div>
+
+      <!-- Step 5: Build -->
+      <h2 id="build">Build Your Project</h2>
+      <p>Use the <code>lpack</code> CLI to build. It sets up the correct environment variables and spawns webpack with layer-aware module resolution:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">terminal</span>
+        </div>
+        <pre><code class="language-bash"># Build using the "default" profile
+npx lpack
+
+# Start the dev server with hot module replacement
+npx lpack-dev-server</code></pre>
+      </div>
+
+      <p>That is it &mdash; you have a working layer-pack project. But the real power comes when you start inheriting layers.</p>
+
+      <!-- Step 6: Inheriting a Layer -->
+      <h2 id="inheriting-a-layer">Inheriting a Layer</h2>
+      <p>The key feature of layer-pack is layer inheritance via the <code>extend</code> field. Let us extend <code>lpack-react</code>, which provides a complete React 18 + Webpack 5 + Sass + Express SSR stack:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">terminal</span>
+        </div>
+        <pre><code class="language-bash"># Install the parent layer
+npm install lpack-react --save-dev
+
+# Run lpack-setup to install dependencies from inherited layers
+npx lpack-setup</code></pre>
+      </div>
+
+      <p>Now update your <code>.layers.json</code> to extend it:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">.layers.json</span>
+        </div>
+        <pre><code class="language-json">{
+  "default": {
+    "rootFolder": "App",
+    "extend": ["lpack-react"],
+    "vars": {
+      "rootAlias": "App",
+      "project": "my-react-app",
+      "devPort": 3000,
+      "targetDir": "dist/www"
+    }
+  }
+}</code></pre>
+      </div>
+
+      <p>Notice we no longer need <code>"config"</code> &mdash; the webpack configuration is inherited from <code>lpack-react</code>. Our project inherits:</p>
+      <ul>
+        <li>Webpack configuration with babel, sass, and asset loaders</li>
+        <li>Express-based SSR server configuration</li>
+        <li>Hot Module Replacement setup</li>
+        <li>React 18 with JSX/TSX support</li>
+        <li>Source root resolution across all layer roots</li>
+      </ul>
+
+      <p>You can still provide your own <code>config</code> field to override or extend the inherited webpack config. The inherited config is used as a base that your config builds upon.</p>
+
+      <div class="callout callout-info">
+        <strong>About lpack-setup</strong>
+        When you extend a layer, that layer may have its own dependencies (babel presets, loaders, plugins). <code>lpack-setup</code> walks the entire layer chain and installs any missing dependencies so the build works out of the box.
+      </div>
+
+      <!-- Step 7: Multiple Profiles -->
+      <h2 id="multiple-profiles">Multiple Profiles</h2>
+      <p>A single project often needs multiple build targets: a web frontend, an API server, a static site generator. layer-pack handles this with profiles:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">.layers.json</span>
+        </div>
+        <pre><code class="language-json">{
+  "default": {
+    "rootFolder": "App",
+    "extend": ["lpack-react"],
+    "vars": {
+      "rootAlias": "App",
+      "project": "my-app",
+      "devPort": 3000
+    }
+  },
+  "www": {
+    "basedOn": "default",
+    "vars": {
+      "targetDir": "dist/www",
+      "production": true
+    }
+  },
+  "api": {
+    "basedOn": "default",
+    "config": "./webpack.config.api.js",
+    "vars": {
+      "targetDir": "dist/api",
+      "externals": true
+    }
+  }
+}</code></pre>
+      </div>
+
+      <p>Build each profile by name:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">terminal</span>
+        </div>
+        <pre><code class="language-bash"># Build the web frontend
+npx lpack :www
+
+# Build the API server
+npx lpack :api
+
+# Dev server for the web frontend
+npx lpack-dev-server :www</code></pre>
+      </div>
+
+      <p>The <code>basedOn</code> field tells layer-pack to inherit all settings from another profile in the same file. The <code>www</code> profile inherits everything from <code>default</code> and overrides the <code>vars</code>. The <code>api</code> profile inherits from <code>default</code> but also provides its own webpack config file.</p>
+
+      <!-- CLI Reference -->
+      <h2 id="cli-reference">CLI Reference</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Command</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>lpack</code></td>
+            <td>Build using the <code>default</code> profile. Spawns webpack with layer-aware resolution.</td>
+          </tr>
+          <tr>
+            <td><code>lpack :profile</code></td>
+            <td>Build using the named profile (e.g., <code>lpack :api</code>, <code>lpack :www</code>).</td>
+          </tr>
+          <tr>
+            <td><code>lpack-dev-server</code></td>
+            <td>Start webpack-dev-server with HMR. Accepts <code>:profile</code> suffix.</td>
+          </tr>
+          <tr>
+            <td><code>lpack-setup</code></td>
+            <td>Install dependencies from all inherited layers in the extend chain.</td>
+          </tr>
+          <tr>
+            <td><code>lpack-run &lt;script&gt;</code></td>
+            <td>Run a Node.js script with layer-pack module resolution paths active.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>All CLI commands accept additional arguments that are passed through to webpack or webpack-dev-server. For example:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">terminal</span>
+        </div>
+        <pre><code class="language-bash"># Build with watch mode
+npx lpack --watch
+
+# Build for production
+npx lpack :www --mode production
+
+# Dev server on a custom port
+npx lpack-dev-server :www --port 8080</code></pre>
+      </div>
+
+      <!-- Next Steps -->
+      <h2 id="next-steps">Next Steps</h2>
+
+      <div class="use-cases-grid" style="margin-top: 1rem;">
+        <a href="documentation.html" class="use-case-item" style="text-decoration: none;">
+          <div class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+          </div>
+          <div>
+            <h4>Documentation</h4>
+            <p>Deep dive into .layers.json format, glob imports, $super, namespace resolution, and the full plugin API.</p>
+          </div>
+        </a>
+
+        <a href="tutorials.html" class="use-case-item" style="text-decoration: none;">
+          <div class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+          </div>
+          <div>
+            <h4>Tutorials</h4>
+            <p>Hands-on tutorials: build a reusable React layer, set up multi-endpoint architecture, and more.</p>
+          </div>
+        </a>
+
+        <a href="documentation.html#glob-imports" class="use-case-item" style="text-decoration: none;">
+          <div class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          </div>
+          <div>
+            <h4>Glob Imports</h4>
+            <p>Learn how glob imports auto-generate virtual modules from directory trees.</p>
+          </div>
+        </a>
+
+        <a href="documentation.html#super-imports" class="use-case-item" style="text-decoration: none;">
+          <div class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+          </div>
+          <div>
+            <h4>$super Imports</h4>
+            <p>Override parent components while still accessing the original through $super.</p>
+          </div>
+        </a>
+      </div>
+
+      <!-- Page Nav -->
+      <div class="page-nav">
+        <a href="index.html">
+          <span class="label">Previous</span>
+          <span class="title">Home</span>
+        </a>
+        <a href="documentation.html" class="next">
+          <span class="label">Next</span>
+          <span class="title">Documentation</span>
+        </a>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div>
+        <strong style="color: #fff;">layer-pack</strong> &mdash; MIT License &copy; 2023 Nathanael Braun
+      </div>
+      <ul class="footer-links">
+        <li><a href="https://github.com/layer-pack/layer-pack" target="_blank" rel="noopener">GitHub</a></li>
+        <li><a href="https://www.npmjs.com/package/layer-pack" target="_blank" rel="noopener">npm</a></li>
+        <li><a href="documentation.html">Docs</a></li>
+      </ul>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-json.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-bash.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

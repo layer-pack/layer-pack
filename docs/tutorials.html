@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tutorials — layer-pack</title>
+  <meta name="description" content="Hands-on tutorials for layer-pack: build reusable React layers, multi-endpoint architectures, component overrides with $super, and glob-powered auto-routing.">
+  <meta property="og:title" content="Tutorials — layer-pack">
+  <meta property="og:description" content="Step-by-step tutorials for building composable webpack layers with layer-pack.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='15' y='55' width='70' height='14' rx='3' fill='%231e3a5f'/><rect x='22' y='36' width='56' height='14' rx='3' fill='%232a4f7a'/><rect x='29' y='17' width='42' height='14' rx='3' fill='%2300bcd4'/></svg>">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">
+        <img src="assets/logo-only.svg" alt="layer-pack" style="height:32px;width:auto;">
+        layer-pack <span class="version-badge">v3.0.9</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="getting-started.html">Getting Started</a></li>
+        <li><a href="documentation.html">Documentation</a></li>
+        <li><a href="tutorials.html">Tutorials</a></li>
+      </ul>
+      <a href="https://github.com/layer-pack/layer-pack" class="nav-github" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        GitHub
+      </a>
+      <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <div class="page-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <h4>Tutorials</h4>
+        <ul>
+          <li><a href="#reusable-react-layer">Reusable React Layer</a></li>
+          <li><a href="#multi-endpoint">Multi-Endpoint Architecture</a></li>
+          <li><a href="#super-override">Component Override with $super</a></li>
+          <li><a href="#glob-routing">Glob-Powered Auto-Routing</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Content -->
+    <main class="content">
+      <h1>Tutorials</h1>
+      <p>Hands-on guides that walk you through real-world layer-pack patterns. Each tutorial builds a complete, working example.</p>
+
+      <!-- Tutorial 1: Reusable React Layer -->
+      <h2 id="reusable-react-layer">Tutorial: Reusable React Layer</h2>
+
+      <div class="callout callout-info">
+        <strong>What you will build</strong>
+        A reusable layer (npm package) with React, babel, and webpack preconfigured. Then a consuming project that extends it, inheriting the entire build stack and adding its own components.
+      </div>
+
+      <h3>Step 1: Create the Base Layer Package</h3>
+
+      <p>Create a new npm package that will serve as your shared base layer. This package will contain webpack configuration, babel presets, and default components that all consuming projects inherit.</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">terminal</span>
+        </div>
+        <pre><code class="language-bash">mkdir my-react-layer && cd my-react-layer
+npm init -y
+npm install layer-pack webpack webpack-cli babel-loader \
+  @babel/core @babel/preset-env @babel/preset-react \
+  react react-dom --save</code></pre>
+      </div>
+
+      <h3>Step 2: Define the Layer Configuration</h3>
+
+      <p>Create a <code>.layers.json</code> that defines this package as a layer with a source root and webpack config:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">my-react-layer/.layers.json</span>
+        </div>
+        <pre><code class="language-json">{
+  "default": {
+    "rootFolder": "App",
+    "config": "./webpack.config.js",
+    "vars": {
+      "rootAlias": "App",
+      "devPort": 3000,
+      "targetDir": "dist"
+    }
+  }
+}</code></pre>
+      </div>
+
+      <h3>Step 3: Create the Webpack Config</h3>
+
+      <p>This config uses the layer-pack API so it works correctly when inherited by consuming projects:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">my-react-layer/webpack.config.js</span>
+        </div>
+        <pre><code class="language-javascript">const layerPack = require('layer-pack');
+const cfg       = layerPack.getConfig();
+
+module.exports = [
+  {
+    mode: cfg.vars.production ? 'production' : 'development',
+    entry: {
+      App: cfg.vars.rootAlias
+    },
+    output: {
+      path: layerPack.getHeadRoot() + '/' + (cfg.vars.targetDir || 'dist'),
+      filename: '[name].js'
+    },
+    plugins: [
+      layerPack.plugin()
+    ],
+    module: {
+      rules: [
+        {
+          test: /\.jsx?$/,
+          exclude: layerPack.isFileExcluded(),
+          use: {
+            loader: 'babel-loader',
+            options: {
+              presets: [
+                '@babel/preset-env',
+                '@babel/preset-react'
+              ]
+            }
+          }
+        }
+      ]
+    },
+    resolve: {
+      extensions: ['.js', '.jsx', '.json']
+    }
+  }
+];</code></pre>
+      </div>
+
+      <h3>Step 4: Add Default Components</h3>
+
+      <p>Provide default components in the layer's <code>App/</code> directory. Consuming projects can override any of these:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">my-react-layer/App/index.js</span>
+        </div>
+        <pre><code class="language-javascript">import React from 'react';
+import { createRoot } from 'react-dom/client';
+import App from 'App/components/App';
+
+const root = createRoot(document.getElementById('root'));
+root.render(&lt;App /&gt;);</code></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">my-react-layer/App/components/App.jsx</span>
+        </div>
+        <pre><code class="language-javascript">import React from 'react';
+import Header from 'App/components/Header';
+
+export default function App() {
+  return (
+    &lt;div className="app"&gt;
+      &lt;Header /&gt;
+      &lt;main&gt;
+        &lt;h1&gt;Welcome&lt;/h1&gt;
+        &lt;p&gt;This is the base layer app.&lt;/p&gt;
+      &lt;/main&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">my-react-layer/App/components/Header.jsx</span>
+        </div>
+        <pre><code class="language-javascript">import React from 'react';
+
+export default function Header() {
+  return (
+    &lt;header&gt;
+      &lt;nav&gt;Base Layer Navigation&lt;/nav&gt;
+    &lt;/header&gt;
+  );
+}</code></pre>
+      </div>
+
+      <h3>Step 5: Publish or Link the Layer</h3>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">terminal</span>
+        </div>
+        <pre><code class="language-bash"># For local development, use npm link
+npm link
+
+# Or publish to npm
+npm publish</code></pre>
+      </div>
+
+      <h3>Step 6: Create a Consuming Project</h3>
+
+      <p>Now create a project that extends your layer:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">terminal</span>
+        </div>
+        <pre><code class="language-bash">mkdir my-app && cd my-app
+npm init -y
+npm install layer-pack webpack webpack-cli --save-dev
+npm link my-react-layer  # or: npm install my-react-layer
+npx lpack-setup          # installs inherited dependencies</code></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">my-app/.layers.json</span>
+        </div>
+        <pre><code class="language-json">{
+  "default": {
+    "rootFolder": "App",
+    "extend": ["my-react-layer"],
+    "vars": {
+      "rootAlias": "App",
+      "project": "My Application"
+    }
+  }
+}</code></pre>
+      </div>
+
+      <p>Notice there is no <code>config</code> field &mdash; the webpack config is inherited from <code>my-react-layer</code>. The consuming project only needs to provide a <code>.layers.json</code> and optionally override files in <code>App/</code>.</p>
+
+      <h3>Step 7: Override a Component</h3>
+
+      <p>Override the Header component by creating the same file path in the head project:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">my-app/App/components/Header.jsx</span>
+        </div>
+        <pre><code class="language-javascript">import React from 'react';
+
+// This file shadows my-react-layer/App/components/Header.jsx
+// because the head project has higher priority
+export default function Header() {
+  return (
+    &lt;header&gt;
+      &lt;nav&gt;My Custom Navigation&lt;/nav&gt;
+    &lt;/header&gt;
+  );
+}</code></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">terminal</span>
+        </div>
+        <pre><code class="language-bash"># Build the project — inherits everything from the base layer
+npx lpack</code></pre>
+      </div>
+
+      <p>The build uses the inherited webpack config, babel presets, and entry point from <code>my-react-layer</code>, but the Header component comes from the head project because head project files always take priority in namespace resolution.</p>
+
+      <hr>
+
+      <!-- Tutorial 2: Multi-Endpoint Architecture -->
+      <h2 id="multi-endpoint">Tutorial: Multi-Endpoint Architecture</h2>
+
+      <div class="callout callout-info">
+        <strong>What you will build</strong>
+        A project with a shared core layer and two separate build targets: a web frontend (<code>www</code>) and an API server (<code>api</code>), each built with its own profile and webpack config.
+      </div>
+
+      <h3>Step 1: Project Structure</h3>
+
+      <p>Set up a project with shared code and separate entry points for each target:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">Directory structure</span>
+        </div>
+        <pre><code class="language-bash">my-fullstack-app/
+  .layers.json
+  webpack.config.www.js      # Web frontend config
+  webpack.config.api.js      # API server config
+  App/
+    index.js                 # Default/www entry point
+    index.server.js          # API entry point
+    components/
+      Header.jsx
+      Footer.jsx
+    api/
+      routes.js
+      handlers/
+        users.js
+        posts.js
+    shared/
+      utils.js               # Shared between www and api
+      constants.js</code></pre>
+      </div>
+
+      <h3>Step 2: Configure Profiles</h3>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">.layers.json</span>
+        </div>
+        <pre><code class="language-json">{
+  "default": {
+    "rootFolder": "App",
+    "extend": ["lpack-react"],
+    "vars": {
+      "rootAlias": "App",
+      "project": "my-fullstack-app",
+      "devPort": 3000
+    }
+  },
+  "www": {
+    "basedOn": "default",
+    "config": "./webpack.config.www.js",
+    "vars": {
+      "targetDir": "dist/www",
+      "production": true
+    }
+  },
+  "api": {
+    "basedOn": "default",
+    "config": "./webpack.config.api.js",
+    "vars": {
+      "targetDir": "dist/api",
+      "externals": true
+    }
+  }
+}</code></pre>
+      </div>
+
+      <h3>Step 3: Web Frontend Config</h3>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">webpack.config.www.js</span>
+        </div>
+        <pre><code class="language-javascript">const layerPack = require('layer-pack');
+const cfg       = layerPack.getConfig();
+
+module.exports = [
+  {
+    mode: cfg.vars.production ? 'production' : 'development',
+    target: 'web',
+    entry: {
+      App: cfg.vars.rootAlias  // resolves to App/index.js
+    },
+    output: {
+      path: layerPack.getHeadRoot() + '/' + cfg.vars.targetDir,
+      filename: '[name].[contenthash:8].js',
+      publicPath: '/'
+    },
+    plugins: [ layerPack.plugin() ],
+    module: {
+      rules: [
+        {
+          test: /\.jsx?$/,
+          exclude: layerPack.isFileExcluded(),
+          use: 'babel-loader'
+        },
+        {
+          test: /\.s?css$/,
+          use: ['style-loader', 'css-loader', 'sass-loader']
+        }
+      ]
+    },
+    resolve: {
+      extensions: ['.js', '.jsx', '.json']
+    },
+    devServer: {
+      port: cfg.vars.devPort
+    }
+  }
+];</code></pre>
+      </div>
+
+      <h3>Step 4: API Server Config</h3>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">webpack.config.api.js</span>
+        </div>
+        <pre><code class="language-javascript">const layerPack = require('layer-pack');
+const cfg       = layerPack.getConfig();
+
+module.exports = [
+  {
+    mode: cfg.vars.production ? 'production' : 'development',
+    target: 'node',
+    entry: {
+      'App.server': cfg.vars.rootAlias + '/index.server'
+    },
+    output: {
+      path: layerPack.getHeadRoot() + '/' + cfg.vars.targetDir,
+      filename: '[name].js',
+      libraryTarget: 'commonjs2'
+    },
+    plugins: [ layerPack.plugin() ],
+    module: {
+      rules: [
+        {
+          test: /\.jsx?$/,
+          exclude: layerPack.isFileExcluded(),
+          use: 'babel-loader'
+        }
+      ]
+    },
+    resolve: {
+      extensions: ['.js', '.jsx', '.json']
+    }
+  }
+];</code></pre>
+      </div>
+
+      <h3>Step 5: Shared Code</h3>
+
+      <p>Both the web frontend and API server can import shared code using the same namespace:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">App/shared/utils.js</span>
+        </div>
+        <pre><code class="language-javascript">// This file is available to both www and api profiles
+// via: import { formatDate } from 'App/shared/utils';
+
+export function formatDate(date) {
+  return new Intl.DateTimeFormat('en-US').format(new Date(date));
+}
+
+export function slugify(text) {
+  return text.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+}</code></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">App/index.server.js</span>
+        </div>
+        <pre><code class="language-javascript">import express from 'express';
+import { formatDate } from 'App/shared/utils';
+
+const app = express();
+
+app.get('/api/status', (req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: formatDate(Date.now())
+  });
+});
+
+app.listen(8080, () => {
+  console.log('API server running on :8080');
+});</code></pre>
+      </div>
+
+      <h3>Step 6: Build Both Targets</h3>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">terminal</span>
+        </div>
+        <pre><code class="language-bash"># Build the web frontend
+npx lpack :www
+
+# Build the API server
+npx lpack :api
+
+# Run the API server
+node dist/api/App.server.js
+
+# Dev server for the frontend
+npx lpack-dev-server :www</code></pre>
+      </div>
+
+      <p>Each profile builds independently with its own webpack config, target, and output directory, but they share the same source tree and layer chain.</p>
+
+      <hr>
+
+      <!-- Tutorial 3: Component Override with $super -->
+      <h2 id="super-override">Tutorial: Component Override with $super</h2>
+
+      <div class="callout callout-info">
+        <strong>What you will build</strong>
+        A project that overrides a parent layer's Button component, wrapping it with additional functionality while preserving the original via <code>$super</code>.
+      </div>
+
+      <h3>The Scenario</h3>
+      <p>Your team uses a shared UI layer (<code>@company/ui-layer</code>) that provides a <code>Button</code> component. Your project needs to add analytics tracking to every button click, but you still want the original Button's rendering and behavior.</p>
+
+      <h3>Step 1: The Parent Layer's Button</h3>
+
+      <p>Here is what the parent layer provides (you do not modify this):</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">@company/ui-layer/App/components/Button.jsx</span>
+        </div>
+        <pre><code class="language-javascript">import React from 'react';
+
+export default function Button({ children, onClick, variant = 'primary', ...props }) {
+  return (
+    &lt;button
+      className={`btn btn-${variant}`}
+      onClick={onClick}
+      {...props}
+    &gt;
+      {children}
+    &lt;/button&gt;
+  );
+}</code></pre>
+      </div>
+
+      <h3>Step 2: Override with $super</h3>
+
+      <p>Create the same file path in your project to override it. Use <code>$super</code> to import the parent's version:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">my-project/App/components/Button.jsx</span>
+        </div>
+        <pre><code class="language-javascript">import React, { useCallback } from 'react';
+// Import the parent layer's Button via $super
+import OriginalButton from '$super';
+import { trackEvent } from 'App/analytics/tracker';
+
+export default function Button({ children, onClick, trackingLabel, ...props }) {
+  const handleClick = useCallback((e) => {
+    // Add analytics tracking
+    if (trackingLabel) {
+      trackEvent('button_click', {
+        label: trackingLabel,
+        component: 'Button'
+      });
+    }
+    // Call the original onClick handler
+    if (onClick) onClick(e);
+  }, [onClick, trackingLabel]);
+
+  // Render the parent layer's Button with enhanced onClick
+  return (
+    &lt;OriginalButton onClick={handleClick} {...props}&gt;
+      {children}
+    &lt;/OriginalButton&gt;
+  );
+}</code></pre>
+      </div>
+
+      <h3>Step 3: Use It Transparently</h3>
+
+      <p>Any code that imports <code>App/components/Button</code> gets your enhanced version automatically. The consumer does not know or care that it is an override:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">App/pages/Home.jsx</span>
+        </div>
+        <pre><code class="language-javascript">import React from 'react';
+import Button from 'App/components/Button';
+
+export default function Home() {
+  return (
+    &lt;div&gt;
+      &lt;h1&gt;Welcome&lt;/h1&gt;
+      {/* This uses your enhanced Button with analytics tracking */}
+      &lt;Button
+        trackingLabel="hero-cta"
+        onClick={() => window.location = '/signup'}
+      &gt;
+        Get Started
+      &lt;/Button&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+      </div>
+
+      <h3>How the Resolution Chain Works</h3>
+
+      <div class="architecture">
+        <pre>
+  Import: "App/components/Button"
+   │
+   ├─ Check my-project/App/components/Button.jsx  ← FOUND (head project wins)
+   │   └─ This file imports "$super"
+   │       └─ Resolves to: @company/ui-layer/App/components/Button.jsx
+   │
+   └─ Result: Consumer gets the enhanced Button,
+      which internally renders the original Button</pre>
+      </div>
+
+      <h3>Chaining Multiple Overrides</h3>
+      <p><code>$super</code> works through the entire layer chain. If you have three layers (A extends B extends C), and both A and B override the same file, each can use <code>$super</code> to access the next layer's version:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">$super resolution chain</span>
+        </div>
+        <pre><code class="language-javascript">// Layer A (head) — App/components/Button.jsx
+import ParentButton from '$super';  // gets Layer B's version
+
+// Layer B (middle) — App/components/Button.jsx
+import ParentButton from '$super';  // gets Layer C's version
+
+// Layer C (base) — App/components/Button.jsx
+// No $super — this is the bottom of the chain</code></pre>
+      </div>
+
+      <hr>
+
+      <!-- Tutorial 4: Glob-Powered Auto-Routing -->
+      <h2 id="glob-routing">Tutorial: Glob-Powered Auto-Routing</h2>
+
+      <div class="callout callout-info">
+        <strong>What you will build</strong>
+        An automatic routing system where adding a new file to <code>App/pages/</code> automatically registers it as a route &mdash; no manual imports or route config needed.
+      </div>
+
+      <h3>The Concept</h3>
+      <p>Instead of manually importing every page component and wiring up routes, use glob imports to auto-discover all page files. The glob pattern captures the file path, which becomes the route path.</p>
+
+      <h3>Step 1: Create Page Components</h3>
+
+      <p>Create page components using a file-system convention. The file path determines the URL path:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">Directory structure</span>
+        </div>
+        <pre><code class="language-bash">App/
+  pages/
+    Home.jsx           # Route: /
+    About.jsx          # Route: /about
+    Contact.jsx        # Route: /contact
+    blog/
+      Index.jsx        # Route: /blog
+      Post.jsx         # Route: /blog/post</code></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">App/pages/Home.jsx</span>
+        </div>
+        <pre><code class="language-javascript">import React from 'react';
+
+export default function Home() {
+  return &lt;h1&gt;Home Page&lt;/h1&gt;;
+}
+
+// Optional: export route metadata
+export const routeMeta = {
+  path: '/',
+  exact: true,
+  title: 'Home'
+};</code></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">App/pages/About.jsx</span>
+        </div>
+        <pre><code class="language-javascript">import React from 'react';
+
+export default function About() {
+  return &lt;h1&gt;About Us&lt;/h1&gt;;
+}
+
+export const routeMeta = {
+  path: '/about',
+  title: 'About'
+};</code></pre>
+      </div>
+
+      <h3>Step 2: Auto-Import All Pages with Glob</h3>
+
+      <p>Use a glob import to auto-discover all page components. The captured group becomes the key:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">App/router.jsx</span>
+        </div>
+        <pre><code class="language-javascript">import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+
+// Glob import: auto-discover all .jsx files under App/pages/
+// The (**/*.jsx) pattern matches recursively
+// Each match becomes a key like "Home", "About", "blog/Index", "blog/Post"
+import pages from 'App/pages/(**/*.jsx)';
+
+function filePathToRoute(key) {
+  // Convert file path to URL path
+  // "Home" -> "/"
+  // "About" -> "/about"
+  // "blog/Index" -> "/blog"
+  // "blog/Post" -> "/blog/post"
+  let route = '/' + key
+    .replace(/\/Index$/, '')  // Index files map to parent directory
+    .replace(/^Home$/, '')     // Home maps to root
+    .toLowerCase();
+  return route || '/';
+}
+
+export default function AppRouter() {
+  return (
+    &lt;BrowserRouter&gt;
+      &lt;Routes&gt;
+        {Object.keys(pages).map(key =&gt; {
+          const PageComponent = pages[key].default || pages[key];
+          const meta = pages[key].routeMeta || {};
+          const path = meta.path || filePathToRoute(key);
+
+          return (
+            &lt;Route
+              key={key}
+              path={path}
+              element={&lt;PageComponent /&gt;}
+            /&gt;
+          );
+        })}
+      &lt;/Routes&gt;
+    &lt;/BrowserRouter&gt;
+  );
+}</code></pre>
+      </div>
+
+      <h3>Step 3: Use with Code Splitting</h3>
+
+      <p>For larger apps, use the <code>LazyReact</code> codec to automatically code-split each page:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">App/router.jsx (with code splitting)</span>
+        </div>
+        <pre><code class="language-javascript">import React, { Suspense } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+
+// LazyReact codec wraps each import in React.lazy()
+// Each page becomes a separate chunk, loaded on demand
+import pages from 'App/pages/(**/*.jsx)?using=LazyReact';
+
+function filePathToRoute(key) {
+  let route = '/' + key
+    .replace(/\/Index$/, '')
+    .replace(/^Home$/, '')
+    .toLowerCase();
+  return route || '/';
+}
+
+export default function AppRouter() {
+  return (
+    &lt;BrowserRouter&gt;
+      &lt;Suspense fallback={&lt;div&gt;Loading...&lt;/div&gt;}&gt;
+        &lt;Routes&gt;
+          {Object.keys(pages).map(key =&gt; {
+            const LazyPage = pages[key];
+            const path = filePathToRoute(key);
+            return (
+              &lt;Route
+                key={key}
+                path={path}
+                element={&lt;LazyPage /&gt;}
+              /&gt;
+            );
+          })}
+        &lt;/Routes&gt;
+      &lt;/Suspense&gt;
+    &lt;/BrowserRouter&gt;
+  );
+}</code></pre>
+      </div>
+
+      <h3>Step 4: Auto-Routing Across Layers</h3>
+
+      <p>The most powerful aspect: glob imports scan <em>all layer roots</em>. If a parent layer provides default pages and your project adds more, they are all discovered automatically:</p>
+
+      <div class="architecture">
+        <pre>
+  Glob: "App/pages/(**/*.jsx)" scans all layers:
+
+  my-project/App/pages/
+    Home.jsx          ← Head project (highest priority)
+    Dashboard.jsx     ← Only in head project
+
+  @company/ui-layer/App/pages/
+    Home.jsx          ← Shadowed by head project's version
+    About.jsx         ← Inherited (not in head project)
+    Contact.jsx       ← Inherited (not in head project)
+
+  Result: { Home, Dashboard, About, Contact }
+  Head project's Home.jsx wins over the parent's.</pre>
+      </div>
+
+      <h3>Adding a New Route</h3>
+      <p>To add a new route, simply create a new <code>.jsx</code> file in <code>App/pages/</code>:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="filename">App/pages/Settings.jsx</span>
+        </div>
+        <pre><code class="language-javascript">import React from 'react';
+
+export default function Settings() {
+  return &lt;h1&gt;Settings&lt;/h1&gt;;
+}</code></pre>
+      </div>
+
+      <p>That is it. No router config to update, no import to add. The glob import picks it up automatically. In watch mode, the virtual module is regenerated when new files appear in the matched directories.</p>
+
+      <div class="callout callout-tip">
+        <strong>Tip: Express Route Handlers</strong>
+        The same glob pattern works for API routes too. Use <code>import handlers from 'App/api/handlers/(*.js)'</code> to auto-discover all route handler files and register them with Express.
+      </div>
+
+      <!-- Page Nav -->
+      <div class="page-nav">
+        <a href="documentation.html">
+          <span class="label">Previous</span>
+          <span class="title">Documentation</span>
+        </a>
+        <a href="index.html" class="next">
+          <span class="label">Back to</span>
+          <span class="title">Home</span>
+        </a>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div>
+        <strong style="color: #fff;">layer-pack</strong> &mdash; MIT License &copy; 2023 Nathanael Braun
+      </div>
+      <ul class="footer-links">
+        <li><a href="https://github.com/layer-pack/layer-pack" target="_blank" rel="noopener">GitHub</a></li>
+        <li><a href="https://www.npmjs.com/package/layer-pack" target="_blank" rel="noopener">npm</a></li>
+        <li><a href="documentation.html">Docs</a></li>
+      </ul>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-json.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-bash.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

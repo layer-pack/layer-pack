@@ -1,1 +1,2 @@
-module.exports = { component: "WwwApp", layer: "www-endpoint" };
+const parent = require("$super");
+module.exports = { component: "WwwApp", layer: "www-endpoint", parent };
