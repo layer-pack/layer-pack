@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>layer-pack — Inheritable, Composable Webpack Layers</title>
-  <meta name="description" content="layer-pack is a Webpack 5 plugin enabling layer inheritance, glob imports, namespace aliases, $super imports, and multi-profile builds for composable frontend architecture.">
-  <meta property="og:title" content="layer-pack — Inheritable, Composable Webpack Layers">
-  <meta property="og:description" content="Stop copying webpack configs. Start inheriting them. layer-pack lets you compose reusable build layers like OOP inheritance.">
+  <title>layer-pack — Build Full-Stack Apps with Inheritable, Composable Layers</title>
+  <meta name="description" content="layer-pack is a Webpack 5 plugin for building full-stack applications from a single codebase. Ship your frontend, API server, and SSR build using inheritable layers, glob imports, and multi-profile builds.">
+  <meta property="og:title" content="layer-pack — Build Full-Stack Apps with Inheritable, Composable Layers">
+  <meta property="og:description" content="Build your frontend, API server, and SSR from one codebase. layer-pack lets you compose inheritable build layers like OOP inheritance — for your entire stack.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://layer-pack.github.io/layer-pack/">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='15' y='55' width='70' height='14' rx='3' fill='%231e3a5f'/><rect x='22' y='36' width='56' height='14' rx='3' fill='%232a4f7a'/><rect x='29' y='17' width='42' height='14' rx='3' fill='%2300bcd4'/></svg>">
@@ -41,8 +41,8 @@
   <!-- Hero -->
   <section class="hero">
     <div class="hero-content">
-      <h1>Build Inheritable, Composable Webpack Layers</h1>
-      <p class="subtitle">Stop copying webpack configs. Start inheriting them. layer-pack lets you compose reusable build layers like OOP inheritance &mdash; for your entire frontend stack.</p>
+      <h1>Build Full-Stack Apps with Inheritable Layers</h1>
+      <p class="subtitle">One codebase. Multiple build targets. layer-pack lets you ship your frontend, API server, and SSR build from a single project &mdash; using inheritable, composable layers that work like OOP inheritance for your entire stack.</p>
       <div class="hero-ctas">
         <a href="getting-started.html" class="btn btn-primary">Get Started</a>
         <a href="https://github.com/layer-pack/layer-pack" class="btn btn-outline" target="_blank" rel="noopener">
@@ -75,8 +75,8 @@
   <section class="section" id="features">
     <div class="section-inner">
       <div class="section-header fade-in">
-        <h2>Powerful Features for Composable Builds</h2>
-        <p>Everything you need to create reusable, inheritable frontend architectures.</p>
+        <h2>Powerful Features for Full-Stack Builds</h2>
+        <p>Everything you need to build and ship complete applications &mdash; frontend, backend, and SSR &mdash; from one codebase.</p>
       </div>
       <div class="features-grid">
 
@@ -109,7 +109,7 @@
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00bcd4" stroke-width="2"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
           </div>
           <h3>Multi-Profile Builds</h3>
-          <p>One project, many outputs. Define <code>api</code>, <code>www</code>, <code>static</code> profiles in <code>.layers.json</code> &mdash; each with its own webpack config, vars, and layer chain.</p>
+          <p>Full-stack from one codebase. Define <code>www</code>, <code>api</code>, <code>ssr</code> profiles in <code>.layers.json</code> &mdash; each produces its own bundle with shared code, separate configs, and distinct entry points.</p>
         </div>
 
         <div class="feature-card fade-in">
@@ -124,10 +124,150 @@
           <div class="feature-icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00bcd4" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
           </div>
-          <h3>Zero-Config React</h3>
-          <p>Use <code>lpack-react</code> for a production-ready stack: React 18, Webpack 5, Sass, Express SSR, HMR &mdash; all inheritable and overridable through layer-pack.</p>
+          <h3>Zero-Config Full-Stack React</h3>
+          <p>Use <code>lpack-react</code> as a base layer for a complete stack: React 18, Webpack 5, Sass, Express SSR, HMR &mdash; all inherited from a single npm package and fully overridable.</p>
         </div>
 
+      </div>
+    </div>
+  </section>
+
+  <!-- Full-Stack from One Codebase -->
+  <section class="section section-alt" id="full-stack">
+    <div class="section-inner">
+      <div class="section-header fade-in">
+        <h2>One Codebase, Every Build Target</h2>
+        <p>With multi-profile builds, a single project produces your entire application stack. Shared models, utilities, and business logic live once and are used everywhere.</p>
+      </div>
+
+      <div class="example-grid fade-in">
+        <div>
+          <div class="code-block">
+            <div class="code-header">
+              <div class="dots"><span></span><span></span><span></span></div>
+              <span class="filename">.layers.json</span>
+            </div>
+            <pre><code class="language-json">{
+  "default": {
+    "rootFolder": "App",
+    "extend": ["lpack-react"],
+    "vars": { "rootAlias": "App" }
+  },
+  "www": {
+    "basedOn": "default",
+    "config": "./webpack.config.www.js",
+    "vars": { "targetDir": "dist/www" }
+  },
+  "api": {
+    "basedOn": "default",
+    "config": "./webpack.config.api.js",
+    "vars": {
+      "externals": true,
+      "targetDir": "dist/api"
+    }
+  }
+}</code></pre>
+          </div>
+        </div>
+
+        <div>
+          <div class="code-block">
+            <div class="code-header">
+              <div class="dots"><span></span><span></span><span></span></div>
+              <span class="filename">Project structure</span>
+            </div>
+            <pre><code class="language-bash">my-app/
+  App/
+    components/    # React UI (www build)
+    api/           # Express routes (api build)
+    models/        # Shared across all builds
+    utils/         # Shared across all builds
+    index.js       # www entry point
+    server.js      # api entry point
+  webpack.config.www.js
+  webpack.config.api.js
+  .layers.json</code></pre>
+          </div>
+
+          <div class="code-block" style="margin-top: 1rem;">
+            <div class="code-header">
+              <div class="dots"><span></span><span></span><span></span></div>
+              <span class="filename">terminal</span>
+            </div>
+            <pre><code class="language-bash"># Build the React frontend
+npx lpack :www
+
+# Build the Node.js API server
+npx lpack :api
+
+# Both share App/models/ and App/utils/</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="fade-in" style="max-width: 720px; margin: 2rem auto 0; text-align: center;">
+        <p class="text-muted" style="font-size: var(--size-base);">Your frontend components, API routes, and server-side rendering code all live in the same source tree. Shared modules like data models, validation logic, and utilities are written once and imported by every build profile &mdash; no duplication, no sync issues.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Inheritable Libraries -->
+  <section class="section" id="inheritable-libs">
+    <div class="section-inner">
+      <div class="section-header fade-in">
+        <h2>Inheritable Libraries: Reuse Your Entire Stack</h2>
+        <p>Publish a complete, working application stack as an npm package. Consumers inherit everything &mdash; webpack config, source files, components, server logic &mdash; and override only what they need. No ejecting, no copy-paste.</p>
+      </div>
+
+      <div class="example-grid fade-in">
+        <div>
+          <h3 style="margin-top: 0; font-size: var(--size-base); color: var(--color-primary);">How it works</h3>
+          <ol style="line-height: 1.8; padding-left: 1.2rem;">
+            <li>A <strong>base layer</strong> (an npm package) provides a full working setup: webpack configs, babel presets, source files, components, and even an Express server.</li>
+            <li>Your project <strong>extends</strong> that layer in <code>.layers.json</code>. You inherit all of its source files and build configuration automatically.</li>
+            <li>To customize, just <strong>create a file at the same path</strong> in your project. Your version takes priority. Use <code>$super</code> to wrap or extend the original instead of replacing it entirely.</li>
+            <li>You can <strong>chain multiple layers</strong>: a base utilities layer, then a React UI layer on top, then your project. Each layer inherits from the ones below.</li>
+          </ol>
+        </div>
+
+        <div>
+          <div class="code-block">
+            <div class="code-header">
+              <div class="dots"><span></span><span></span><span></span></div>
+              <span class="filename">The inheritable layer (npm package)</span>
+            </div>
+            <pre><code class="language-bash">my-base-layer/           # published to npm
+  App/
+    components/Header.jsx  # default Header
+    components/Footer.jsx  # default Footer
+    config/theme.js        # default theme
+    server.js              # Express SSR server
+  webpack.config.js        # full webpack setup
+  .layers.json             # exposes rootFolder: "App"</code></pre>
+          </div>
+
+          <div class="code-block" style="margin-top: 1rem;">
+            <div class="code-header">
+              <div class="dots"><span></span><span></span><span></span></div>
+              <span class="filename">Your project (inherits everything)</span>
+            </div>
+            <pre><code class="language-bash">my-app/
+  App/
+    components/Header.jsx  # overrides Header
+    pages/Home.jsx         # adds new page
+  .layers.json             # extend: ["my-base-layer"]
+
+# Footer, theme, server, webpack config
+# are all inherited from my-base-layer.
+# Header is overridden by your version.</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="fade-in" style="max-width: 720px; margin: 2rem auto 0;">
+        <div class="callout callout-info">
+          <strong>Think of it like class inheritance for entire projects.</strong> A base layer is like an abstract class: it provides a complete, working implementation. Your project extends it, overriding specific methods (files) while inheriting everything else. The <code>$super</code> keyword even lets you call the parent's version, just like <code>super()</code> in OOP.
+        </div>
       </div>
     </div>
   </section>
@@ -221,8 +361,8 @@ npx lpack-dev-server</code></pre>
   <section class="section" id="architecture">
     <div class="section-inner">
       <div class="section-header fade-in">
-        <h2>How Layer Inheritance Works</h2>
-        <p>Layers form an inheritance chain. Each layer can extend parent layers, inheriting their configs, source roots, and dependencies. The head project always wins.</p>
+        <h2>How It All Fits Together</h2>
+        <p>One source tree produces every part of your application. Layers form an inheritance chain, and each build profile compiles its own target &mdash; sharing models, utilities, and logic across frontend, backend, and SSR.</p>
       </div>
 
       <div class="architecture fade-in" style="text-align:center;">
@@ -236,7 +376,7 @@ npx lpack-dev-server</code></pre>
     <div class="section-inner">
       <div class="section-header fade-in">
         <h2>Who Is layer-pack For?</h2>
-        <p>layer-pack solves real problems for teams and projects of all sizes.</p>
+        <p>layer-pack solves real problems for teams building full-stack applications and reusable infrastructure.</p>
       </div>
 
       <div class="use-cases-grid fade-in">
@@ -245,8 +385,8 @@ npx lpack-dev-server</code></pre>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
           </div>
           <div>
-            <h4>Shared Frontend Infrastructure</h4>
-            <p>Teams maintaining multiple apps can publish a base layer with shared webpack configs, babel presets, linting rules, and common components. Each app inherits and overrides only what it needs.</p>
+            <h4>Shared Full-Stack Infrastructure</h4>
+            <p>Teams maintaining multiple apps can publish a base layer with shared webpack configs, babel presets, common components, API middleware, and server logic. Each app inherits and overrides only what it needs &mdash; across both frontend and backend.</p>
           </div>
         </div>
 
@@ -265,8 +405,8 @@ npx lpack-dev-server</code></pre>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
           </div>
           <div>
-            <h4>Library Authors &amp; Boilerplates</h4>
-            <p>Publish a complete, opinionated build layer as an npm package. Consumers inherit your entire stack &mdash; webpack config, loaders, presets &mdash; and can override any piece without ejecting.</p>
+            <h4>Inheritable Boilerplates &amp; Starter Kits</h4>
+            <p>Publish a fully working application as an npm package. Consumers inherit your entire stack &mdash; webpack config, source files, components, server logic &mdash; and override any piece without ejecting. Updates flow through <code>npm update</code>.</p>
           </div>
         </div>
 
@@ -275,8 +415,8 @@ npx lpack-dev-server</code></pre>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
           </div>
           <div>
-            <h4>Multiple Build Targets</h4>
-            <p>Projects that need to produce a web frontend, an API server, and an SSR build from a shared codebase. Each target is a separate profile with its own webpack config and vars.</p>
+            <h4>Full-Stack Single-Codebase Apps</h4>
+            <p>Build your React frontend, Node.js API server, and SSR build from the same source tree. Shared models, validation, and utilities are written once. Each target is a separate build profile with its own webpack config and entry point.</p>
           </div>
         </div>
       </div>

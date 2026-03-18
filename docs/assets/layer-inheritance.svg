@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 520">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 540">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#0f1b2d"/>
@@ -6,123 +6,215 @@
     </linearGradient>
   </defs>
 
-  <rect width="700" height="520" rx="16" fill="url(#bg)"/>
+  <rect width="780" height="540" rx="16" fill="url(#bg)"/>
 
-  <!-- ════════════════════════════════════════════════ -->
-  <!-- LAYER 3 (bottom): base-layer — drawn first so it's behind -->
-  <!-- ════════════════════════════════════════════════ -->
-  <g transform="translate(60, 310)">
-    <!-- Card -->
-    <rect width="400" height="150" rx="14" fill="#1a1a2e" stroke="#ff9800" stroke-width="2" stroke-opacity="0.5"/>
-    <rect width="400" height="5" rx="3" fill="#ff9800" fill-opacity="0.7"/>
-    <!-- Label -->
-    <text x="20" y="35" font-family="sans-serif" font-size="18" fill="#ffb74d" font-weight="700">base-layer</text>
-    <text x="170" y="35" font-family="sans-serif" font-size="12" fill="#ffb74d" fill-opacity="0.5">npm package</text>
-    <!-- Files -->
-    <g transform="translate(20, 55)">
-      <!-- Button.jsx — will be overridden -->
-      <rect width="160" height="32" rx="6" fill="#2a1a00" stroke="#ff9800" stroke-width="1" stroke-opacity="0.3"/>
-      <text x="12" y="21" font-family="monospace" font-size="12" fill="#ffcc80">App/Button.jsx</text>
-      <!-- webpack config — inherited -->
-      <rect x="180" width="190" height="32" rx="6" fill="#2a1a00" stroke="#ff9800" stroke-width="1" stroke-opacity="0.3"/>
-      <text x="192" y="21" font-family="monospace" font-size="12" fill="#ffcc80">webpack.config.js</text>
-    </g>
-    <!-- Inherited label -->
-    <rect x="20" y="105" width="170" height="26" rx="13" fill="#ff9800" fill-opacity="0.1" stroke="#ff9800" stroke-opacity="0.25"/>
-    <text x="34" y="122" font-family="sans-serif" font-size="11" fill="#ffb74d">webpack config inherited</text>
+  <!-- ═══════════════════════════════════════ -->
+  <!-- LAYER CHAIN PILL (top)                 -->
+  <!-- ═══════════════════════════════════════ -->
+  <g transform="translate(115, 12)">
+    <rect width="550" height="32" rx="16" fill="#0d1520" stroke="#1e3a5f" stroke-width="1"/>
+    <text x="18" y="21" font-family="sans-serif" font-size="11" fill="#546e7a">Inheritable layers:</text>
+    <rect x="128" y="6" width="85" height="20" rx="10" fill="#ff9800" fill-opacity="0.12" stroke="#ff9800" stroke-opacity="0.3"/>
+    <text x="147" y="20" font-family="sans-serif" font-size="11" fill="#ffb74d">base-layer</text>
+    <text x="222" y="21" font-family="sans-serif" font-size="13" fill="#37474f">→</text>
+    <rect x="240" y="6" width="95" height="20" rx="10" fill="#ab47bc" fill-opacity="0.12" stroke="#ab47bc" stroke-opacity="0.3"/>
+    <text x="255" y="20" font-family="sans-serif" font-size="11" fill="#ce93d8">lpack-react</text>
+    <text x="344" y="21" font-family="sans-serif" font-size="13" fill="#37474f">→</text>
+    <rect x="362" y="6" width="62" height="20" rx="10" fill="#00bcd4" fill-opacity="0.15" stroke="#00bcd4" stroke-opacity="0.4"/>
+    <text x="373" y="20" font-family="sans-serif" font-size="11" fill="#4fc3f7" font-weight="600">my-app</text>
+    <text x="434" y="21" font-family="sans-serif" font-size="10" fill="#546e7a">(head project)</text>
   </g>
 
-  <!-- ════════════════════════════════════════════════ -->
-  <!-- LAYER 2 (middle): lpack-react -->
-  <!-- ════════════════════════════════════════════════ -->
-  <g transform="translate(40, 175)">
-    <rect width="440" height="150" rx="14" fill="#1a1a2e" stroke="#9c27b0" stroke-width="2" stroke-opacity="0.5"/>
-    <rect width="440" height="5" rx="3" fill="#9c27b0" fill-opacity="0.7"/>
-    <text x="20" y="35" font-family="sans-serif" font-size="18" fill="#ce93d8" font-weight="700">lpack-react</text>
-    <text x="155" y="35" font-family="sans-serif" font-size="12" fill="#ce93d8" fill-opacity="0.5">React + Webpack + SSR</text>
-    <!-- Files -->
-    <g transform="translate(20, 55)">
-      <rect width="160" height="32" rx="6" fill="#1a0a2e" stroke="#9c27b0" stroke-width="1" stroke-opacity="0.3"/>
-      <text x="12" y="21" font-family="monospace" font-size="12" fill="#e1bee7">App/Button.jsx</text>
-      <rect x="180" width="230" height="32" rx="6" fill="#1a0a2e" stroke="#9c27b0" stroke-width="1" stroke-opacity="0.3"/>
-      <text x="192" y="21" font-family="monospace" font-size="12" fill="#e1bee7">App/index.server.js</text>
+  <!-- ═══════════════════════════════════════ -->
+  <!-- SOURCE CODEBASE CARD                   -->
+  <!-- ═══════════════════════════════════════ -->
+  <g transform="translate(30, 56)">
+    <rect width="720" height="210" rx="14" fill="#111827" stroke="#1e3a5f" stroke-width="1.5"/>
+
+    <!-- Header bar -->
+    <rect width="720" height="38" rx="14" fill="#0d1520"/>
+    <rect y="24" width="720" height="14" fill="#0d1520"/>
+    <text x="20" y="26" font-family="monospace" font-size="14" fill="#e0e0e0" font-weight="600">my-app / App/</text>
+    <text x="165" y="26" font-family="sans-serif" font-size="12" fill="#546e7a">— single source tree, all build targets</text>
+
+    <!-- Row 1: directories -->
+    <g transform="translate(20, 52)">
+      <!-- components/ (www + ssr) -->
+      <g>
+        <rect width="162" height="55" rx="8" fill="#002a2e" stroke="#00bcd4" stroke-width="1" stroke-opacity="0.5"/>
+        <circle cx="14" cy="14" r="4" fill="#00bcd4"/>
+        <text x="24" y="18" font-family="monospace" font-size="12" fill="#80deea">components/</text>
+        <text x="14" y="38" font-family="sans-serif" font-size="10" fill="#546e7a">React UI</text>
+        <text x="14" y="50" font-family="sans-serif" font-size="9" fill="#00bcd4" fill-opacity="0.7">used by :www :ssr</text>
+      </g>
+      <!-- api/ -->
+      <g transform="translate(175, 0)">
+        <rect width="162" height="55" rx="8" fill="#071a07" stroke="#66bb6a" stroke-width="1" stroke-opacity="0.5"/>
+        <circle cx="14" cy="14" r="4" fill="#66bb6a"/>
+        <text x="24" y="18" font-family="monospace" font-size="12" fill="#a5d6a7">api/</text>
+        <text x="14" y="38" font-family="sans-serif" font-size="10" fill="#546e7a">Express routes</text>
+        <text x="14" y="50" font-family="sans-serif" font-size="9" fill="#66bb6a" fill-opacity="0.7">used by :api</text>
+      </g>
+      <!-- models/ (shared) -->
+      <g transform="translate(350, 0)">
+        <rect width="162" height="55" rx="8" fill="#1a1700" stroke="#ffb300" stroke-width="1" stroke-opacity="0.5"/>
+        <circle cx="14" cy="14" r="4" fill="#ffb300"/>
+        <text x="24" y="18" font-family="monospace" font-size="12" fill="#ffe082">models/</text>
+        <text x="14" y="38" font-family="sans-serif" font-size="10" fill="#546e7a">Data models</text>
+        <text x="14" y="50" font-family="sans-serif" font-size="9" fill="#ffb300" fill-opacity="0.7">shared by all</text>
+      </g>
+      <!-- utils/ (shared) -->
+      <g transform="translate(525, 0)">
+        <rect width="162" height="55" rx="8" fill="#1a1700" stroke="#ffb300" stroke-width="1" stroke-opacity="0.5"/>
+        <circle cx="14" cy="14" r="4" fill="#ffb300"/>
+        <text x="24" y="18" font-family="monospace" font-size="12" fill="#ffe082">utils/</text>
+        <text x="14" y="38" font-family="sans-serif" font-size="10" fill="#546e7a">Shared helpers</text>
+        <text x="14" y="50" font-family="sans-serif" font-size="9" fill="#ffb300" fill-opacity="0.7">shared by all</text>
+      </g>
     </g>
-    <rect x="20" y="105" width="140" height="26" rx="13" fill="#9c27b0" fill-opacity="0.1" stroke="#9c27b0" stroke-opacity="0.25"/>
-    <text x="34" y="122" font-family="sans-serif" font-size="11" fill="#ce93d8">SSR + HMR inherited</text>
+
+    <!-- Row 2: entry points -->
+    <g transform="translate(20, 120)">
+      <!-- index.js (www) -->
+      <g>
+        <rect width="162" height="42" rx="8" fill="#002a2e" stroke="#00bcd4" stroke-width="1" stroke-opacity="0.35"/>
+        <text x="14" y="18" font-family="monospace" font-size="12" fill="#80deea">index.js</text>
+        <text x="14" y="34" font-family="sans-serif" font-size="10" fill="#546e7a">www entry point</text>
+      </g>
+      <!-- server.js (api) -->
+      <g transform="translate(175, 0)">
+        <rect width="162" height="42" rx="8" fill="#071a07" stroke="#66bb6a" stroke-width="1" stroke-opacity="0.35"/>
+        <text x="14" y="18" font-family="monospace" font-size="12" fill="#a5d6a7">server.js</text>
+        <text x="14" y="34" font-family="sans-serif" font-size="10" fill="#546e7a">api entry point</text>
+      </g>
+      <!-- server.ssr.js -->
+      <g transform="translate(350, 0)">
+        <rect width="162" height="42" rx="8" fill="#1a0a2e" stroke="#ab47bc" stroke-width="1" stroke-opacity="0.35"/>
+        <text x="14" y="18" font-family="monospace" font-size="12" fill="#ce93d8">server.ssr.js</text>
+        <text x="14" y="34" font-family="sans-serif" font-size="10" fill="#546e7a">SSR entry point</text>
+      </g>
+      <!-- .layers.json -->
+      <g transform="translate(525, 0)">
+        <rect width="162" height="42" rx="8" fill="#0d1520" stroke="#546e7a" stroke-width="1" stroke-opacity="0.35"/>
+        <text x="14" y="18" font-family="monospace" font-size="12" fill="#90a4ae">.layers.json</text>
+        <text x="14" y="34" font-family="sans-serif" font-size="10" fill="#546e7a">3 build profiles</text>
+      </g>
+    </g>
+
+    <!-- Shared code indicator -->
+    <g transform="translate(20, 178)">
+      <rect width="680" height="22" rx="6" fill="#ffb300" fill-opacity="0.05" stroke="#ffb300" stroke-width="0.5" stroke-opacity="0.2"/>
+      <circle cx="14" cy="11" r="3.5" fill="#ffb300" fill-opacity="0.5"/>
+      <text x="26" y="15" font-family="sans-serif" font-size="10" fill="#ffb300" fill-opacity="0.8">models/ and utils/ are imported by every build target — write once, use everywhere</text>
+    </g>
   </g>
 
-  <!-- ════════════════════════════════════════════════ -->
-  <!-- LAYER 1 (top): Your Project — drawn last so it's on top -->
-  <!-- ════════════════════════════════════════════════ -->
-  <g transform="translate(20, 40)">
-    <rect width="480" height="150" rx="14" fill="#1a1a2e" stroke="#00bcd4" stroke-width="2.5"/>
-    <rect width="480" height="5" rx="3" fill="#00bcd4"/>
-    <text x="20" y="35" font-family="sans-serif" font-size="18" fill="#4fc3f7" font-weight="700">my-app</text>
-    <text x="100" y="35" font-family="sans-serif" font-size="12" fill="#4fc3f7" fill-opacity="0.5">your code — always wins</text>
-    <!-- Files -->
-    <g transform="translate(20, 55)">
-      <!-- Button.jsx — overrides parent -->
-      <rect width="160" height="32" rx="6" fill="#002a2e" stroke="#00bcd4" stroke-width="1.5"/>
-      <text x="12" y="21" font-family="monospace" font-size="12" fill="#80deea">App/Button.jsx</text>
-      <!-- Dashboard — unique to head -->
-      <rect x="180" width="200" height="32" rx="6" fill="#002a2e" stroke="#00bcd4" stroke-width="1"/>
-      <text x="192" y="21" font-family="monospace" font-size="12" fill="#80deea">App/Dashboard.jsx</text>
-    </g>
-    <!-- Override badge -->
-    <rect x="20" y="105" width="106" height="26" rx="13" fill="#00bcd4" fill-opacity="0.15" stroke="#00bcd4" stroke-opacity="0.4"/>
-    <text x="32" y="122" font-family="sans-serif" font-size="11" fill="#4fc3f7" font-weight="600">your Button</text>
+  <!-- ═══════════════════════════════════════ -->
+  <!-- PROFILE ARROWS                          -->
+  <!-- ═══════════════════════════════════════ -->
+  <!-- :www arrow (centered over card 1: x=30+115=145) -->
+  <g transform="translate(85, 278)">
+    <line x1="60" y1="0" x2="60" y2="52" stroke="#00bcd4" stroke-width="2" stroke-dasharray="4 2"/>
+    <polygon points="52,48 60,62 68,48" fill="#00bcd4"/>
+    <rect x="10" y="14" width="100" height="24" rx="12" fill="#00bcd4" fill-opacity="0.12" stroke="#00bcd4" stroke-opacity="0.4" stroke-width="1"/>
+    <text x="60" y="31" text-anchor="middle" font-family="monospace" font-size="11" fill="#00bcd4" font-weight="600">lpack :www</text>
   </g>
 
-  <!-- ════════════════════════════════════════════════ -->
-  <!-- "extends" arrows -->
-  <!-- ════════════════════════════════════════════════ -->
-  <!-- my-app → lpack-react -->
-  <line x1="260" y1="142" x2="260" y2="175" stroke="#4fc3f7" stroke-width="1.5" opacity="0.5"/>
-  <text x="270" y="163" font-family="sans-serif" font-size="10" fill="#4fc3f7" fill-opacity="0.7">extends</text>
-  <!-- lpack-react → base-layer -->
-  <line x1="280" y1="325" x2="280" y2="310" stroke="#ce93d8" stroke-width="1.5" opacity="0.5"/>
-  <text x="290" y="322" font-family="sans-serif" font-size="10" fill="#ce93d8" fill-opacity="0.7">extends</text>
+  <!-- :api arrow (centered over card 2: x=275+115=390) -->
+  <g transform="translate(330, 278)">
+    <line x1="60" y1="0" x2="60" y2="52" stroke="#66bb6a" stroke-width="2" stroke-dasharray="4 2"/>
+    <polygon points="52,48 60,62 68,48" fill="#66bb6a"/>
+    <rect x="12" y="14" width="96" height="24" rx="12" fill="#66bb6a" fill-opacity="0.12" stroke="#66bb6a" stroke-opacity="0.4" stroke-width="1"/>
+    <text x="60" y="31" text-anchor="middle" font-family="monospace" font-size="11" fill="#66bb6a" font-weight="600">lpack :api</text>
+  </g>
 
-  <!-- ════════════════════════════════════════════════ -->
-  <!-- RIGHT SIDE: The story -->
-  <!-- ════════════════════════════════════════════════ -->
-  <g transform="translate(500, 50)">
-    <rect width="175" height="410" rx="12" fill="#0d1520" stroke="#1e3a5f" stroke-width="1"/>
+  <!-- :ssr arrow (centered over card 3: x=520+115=635) -->
+  <g transform="translate(575, 278)">
+    <line x1="60" y1="0" x2="60" y2="52" stroke="#ab47bc" stroke-width="2" stroke-dasharray="4 2"/>
+    <polygon points="52,48 60,62 68,48" fill="#ab47bc"/>
+    <rect x="14" y="14" width="92" height="24" rx="12" fill="#ab47bc" fill-opacity="0.12" stroke="#ab47bc" stroke-opacity="0.4" stroke-width="1"/>
+    <text x="60" y="31" text-anchor="middle" font-family="monospace" font-size="11" fill="#ab47bc" font-weight="600">lpack :ssr</text>
+  </g>
 
-    <!-- Title -->
-    <text x="18" y="30" font-family="sans-serif" font-size="14" fill="#e0e0e0" font-weight="600">What happens</text>
+  <!-- ═══════════════════════════════════════ -->
+  <!-- OUTPUT CARDS                            -->
+  <!-- ═══════════════════════════════════════ -->
+  <!-- www output -->
+  <g transform="translate(30, 350)">
+    <rect width="230" height="140" rx="12" fill="#111827" stroke="#00bcd4" stroke-width="2"/>
+    <rect width="230" height="5" rx="3" fill="#00bcd4"/>
+    <!-- Browser icon -->
+    <rect x="18" y="18" width="22" height="16" rx="3" fill="none" stroke="#00bcd4" stroke-width="1.2"/>
+    <line x1="18" y1="24" x2="40" y2="24" stroke="#00bcd4" stroke-width="0.8"/>
+    <circle cx="22" cy="21" r="1.2" fill="#00bcd4"/>
+    <circle cx="26" cy="21" r="1.2" fill="#00bcd4"/>
+    <text x="50" y="30" font-family="sans-serif" font-size="14" fill="#4fc3f7" font-weight="700">Frontend Bundle</text>
+    <text x="18" y="52" font-family="sans-serif" font-size="11" fill="#7a8a9e">React SPA for browsers</text>
+    <text x="18" y="72" font-family="monospace" font-size="11" fill="#37474f">dist/www/</text>
+    <!-- Included modules -->
+    <g transform="translate(18, 86)">
+      <rect width="68" height="18" rx="9" fill="#00bcd4" fill-opacity="0.1"/>
+      <text x="8" y="13" font-family="sans-serif" font-size="9" fill="#00bcd4">components</text>
+      <rect x="76" width="50" height="18" rx="9" fill="#ffb300" fill-opacity="0.1"/>
+      <text x="84" y="13" font-family="sans-serif" font-size="9" fill="#ffb300">models</text>
+      <rect x="134" width="42" height="18" rx="9" fill="#ffb300" fill-opacity="0.1"/>
+      <text x="142" y="13" font-family="sans-serif" font-size="9" fill="#ffb300">utils</text>
+    </g>
+    <text x="18" y="124" font-family="sans-serif" font-size="10" fill="#37474f">JS + CSS + assets bundle</text>
+  </g>
 
-    <!-- Story 1: Button override -->
-    <rect x="12" y="48" width="150" height="24" rx="5" fill="#122240"/>
-    <text x="20" y="65" font-family="monospace" font-size="10" fill="#80deea">import "App/Button"</text>
+  <!-- api output -->
+  <g transform="translate(275, 350)">
+    <rect width="230" height="140" rx="12" fill="#111827" stroke="#66bb6a" stroke-width="2"/>
+    <rect width="230" height="5" rx="3" fill="#66bb6a"/>
+    <!-- Server icon -->
+    <rect x="18" y="16" width="22" height="18" rx="3" fill="none" stroke="#66bb6a" stroke-width="1.2"/>
+    <line x1="22" y1="22" x2="24" y2="22" stroke="#66bb6a" stroke-width="2" stroke-linecap="round"/>
+    <line x1="28" y1="22" x2="36" y2="22" stroke="#66bb6a" stroke-width="1"/>
+    <line x1="22" y1="28" x2="24" y2="28" stroke="#66bb6a" stroke-width="2" stroke-linecap="round"/>
+    <line x1="28" y1="28" x2="36" y2="28" stroke="#66bb6a" stroke-width="1"/>
+    <text x="50" y="30" font-family="sans-serif" font-size="14" fill="#a5d6a7" font-weight="700">API Server</text>
+    <text x="18" y="52" font-family="sans-serif" font-size="11" fill="#7a8a9e">Express + Node.js backend</text>
+    <text x="18" y="72" font-family="monospace" font-size="11" fill="#37474f">dist/api/</text>
+    <!-- Included modules -->
+    <g transform="translate(18, 86)">
+      <rect width="58" height="18" rx="9" fill="#66bb6a" fill-opacity="0.1"/>
+      <text x="8" y="13" font-family="sans-serif" font-size="9" fill="#66bb6a">api routes</text>
+      <rect x="66" width="50" height="18" rx="9" fill="#ffb300" fill-opacity="0.1"/>
+      <text x="74" y="13" font-family="sans-serif" font-size="9" fill="#ffb300">models</text>
+      <rect x="124" width="42" height="18" rx="9" fill="#ffb300" fill-opacity="0.1"/>
+      <text x="132" y="13" font-family="sans-serif" font-size="9" fill="#ffb300">utils</text>
+    </g>
+    <text x="18" y="124" font-family="sans-serif" font-size="10" fill="#37474f">Node.js bundle, externals</text>
+  </g>
 
-    <text x="18" y="92" font-family="sans-serif" font-size="11" fill="#4fc3f7" font-weight="600">Your version wins.</text>
-    <text x="18" y="108" font-family="sans-serif" font-size="11" fill="#7a8a9e">Button.jsx exists in both</text>
-    <text x="18" y="123" font-family="sans-serif" font-size="11" fill="#7a8a9e">layers, but head project</text>
-    <text x="18" y="138" font-family="sans-serif" font-size="11" fill="#7a8a9e">files always come first.</text>
+  <!-- ssr output -->
+  <g transform="translate(520, 350)">
+    <rect width="230" height="140" rx="12" fill="#111827" stroke="#ab47bc" stroke-width="2"/>
+    <rect width="230" height="5" rx="3" fill="#ab47bc"/>
+    <!-- SSR icon -->
+    <rect x="18" y="16" width="22" height="18" rx="3" fill="none" stroke="#ab47bc" stroke-width="1.2"/>
+    <text x="22" y="29" font-family="monospace" font-size="8" fill="#ab47bc">&lt;/&gt;</text>
+    <text x="50" y="30" font-family="sans-serif" font-size="14" fill="#ce93d8" font-weight="700">SSR Renderer</text>
+    <text x="18" y="52" font-family="sans-serif" font-size="11" fill="#7a8a9e">Server-rendered React</text>
+    <text x="18" y="72" font-family="monospace" font-size="11" fill="#37474f">dist/ssr/</text>
+    <!-- Included modules -->
+    <g transform="translate(18, 86)">
+      <rect width="68" height="18" rx="9" fill="#ab47bc" fill-opacity="0.1"/>
+      <text x="8" y="13" font-family="sans-serif" font-size="9" fill="#ab47bc">components</text>
+      <rect x="76" width="50" height="18" rx="9" fill="#ffb300" fill-opacity="0.1"/>
+      <text x="84" y="13" font-family="sans-serif" font-size="9" fill="#ffb300">models</text>
+      <rect x="134" width="42" height="18" rx="9" fill="#ffb300" fill-opacity="0.1"/>
+      <text x="142" y="13" font-family="sans-serif" font-size="9" fill="#ffb300">utils</text>
+    </g>
+    <text x="18" y="124" font-family="sans-serif" font-size="10" fill="#37474f">Express + hydrated client</text>
+  </g>
 
-    <!-- Divider -->
-    <line x1="18" y1="155" x2="157" y2="155" stroke="#1e3a5f" stroke-width="1"/>
-
-    <!-- Story 2: Inherited file -->
-    <rect x="12" y="170" width="150" height="24" rx="5" fill="#122240"/>
-    <text x="20" y="187" font-family="monospace" font-size="10" fill="#e1bee7">import "App/index.server"</text>
-
-    <text x="18" y="214" font-family="sans-serif" font-size="11" fill="#ce93d8" font-weight="600">Inherited from parent.</text>
-    <text x="18" y="230" font-family="sans-serif" font-size="11" fill="#7a8a9e">You didn't write it, but</text>
-    <text x="18" y="245" font-family="sans-serif" font-size="11" fill="#7a8a9e">lpack-react provides it.</text>
-    <text x="18" y="260" font-family="sans-serif" font-size="11" fill="#7a8a9e">Zero config needed.</text>
-
-    <!-- Divider -->
-    <line x1="18" y1="277" x2="157" y2="277" stroke="#1e3a5f" stroke-width="1"/>
-
-    <!-- Story 3: $super -->
-    <rect x="12" y="292" width="150" height="24" rx="5" fill="#122240"/>
-    <text x="20" y="309" font-family="monospace" font-size="10" fill="#ce93d8">import "$super"</text>
-
-    <text x="18" y="336" font-family="sans-serif" font-size="11" fill="#ffb74d" font-weight="600">Access parent version.</text>
-    <text x="18" y="352" font-family="sans-serif" font-size="11" fill="#7a8a9e">Override a file AND still</text>
-    <text x="18" y="367" font-family="sans-serif" font-size="11" fill="#7a8a9e">use the original — like</text>
-    <text x="18" y="382" font-family="sans-serif" font-size="11" fill="#7a8a9e">calling super() in OOP.</text>
+  <!-- ═══════════════════════════════════════ -->
+  <!-- FOOTER                                  -->
+  <!-- ═══════════════════════════════════════ -->
+  <g transform="translate(140, 505)">
+    <rect width="500" height="26" rx="13" fill="#0d1520" stroke="#1e3a5f" stroke-width="0.5"/>
+    <text x="250" y="17" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#546e7a">Three builds from one source tree — shared code is never duplicated</text>
   </g>
 </svg>
